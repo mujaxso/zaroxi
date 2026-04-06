@@ -1,0 +1,31 @@
+[workspace]
+resolver = "3"
+members = [
+  "apps/desktop",
+  "crates/core-types",
+  "crates/editor-buffer",
+  "crates/workspace-model",
+  "crates/lsp-client",
+  "crates/ai-context",
+  "crates/ai-agent",
+  "crates/patch-engine",
+  "crates/rpc",
+  "crates/settings",
+  "crates/permissions",
+  "services/workspace-daemon",
+  "services/ai-daemon",
+]
+
+[workspace.package]
+edition = "2024"
+version = "0.1.0"
+license = "Apache-2.0"
+
+[workspace.dependencies]
+anyhow = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "process", "sync", "io-util"] }
+tracing = "0.1"
+uuid = { version = "1", features = ["v4", "serde"] }
+thiserror = "2"
