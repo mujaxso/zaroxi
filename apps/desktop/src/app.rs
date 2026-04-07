@@ -152,9 +152,23 @@ impl iced::Application for App {
             Message::FileLoaded(result) => {
                 match result {
                     Ok((path, content)) => {
+                        // Check file size to prevent UI freezing
+                        // iced text editor struggles with files larger than ~5MB
+                        const MAX_FILE_SIZE: usize = 5_000_000; // 5MB
+                        let file_size = content.len();
+                        
+                        if file_size > MAX_FILE_SIZE {
+                            self.error_message = Some(format!(
+                                "File too large ({} MB). Maximum supported size is {} MB to prevent UI freezing.",
+                                file_size / 1_000_000,
+                                MAX_FILE_SIZE / 1_000_000
+                            ));
+                            self.status_message = "File too large to open in editor".to_string();
+                            return Command::none();
+                        }
+                        
                         // Update text editor content
-                        // For large files, we need to be careful with the iced text editor
-                        // But ropey can handle large files efficiently
+                        // For moderately sized files, this should be fine
                         self.text_editor = text_editor::Content::with_text(&content);
                         self.editor_content = content.clone();
                         
@@ -169,9 +183,8 @@ impl iced::Application for App {
                             state.open_buffer(&path, self.editor_content.clone());
                         }
                         
-                        let file_size = content.len();
-                        if file_size > 10_000_000 { // 10MB
-                            self.status_message = format!("Loaded large file: {} ({} MB). Performance may be affected.", 
+                        if file_size > 1_000_000 { // 1MB
+                            self.status_message = format!("Loaded large file: {} ({} MB).", 
                                 path, file_size / 1_000_000);
                         } else {
                             self.status_message = format!("Loaded: {} ({} bytes)", path, file_size);
