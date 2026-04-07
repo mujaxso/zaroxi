@@ -228,10 +228,16 @@ impl iced::Application for App {
             }
             Message::ToggleAiPanel => {
                 self.ai_panel_visible = !self.ai_panel_visible;
+                // When toggling the AI panel, also set the active activity to AI
+                self.active_activity = Activity::Ai;
                 Command::none()
             }
             Message::ActivitySelected(activity) => {
                 self.active_activity = activity;
+                // If the selected activity is AI, ensure the AI panel is visible
+                if activity == Activity::Ai {
+                    self.ai_panel_visible = true;
+                }
                 Command::none()
             }
             Message::PromptInputChanged(text) => {

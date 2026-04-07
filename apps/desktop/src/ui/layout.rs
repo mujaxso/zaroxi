@@ -138,6 +138,12 @@ fn activity_rail<'a>(active_activity: Activity) -> Element<'a, Message> {
             } else {
                 theme::Button::Secondary
             };
+            // For AI activity, we want to toggle the panel visibility
+            let message = if activity == Activity::Ai {
+                Message::ToggleAiPanel
+            } else {
+                Message::ActivitySelected(activity)
+            };
             container(
                 button(
                     column![
@@ -147,7 +153,7 @@ fn activity_rail<'a>(active_activity: Activity) -> Element<'a, Message> {
                     .align_items(Alignment::Center)
                     .spacing(4),
                 )
-                .on_press(Message::ActivitySelected(activity))
+                .on_press(message)
                 .padding(12)
                 .style(button_style),
             )
@@ -176,8 +182,16 @@ fn left_panel<'a>(
 fn explorer_panel<'a>(file_entries: &'a [core_types::workspace::DirectoryEntry]) -> Element<'a, Message> {
     let content: Element<_> = if file_entries.is_empty() {
         container(
-            text("No files in workspace")
-                .style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150)))
+            column![
+                text("No files in workspace")
+                    .style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150))),
+                button("Open Workspace")
+                    .on_press(Message::OpenWorkspace)
+                    .padding(8)
+                    .style(theme::Button::Secondary),
+            ]
+            .spacing(10)
+            .align_items(Alignment::Center)
         )
         .center_y()
         .center_x()
@@ -190,11 +204,17 @@ fn explorer_panel<'a>(file_entries: &'a [core_types::workspace::DirectoryEntry])
             .map(|(i, entry)| {
                 let is_file = !entry.is_dir;
                 let icon = if is_file { "📄" } else { "📁" };
+                let text_color = if is_file {
+                    iced::Color::from_rgb8(220, 220, 220)
+                } else {
+                    iced::Color::from_rgb8(180, 180, 255)
+                };
                 container(
                     button(
                         row![
                             text(icon).size(14),
-                            text(&entry.name).size(14),
+                            text(&entry.name).size(14)
+                                .style(iced::theme::Text::Color(text_color)),
                         ]
                         .spacing(8)
                         .align_items(Alignment::Center),
@@ -220,7 +240,10 @@ fn explorer_panel<'a>(file_entries: &'a [core_types::workspace::DirectoryEntry])
         row![
             text("EXPLORER").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150))),
             horizontal_space(),
-            button("⋯").style(theme::Button::Secondary),
+            button("Refresh")
+                .on_press(Message::RefreshWorkspace)
+                .padding([4, 8])
+                .style(theme::Button::Secondary),
         ]
         .padding([12, 16])
         .align_items(Alignment::Center),
@@ -385,11 +408,32 @@ fn status_bar<'a>(
         horizontal_space().into()
     };
 
+    // Determine file type for display
+    let file_type = if let Some(path) = active_file_path {
+        if path.ends_with(".rs") {
+            "Rust"
+        } else if path.ends_with(".toml") {
+            "TOML"
+        } else if path.ends_with(".md") {
+            "Markdown"
+        } else if path.ends_with(".json") {
+            "JSON"
+        } else if path.ends_with(".txt") {
+            "Plain Text"
+        } else {
+            "Unknown"
+        }
+    } else {
+        "Plain Text"
+    };
+
     row![
-        text(format!("{} files", file_count)).size(12),
+        text(format!("📁 {} files", file_count)).size(12),
         horizontal_space(),
         if let Some(path) = active_file_path {
-            text(path).size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(180, 180, 255)))
+            // Show only the file name, not the full path
+            let file_name = path.split('/').last().unwrap_or(path);
+            text(file_name).size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(180, 180, 255)))
         } else {
             text("No active file").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150)))
         },
@@ -399,7 +443,7 @@ fn status_bar<'a>(
         horizontal_space(),
         text("Ln 1, Col 1").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150))),
         horizontal_space(),
-        text("Plain Text").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150))),
+        text(file_type).size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(200, 200, 100))),
     ]
     .padding([8, 16])
     .align_items(Alignment::Center)
