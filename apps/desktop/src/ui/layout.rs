@@ -240,13 +240,15 @@ fn explorer_panel<'a>(file_entries: &'a [core_types::workspace::DirectoryEntry])
                         row![
                             if entry.is_dir {
                                 // Add a toggle button for directories
-                                button("▶")
+                                let btn: Element<_> = button("▶")
                                     .on_press(Message::ToggleDirectory(entry.path.clone()))
                                     .style(theme::Button::Text)
                                     .padding(0)
-                                    .into()
+                                    .into();
+                                btn
                             } else {
-                                horizontal_space().width(20).into()
+                                let space: Element<_> = horizontal_space().width(20).into();
+                                space
                             },
                             text(icon).size(14),
                             text(&entry.name).size(14)
