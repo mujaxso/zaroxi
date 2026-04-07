@@ -12,7 +12,7 @@ pub enum Message {
     OpenWorkspace,
     WorkspaceLoaded(Result<Vec<DirectoryEntry>, String>),
     FileSelected(usize),
-    FileLoaded(Result<(String, String, TextBuffer), String>),
+    FileLoaded(Result<(String, String, TextBuffer, text_editor::Content), String>),
     EditorContentChanged(text_editor::Action),
     SaveFile,
     FileSaved(Result<(), String>),
@@ -142,21 +142,32 @@ impl iced::Application for App {
                             async move {
                                 // Clone path for use inside the async block
                                 let path_clone = path.clone();
-                                // Read file and create buffer in a blocking task
+                                // Read file, create buffer, and text editor content in a blocking task
                                 let result = tokio::task::spawn_blocking(move || {
                                     match files::read_file(&path_clone) {
                                         Ok(content) => {
+                                            // Check file size before processing
+                                            const MAX_FILE_SIZE: usize = 50_000_000; // 50MB
+                                            if content.len() > MAX_FILE_SIZE {
+                                                return Err(format!(
+                                                    "File too large ({} MB). Maximum supported size is {} MB.",
+                                                    content.len() / 1_000_000,
+                                                    MAX_FILE_SIZE / 1_000_000
+                                                ));
+                                            }
                                             // Create buffer in the background thread
                                             let buffer = TextBuffer::new(content.clone());
-                                            Ok((path, content, buffer))
+                                            // Also create text editor content here to avoid blocking the UI thread
+                                            let text_editor_content = text_editor::Content::with_text(&content);
+                                            Ok((path, content, buffer, text_editor_content))
                                         }
                                         Err(e) => Err(format!("Failed to read file: {}", e)),
                                     }
                                 }).await;
                                 
                                 match result {
-                                    Ok(Ok((path, content, buffer))) => {
-                                        Message::FileLoaded(Ok((path, content, buffer)))
+                                    Ok(Ok((path, content, buffer, text_editor_content))) => {
+                                        Message::FileLoaded(Ok((path, content, buffer, text_editor_content)))
                                     }
                                     Ok(Err(e)) => Message::FileLoaded(Err(e)),
                                     Err(join_err) => Message::FileLoaded(Err(format!("Failed to join task: {}", join_err))),
@@ -173,14 +184,13 @@ impl iced::Application for App {
             }
             Message::FileLoaded(result) => {
                 match result {
-                    Ok((path, content, buffer)) => {
+                    Ok((path, content, buffer, text_editor_content)) => {
                         let file_size = content.len();
                         const WARNING_THRESHOLD: usize = 1_000_000; // 1MB
                         const READ_ONLY_THRESHOLD: usize = 10_000_000; // 10MB
                         
-                        // Update text editor content on the main thread
-                        // This could still be heavy for very large files, but we've already loaded the content
-                        self.text_editor = text_editor::Content::with_text(&content);
+                        // Use the pre-created text editor content
+                        self.text_editor = text_editor_content;
                         self.editor_content = content.clone();
                         self.editor_buffer = Some(buffer);
                         self.is_dirty = false;
