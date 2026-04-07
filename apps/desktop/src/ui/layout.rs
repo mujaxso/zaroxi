@@ -21,6 +21,7 @@ pub fn ide_layout<'a>(
     ai_panel_visible: bool,
     prompt_input: &'a str,
     _expanded_directories: &'a std::collections::HashSet<String>,
+    text_editor: &'a iced::widget::text_editor::Content,
 ) -> Element<'a, Message> {
     // Top bar
     let top_bar = top_bar(workspace_path, is_dirty);
@@ -49,7 +50,7 @@ pub fn ide_layout<'a>(
             .height(Length::Fill),
         vertical_rule(1),
         // Editor area - takes most space
-        container(editor_panel(active_file_path, editor_content, is_dirty))
+        container(editor_panel(active_file_path, text_editor, is_dirty))
             .width(Length::FillPortion(5))
             .height(Length::Fill),
         // AI panel (conditionally visible) - flexible width
@@ -299,7 +300,7 @@ fn explorer_panel<'a>(file_entries: &'a [core_types::workspace::DirectoryEntry])
 
 fn editor_panel<'a>(
     active_file_path: Option<&'a String>,
-    editor_content: &'a str,
+    text_editor: &'a iced::widget::text_editor::Content,
     is_dirty: bool,
 ) -> Element<'a, Message> {
     let header = if let Some(path) = active_file_path {
@@ -327,7 +328,7 @@ fn editor_panel<'a>(
     };
 
     let editor_content = if active_file_path.is_some() {
-        super::editor::editor(editor_content)
+        super::editor::editor(text_editor)
     } else {
         container(
             column![

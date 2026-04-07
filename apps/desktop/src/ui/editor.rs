@@ -1,14 +1,14 @@
 use iced::{
-    widget::{scrollable, text_input, column, container, row, text},
+    widget::{scrollable, column, container, row, text, text_editor},
     Element, Length, Font,
 };
 
 use crate::app::Message;
 
-pub fn editor<'a>(editor_content: &'a str) -> Element<'a, Message> {
+pub fn editor<'a>(text_editor: &'a iced::widget::text_editor::Content) -> Element<'a, Message> {
     // Count lines to show line numbers
-    let line_count = editor_content.lines().count().max(1);
-    let visible_lines = line_count.max(20); // Show at least 20 lines
+    let text = text_editor.text();
+    let line_count = text.lines().count().max(1);
     
     let line_numbers: Vec<Element<_>> = (1..=line_count)
         .map(|i| {
@@ -29,19 +29,17 @@ pub fn editor<'a>(editor_content: &'a str) -> Element<'a, Message> {
         .spacing(0)
         .width(Length::Fixed(60.0));
     
-    // Create a multi-line text input
-    // Use .lines() to specify the number of visible lines
-    let editor_input = text_input("", editor_content)
-        .on_input(Message::EditorContentChanged)
-        .padding(16)
-        .width(Length::Fill)
+    // Create a text editor
+    let editor = text_editor::Editor::new(text_editor)
+        .on_action(Message::EditorContentChanged)
         .font(Font::MONOSPACE)
         .size(14)
-        .lines(visible_lines as u16);
+        .height(Length::Fill);
     
-    // Wrap in a scrollable to handle when content exceeds visible area
+    // Wrap in a scrollable
     let scrollable_editor = scrollable(
-        container(editor_input)
+        container(editor)
+            .padding(16)
             .width(Length::Fill)
             .height(Length::Fill)
     )

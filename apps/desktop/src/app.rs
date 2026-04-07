@@ -4,6 +4,7 @@ use workspace_model::state::WorkspaceState;
 use core_types::workspace::DirectoryEntry;
 use editor_buffer::buffer::TextBuffer;
 use iced::{Element, Command};
+use iced::widget::text_editor;
 
 #[derive(Debug, Clone)]
 pub enum Message {
@@ -12,7 +13,7 @@ pub enum Message {
     WorkspaceLoaded(Result<Vec<DirectoryEntry>, String>),
     FileSelected(usize),
     FileLoaded(Result<(String, String), String>),
-    EditorContentChanged(String),
+    EditorContentChanged(text_editor::Action),
     SaveFile,
     FileSaved(Result<(), String>),
     RefreshWorkspace,
@@ -48,6 +49,7 @@ pub struct App {
     ai_panel_visible: bool,
     prompt_input: String,
     expanded_directories: std::collections::HashSet<String>,
+    text_editor: text_editor::Content,
 }
 
 impl iced::Application for App {
@@ -72,6 +74,7 @@ impl iced::Application for App {
                 ai_panel_visible: true,
                 prompt_input: String::new(),
                 expanded_directories: std::collections::HashSet::new(),
+                text_editor: text_editor::Content::new(),
             },
             Command::none(),
         )
@@ -149,7 +152,8 @@ impl iced::Application for App {
                 match result {
                     Ok((path, content)) => {
                         let buffer = TextBuffer::new(content.clone());
-                        self.editor_content = content;
+                        self.editor_content = content.clone();
+                        self.text_editor = text_editor::Content::with_text(&content);
                         self.editor_buffer = Some(buffer);
                         self.is_dirty = false;
                         
@@ -166,10 +170,11 @@ impl iced::Application for App {
                 }
                 Command::none()
             }
-            Message::EditorContentChanged(new_content) => {
-                self.editor_content = new_content.clone();
+            Message::EditorContentChanged(action) => {
+                self.text_editor.perform(action);
+                self.editor_content = self.text_editor.text().to_string();
                 if let Some(buffer) = &mut self.editor_buffer {
-                    buffer.replace_all(new_content);
+                    buffer.replace_all(self.editor_content.clone());
                     self.is_dirty = buffer.is_dirty();
                 }
                 self.status_message = if self.is_dirty {
@@ -305,6 +310,7 @@ impl iced::Application for App {
             self.ai_panel_visible,
             &self.prompt_input,
             &self.expanded_directories,
+            &self.text_editor,
         )
     }
 
