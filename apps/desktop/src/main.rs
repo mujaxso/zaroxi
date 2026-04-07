@@ -43,7 +43,7 @@ impl NeoteApp {
             selected_file_index: None,
             editor_text: String::new(),
             dirty: false,
-        })
+        }
     }
 
     fn open_workspace(&mut self, path: String) -> Result<(), String> {
