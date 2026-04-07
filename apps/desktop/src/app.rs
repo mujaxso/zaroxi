@@ -14,6 +14,7 @@ pub enum Message {
     FileSelected(usize),
     FileLoaded(Result<(String, String, TextBuffer), String>),
     TextEditorChunkLoaded(String), // Just the path
+    TextEditorContentCreated(String), // Path for final content creation
     EditorContentChanged(text_editor::Action),
     SaveFile,
     FileSaved(Result<(), String>),
@@ -33,7 +34,7 @@ pub enum Message {
 async fn load_text_editor_chunked(path: String, content: String) -> String {
     // Split content into lines
     let lines: Vec<&str> = content.lines().collect();
-    let total_lines = lines.len();
+    let _total_lines = lines.len();
     
     // Process in chunks of 1000 lines to yield control
     const CHUNK_SIZE: usize = 1000;
@@ -411,8 +412,21 @@ impl iced::Application for App {
                 Command::none()
             }
             Message::TextEditorChunkLoaded(path) => {
+                // Update status to show we're creating the editor
+                self.status_message = format!("Creating editor for {}...", path);
+                // Force a UI update by returning a command that will trigger another message
+                Command::perform(
+                    async move {
+                        // Small delay to allow UI to update
+                        tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
+                        path
+                    },
+                    |path| Message::TextEditorContentCreated(path),
+                )
+            }
+            Message::TextEditorContentCreated(path) => {
                 // Create text editor content from the already loaded content
-                // This may block, but the file is limited to 5MB
+                // This may block, but we've already yielded control
                 self.text_editor = text_editor::Content::with_text(&self.editor_content);
                 self.is_dirty = false;
                 

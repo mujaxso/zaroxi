@@ -193,18 +193,6 @@ fn left_panel_with_expanded<'a>(
     }
 }
 
-fn left_panel<'a>(
-    file_entries: &'a [core_types::workspace::DirectoryEntry],
-    active_activity: Activity,
-) -> Element<'a, Message> {
-    match active_activity {
-        Activity::Explorer => explorer_panel(file_entries),
-        Activity::Search => search_panel(),
-        Activity::SourceControl => terminal_panel(),
-        Activity::Settings => settings_panel(),
-        _ => placeholder_panel(&format!("{} panel", format!("{:?}", active_activity))),
-    }
-}
 
 fn explorer_panel<'a>(file_entries: &'a [core_types::workspace::DirectoryEntry]) -> Element<'a, Message> {
     let content: Element<_> = if file_entries.is_empty() {
@@ -359,8 +347,11 @@ fn editor_panel<'a>(
         .align_items(Alignment::Center)
     };
 
-    // Check if we're loading a file (active file path exists but no buffer yet)
-    let is_loading = active_file_path.is_some() && editor_buffer.is_none();
+    // Check if we're loading a file
+    // Either no buffer yet, or buffer exists but text editor is empty (chunked loading)
+    let is_loading = active_file_path.is_some() && 
+        (editor_buffer.is_none() || 
+         (editor_buffer.is_some() && text_editor.text().is_empty()));
     
     let editor_content = if is_loading {
         // Show loading indicator
