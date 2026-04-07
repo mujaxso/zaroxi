@@ -8,7 +8,9 @@ use iced::{
 };
 
 use crate::app::{Activity, Message};
+#[allow(unused_imports)]
 use editor_buffer::buffer::TextBuffer;
+use editor_buffer::buffer::TextBuffer as _;
 
 pub fn ide_layout<'a>(
     workspace_path: &'a str,

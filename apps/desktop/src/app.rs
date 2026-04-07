@@ -236,45 +236,12 @@ impl iced::Application for App {
                         is_very_large_file = true;
                         // For very large files, we might want to mark them as read-only
                         // But for now, we'll just update with a full replacement
-                        buffer.replace_all(self.text_editor.text());
+                        buffer.replace_all(&self.text_editor.text());
                         self.is_dirty = buffer.is_dirty();
                     } else {
-                        // Try to apply the action incrementally using iced's action
-                        use iced::widget::text_editor::{Action, EditAction};
-                        match &action {
-                            Action::Edit(edit_action) => {
-                                match edit_action {
-                                    EditAction::InsertText { char_idx, text } => {
-                                        if let Err(e) = buffer.insert_char_idx(*char_idx, text) {
-                                            eprintln!("Failed to insert text: {}", e);
-                                            // Fall back to full replacement
-                                            buffer.replace_all(self.text_editor.text());
-                                        } else {
-                                            updated_incrementally = true;
-                                        }
-                                    }
-                                    EditAction::DeleteRange { char_idx, len } => {
-                                        let start = *char_idx;
-                                        let end = start + *len;
-                                        if let Err(e) = buffer.delete_char_range(start, end) {
-                                            eprintln!("Failed to delete range: {}", e);
-                                            // Fall back to full replacement
-                                            buffer.replace_all(self.text_editor.text());
-                                        } else {
-                                            updated_incrementally = true;
-                                        }
-                                    }
-                                    _ => {
-                                        // For other edit actions, fall back to full replacement
-                                        buffer.replace_all(self.text_editor.text());
-                                    }
-                                }
-                            }
-                            _ => {
-                                // For non-edit actions, fall back to full replacement
-                                buffer.replace_all(self.text_editor.text());
-                            }
-                        }
+                        // For now, always fall back to full replacement
+                        // TODO: Implement proper incremental updates by examining the action
+                        buffer.replace_all(&self.text_editor.text());
                         self.is_dirty = buffer.is_dirty();
                     }
                 }
