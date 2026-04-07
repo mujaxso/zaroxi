@@ -27,7 +27,12 @@ if [ -f .git/index ]; then
         echo "Could not read version from Git index"
         exit 1
     fi
-    VERSION=$((16#$VERSION_HEX))
+    # Convert hex to decimal using printf (more robust)
+    VERSION=$(printf "%d" "0x$VERSION_HEX" 2>/dev/null)
+    if [ $? -ne 0 ]; then
+        echo "Invalid hex value in Git index: $VERSION_HEX"
+        exit 1
+    fi
     
     echo "Git index version: $VERSION"
     
