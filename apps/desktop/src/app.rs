@@ -13,6 +13,7 @@ pub enum Message {
     WorkspaceLoaded(Result<Vec<DirectoryEntry>, String>),
     FileSelected(usize),
     FileLoaded(Result<(String, String, TextBuffer), String>),
+    TextEditorChunkLoaded((String, text_editor::Content)),
     EditorContentChanged(text_editor::Action),
     SaveFile,
     FileSaved(Result<(), String>),
@@ -24,6 +25,46 @@ pub enum Message {
     KeyPressed(iced::keyboard::Key, iced::keyboard::Modifiers),
     ToggleDirectory(String),
     ToggleCommandPalette,
+}
+
+/// Load text editor content in chunks to avoid blocking the UI
+async fn load_text_editor_chunked(path: String, content: String) -> (String, text_editor::Content) {
+    // Split content into lines
+    let lines: Vec<&str> = content.lines().collect();
+    let total_lines = lines.len();
+    
+    // Create empty content
+    let mut text_editor_content = text_editor::Content::new();
+    
+    // Process in chunks of 1000 lines to yield control
+    const CHUNK_SIZE: usize = 1000;
+    for (chunk_idx, chunk) in lines.chunks(CHUNK_SIZE).enumerate() {
+        // Append chunk to content
+        let chunk_text = chunk.join("\n");
+        if chunk_idx == 0 {
+            text_editor_content = text_editor::Content::with_text(&chunk_text);
+        } else {
+            // For now, we need to recreate the content each time
+            // This is not efficient, but keeps the UI responsive
+            let current_text = text_editor_content.text();
+            let new_text = format!("{}\n{}", current_text, chunk_text);
+            text_editor_content = text_editor::Content::with_text(&new_text);
+        }
+        
+        // Yield control every few chunks to keep UI responsive
+        if chunk_idx % 10 == 0 {
+            tokio::task::yield_now().await;
+        }
+    }
+    
+    // Add final newline if needed
+    if !content.ends_with('\n') && total_lines > 0 {
+        let current_text = text_editor_content.text();
+        let new_text = format!("{}\n", current_text);
+        text_editor_content = text_editor::Content::with_text(&new_text);
+    }
+    
+    (path, text_editor_content)
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -147,7 +188,7 @@ impl iced::Application for App {
                                     match files::read_file(&path_clone) {
                                         Ok(content) => {
                                             // Check file size before processing
-                                            const MAX_FILE_SIZE: usize = 50_000_000; // 50MB
+                                            const MAX_FILE_SIZE: usize = 5_000_000; // 5MB
                                             if content.len() > MAX_FILE_SIZE {
                                                 return Err(format!(
                                                     "File too large ({} MB). Maximum supported size is {} MB.",
@@ -185,10 +226,43 @@ impl iced::Application for App {
                     Ok((path, content, buffer)) => {
                         let file_size = content.len();
                         const WARNING_THRESHOLD: usize = 1_000_000; // 1MB
-                        const READ_ONLY_THRESHOLD: usize = 10_000_000; // 10MB
+                        const READ_ONLY_THRESHOLD: usize = 5_000_000; // 5MB - reduced from 10MB
                         
-                        // Create text editor content on the main thread
-                        // This could block for large files, but we have size limits
+                        // For files larger than 5MB, show error
+                        if file_size > READ_ONLY_THRESHOLD {
+                            self.status_message = format!(
+                                "File too large ({} MB). Maximum supported size is {} MB.",
+                                file_size / 1_000_000,
+                                READ_ONLY_THRESHOLD / 1_000_000
+                            );
+                            self.error_message = Some("File is too large to open in editor".to_string());
+                            // Clear loading state
+                            self.active_file_path = None;
+                            self.text_editor = text_editor::Content::new();
+                            self.editor_content = String::new();
+                            self.editor_buffer = None;
+                            return Command::none();
+                        }
+                        
+                        // For files between 1MB and 5MB, show warning and create content in chunks
+                        if file_size > WARNING_THRESHOLD {
+                            self.status_message = format!(
+                                "Loading large file ({} MB)...",
+                                file_size / 1_000_000
+                            );
+                            self.error_message = Some("Large file - loading in progress".to_string());
+                            // Store the content and buffer for chunked loading
+                            self.editor_content = content.clone();
+                            self.editor_buffer = Some(buffer);
+                            
+                            // Start chunked loading
+                            return Command::perform(
+                                load_text_editor_chunked(path, content),
+                                Message::TextEditorChunkLoaded
+                            );
+                        }
+                        
+                        // For small files, create text editor content directly
                         self.text_editor = text_editor::Content::with_text(&content);
                         self.editor_content = content.clone();
                         self.editor_buffer = Some(buffer);
@@ -200,23 +274,8 @@ impl iced::Application for App {
                             state.open_buffer(&path, self.editor_content.clone());
                         }
                         
-                        // Set status based on file size
-                        if file_size > READ_ONLY_THRESHOLD {
-                            self.status_message = format!(
-                                "Opened very large file ({} MB) - editing may be slow",
-                                file_size / 1_000_000
-                            );
-                            self.error_message = Some("File is very large - performance may be affected".to_string());
-                        } else if file_size > WARNING_THRESHOLD {
-                            self.status_message = format!(
-                                "Opened large file ({} MB). Performance may be affected.",
-                                file_size / 1_000_000
-                            );
-                            self.error_message = Some("Large file - editing may be slow".to_string());
-                        } else {
-                            self.status_message = format!("Loaded: {} ({} bytes)", path, file_size);
-                            self.error_message = None;
-                        }
+                        self.status_message = format!("Loaded: {} ({} bytes)", path, file_size);
+                        self.error_message = None;
                     }
                     Err(e) => {
                         self.error_message = Some(e);
@@ -365,6 +424,20 @@ impl iced::Application for App {
             Message::ToggleCommandPalette => {
                 // For now, just show a status message
                 self.status_message = "Command palette (Ctrl+Shift+P) - coming soon".to_string();
+                Command::none()
+            }
+            Message::TextEditorChunkLoaded((path, text_editor_content)) => {
+                self.text_editor = text_editor_content;
+                self.is_dirty = false;
+                
+                // Update workspace state
+                {
+                    let mut state = self.workspace_state.lock().unwrap();
+                    state.open_buffer(&path, self.editor_content.clone());
+                }
+                
+                self.status_message = format!("Loaded: {} ({} bytes)", path, self.editor_content.len());
+                self.error_message = None;
                 Command::none()
             }
             Message::ToggleDirectory(path) => {
