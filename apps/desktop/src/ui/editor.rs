@@ -8,6 +8,8 @@ use crate::app::Message;
 pub fn editor<'a>(editor_content: &'a str) -> Element<'a, Message> {
     // Count lines to show line numbers
     let line_count = editor_content.lines().count().max(1);
+    let visible_lines = line_count.max(20); // Show at least 20 lines
+    
     let line_numbers: Vec<Element<_>> = (1..=line_count)
         .map(|i| {
             container(
@@ -27,21 +29,29 @@ pub fn editor<'a>(editor_content: &'a str) -> Element<'a, Message> {
         .spacing(0)
         .width(Length::Fixed(60.0));
     
+    // Create a multi-line text input
+    // Use .lines() to specify the number of visible lines
     let editor_input = text_input("", editor_content)
         .on_input(Message::EditorContentChanged)
-        .padding([0, 16])
+        .padding(16)
         .width(Length::Fill)
         .font(Font::MONOSPACE)
-        .size(14);
+        .size(14)
+        .lines(visible_lines as u16);
+    
+    // Wrap in a scrollable to handle when content exceeds visible area
+    let scrollable_editor = scrollable(
+        container(editor_input)
+            .width(Length::Fill)
+            .height(Length::Fill)
+    )
+    .height(Length::Fill);
     
     row![
         container(line_numbers_column)
             .style(iced::theme::Container::Box)
             .height(Length::Fill),
-        scrollable(
-            editor_input
-        )
-        .height(Length::Fill)
+        scrollable_editor,
     ]
     .height(Length::Fill)
     .into()
