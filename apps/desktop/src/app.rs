@@ -229,13 +229,13 @@ impl iced::Application for App {
                 
                 // Try to update the buffer incrementally
                 let mut updated_incrementally = false;
+                let mut is_very_large_file = false;
                 if let Some(buffer) = &mut self.editor_buffer {
                     // Check if the buffer is too large for incremental updates
                     if buffer.is_very_large() {
+                        is_very_large_file = true;
                         // For very large files, we might want to mark them as read-only
-                        // But for now, we'll just update the status
-                        self.status_message = "Very large file - editing may be slow".to_string();
-                        // We'll still update, but with a full replacement
+                        // But for now, we'll just update with a full replacement
                         buffer.replace_all(self.text_editor.text());
                         self.is_dirty = buffer.is_dirty();
                     } else {
@@ -259,11 +259,16 @@ impl iced::Application for App {
                     self.editor_content = self.text_editor.text().to_string();
                 }
                 
-                self.status_message = if self.is_dirty {
-                    "File has unsaved changes".to_string()
+                // Set status message
+                if is_very_large_file {
+                    self.status_message = "Very large file - editing may be slow".to_string();
                 } else {
-                    "All changes saved".to_string()
-                };
+                    self.status_message = if self.is_dirty {
+                        "File has unsaved changes".to_string()
+                    } else {
+                        "All changes saved".to_string()
+                    };
+                }
                 Command::none()
             }
             Message::SaveFile => {
