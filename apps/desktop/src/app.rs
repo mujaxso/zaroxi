@@ -2,336 +2,329 @@ use std::sync::{Arc, Mutex};
 use workspace_daemon::files;
 use workspace_model::state::WorkspaceState;
 use core_types::workspace::DirectoryEntry;
-use eframe::egui;
+use editor_buffer::buffer::TextBuffer;
+use iced::{
+    widget::{button, column, container, row, scrollable, text, text_input},
+    Alignment, Element, Length, Task,
+};
+
+#[derive(Debug, Clone)]
+pub enum Message {
+    WorkspacePathChanged(String),
+    OpenWorkspace,
+    WorkspaceLoaded(Result<Vec<DirectoryEntry>, String>),
+    FileSelected(usize),
+    FileLoaded(Result<(String, String), String>),
+    EditorContentChanged(String),
+    SaveFile,
+    FileSaved(Result<(), String>),
+    RefreshWorkspace,
+}
 
 pub struct App {
-    pub workspace_path: String,
-    pub workspace_state: Arc<Mutex<WorkspaceState>>,
-    pub file_entries: Vec<DirectoryEntry>,
-    pub selected_file_index: Option<usize>,
-    pub editor_text: String,
-    pub dirty: bool,
-    pub sidebar: crate::ui::sidebar::Sidebar,
-    pub pending_sidebar_events: Vec<crate::events::SidebarEvent>,
+    workspace_path: String,
+    file_entries: Vec<DirectoryEntry>,
+    active_file_path: Option<String>,
+    editor_content: String,
+    editor_buffer: Option<TextBuffer>,
+    is_dirty: bool,
+    status_message: String,
+    error_message: Option<String>,
+    workspace_state: Arc<Mutex<WorkspaceState>>,
 }
 
-impl App {
-    pub fn new(workspace_path: String) -> Result<Self, Box<dyn std::error::Error>> {
-        let entries = files::list_directory(&workspace_path)?;
-        let workspace_state = Arc::new(Mutex::new(WorkspaceState::new(&workspace_path)));
-        workspace_state.lock().unwrap().set_file_tree(entries.clone());
-        
-        Ok(Self {
-            workspace_path,
-            workspace_state,
-            file_entries: entries,
-            selected_file_index: None,
-            editor_text: String::new(),
-            dirty: false,
-            sidebar: crate::ui::sidebar::Sidebar::default(),
-            pending_sidebar_events: Vec::new(),
-        })
+impl iced::Application for App {
+    type Message = Message;
+    type Theme = iced::Theme;
+    type Executor = iced::executor::Default;
+    type Flags = ();
+
+    fn new(_flags: ()) -> (Self, Task<Message>) {
+        (
+            App {
+                workspace_path: String::new(),
+                file_entries: Vec::new(),
+                active_file_path: None,
+                editor_content: String::new(),
+                editor_buffer: None,
+                is_dirty: false,
+                status_message: "Ready".to_string(),
+                error_message: None,
+                workspace_state: Arc::new(Mutex::new(WorkspaceState::new(""))),
+            },
+            Task::none(),
+        )
     }
 
-    pub fn empty() -> Self {
-        Self {
-            workspace_path: String::new(),
-            workspace_state: Arc::new(Mutex::new(WorkspaceState::new(""))),
-            file_entries: Vec::new(),
-            selected_file_index: None,
-            editor_text: String::new(),
-            dirty: false,
-            sidebar: crate::ui::sidebar::Sidebar::default(),
-            pending_sidebar_events: Vec::new(),
-        }
+    fn title(&self) -> String {
+        String::from("Neote")
     }
 
-    pub fn open_workspace(&mut self, path: String) -> Result<(), String> {
-        match files::list_directory(&path) {
-            Ok(entries) => {
-                self.workspace_path = path.clone();
-                let mut state = self.workspace_state.lock().unwrap();
-                state.set_workspace_root(&path);
-                state.set_file_tree(entries.clone());
-                self.file_entries = entries;
-                Ok(())
+    fn update(&mut self, message: Message) -> Task<Message> {
+        match message {
+            Message::WorkspacePathChanged(path) => {
+                self.workspace_path = path;
+                Task::none()
             }
-            Err(e) => Err(format!("Failed to open workspace: {}", e)),
-        }
-    }
-
-    pub fn create_file(&mut self, path: String) -> Result<(), String> {
-        // Ensure the path is within the workspace
-        if !self.workspace_path.is_empty() && path.starts_with(&self.workspace_path) {
-            // Create parent directories if they don't exist
-            if let Some(parent) = std::path::Path::new(&path).parent() {
-                if !parent.exists() {
-                    std::fs::create_dir_all(parent).map_err(|e| format!("Failed to create directories: {}", e))?;
+            Message::OpenWorkspace => {
+                if self.workspace_path.is_empty() {
+                    self.status_message = "Please enter a workspace path".to_string();
+                    return Task::none();
                 }
-            }
-            match files::write_file(&path, "") {
-                Ok(_) => {
-                    // Refresh the file list
-                    if !self.workspace_path.is_empty() {
-                        match files::list_directory(&self.workspace_path) {
-                            Ok(entries) => {
-                                self.file_entries = entries;
-                                let mut state = self.workspace_state.lock().unwrap();
-                                state.set_file_tree(self.file_entries.clone());
-                            }
-                            Err(e) => return Err(format!("Failed to refresh after creating file: {}", e)),
+                
+                let path = self.workspace_path.clone();
+                Task::perform(
+                    async move {
+                        match files::list_directory(&path) {
+                            Ok(entries) => Message::WorkspaceLoaded(Ok(entries)),
+                            Err(e) => Message::WorkspaceLoaded(Err(format!("Failed to open workspace: {}", e))),
                         }
-                    }
-                    Ok(())
-                }
-                Err(e) => Err(format!("Failed to create file: {}", e)),
+                    },
+                    |result| result,
+                )
             }
-        } else {
-            Err("File must be within the workspace".to_string())
-        }
-    }
-
-    pub fn delete_file(&mut self, path: String) -> Result<(), String> {
-        use std::fs;
-        
-        if !self.workspace_path.is_empty() && path.starts_with(&self.workspace_path) {
-            match fs::remove_file(&path) {
-                Ok(_) => {
-                    // Refresh the file list
-                    if !self.workspace_path.is_empty() {
-                        match files::list_directory(&self.workspace_path) {
-                            Ok(entries) => {
-                                self.file_entries = entries;
-                                let mut state = self.workspace_state.lock().unwrap();
-                                state.set_file_tree(self.file_entries.clone());
-                            }
-                            Err(e) => return Err(format!("Failed to refresh after deleting file: {}", e)),
-                        }
-                    }
-                    Ok(())
-                }
-                Err(e) => Err(format!("Failed to delete file: {}", e)),
-            }
-        } else {
-            Err("File must be within the workspace".to_string())
-        }
-    }
-
-    pub fn open_file(&mut self, index: usize) {
-        if index < self.file_entries.len() {
-            let entry = &self.file_entries[index];
-            if !entry.is_dir {
-                match files::read_file(&entry.path) {
-                    Ok(content) => {
+            Message::WorkspaceLoaded(result) => {
+                match result {
+                    Ok(entries) => {
+                        self.file_entries = entries;
+                        self.status_message = format!("Workspace loaded: {} files", self.file_entries.len());
+                        self.error_message = None;
+                        
                         let mut state = self.workspace_state.lock().unwrap();
-                        state.open_buffer(&entry.path, content.clone());
-                        self.editor_text = content;
-                        self.selected_file_index = Some(index);
-                        self.dirty = false;
+                        state.set_workspace_root(&self.workspace_path);
+                        state.set_file_tree(self.file_entries.clone());
                     }
                     Err(e) => {
-                        eprintln!("Failed to read file: {}", e);
+                        self.error_message = Some(e);
+                        self.status_message = "Failed to load workspace".to_string();
                     }
                 }
+                Task::none()
             }
-        }
-    }
-
-    pub fn process_sidebar_events(&mut self) {
-        use crate::events::SidebarEvent;
-        
-        // Take all pending events to avoid borrowing issues
-        let events = std::mem::take(&mut self.pending_sidebar_events);
-        
-        for event in events {
-            match event {
-                SidebarEvent::OpenWorkspace => {
-                    if let Some(path) = rfd::FileDialog::new().pick_folder() {
-                        let path_str = path.to_string_lossy().to_string();
-                        if let Err(e) = self.open_workspace(path_str) {
-                            eprintln!("Failed to open workspace: {}", e);
-                        }
-                    }
-                }
-                SidebarEvent::CreateFile => {
-                    if let Some(path) = rfd::FileDialog::new().save_file() {
-                        let path_str = path.to_string_lossy().to_string();
-                        if let Err(e) = self.create_file(path_str) {
-                            eprintln!("Failed to create file: {}", e);
-                        }
-                    }
-                }
-                SidebarEvent::DeleteFile => {
-                    if let Some(path) = rfd::FileDialog::new().pick_file() {
-                        let path_str = path.to_string_lossy().to_string();
-                        if let Err(e) = self.delete_file(path_str) {
-                            eprintln!("Failed to delete file: {}", e);
-                        }
-                    }
-                }
-                SidebarEvent::OpenFile => {
-                    if let Some(path) = rfd::FileDialog::new().pick_file() {
-                        let path_str = path.to_string_lossy().to_string();
-                        // Find the index of this file in file_entries
-                        if let Some(index) = self.file_entries.iter().position(|entry| entry.path == path_str) {
-                            self.open_file(index);
-                        } else {
-                            // If not in current list, open it directly
-                            match files::read_file(&path_str) {
-                                Ok(content) => {
-                                    let mut state = self.workspace_state.lock().unwrap();
-                                    state.open_buffer(&path_str, content.clone());
-                                    self.editor_text = content;
-                                    self.dirty = false;
-                                    // If we have a workspace, refresh the file list to include the new file
-                                    if !self.workspace_path.is_empty() {
-                                        // Check if the file is within the workspace
-                                        if path_str.starts_with(&self.workspace_path) {
-                                            if let Ok(entries) = files::list_directory(&self.workspace_path) {
-                                                self.file_entries = entries;
-                                                state.set_file_tree(self.file_entries.clone());
-                                            }
-                                        }
-                                    }
-                                }
-                                Err(e) => eprintln!("Failed to read file: {}", e),
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    pub fn save_current_file(&mut self) {
-        let mut state = self.workspace_state.lock().unwrap();
-        if let Some((path, _)) = state.save_active_buffer() {
-            match files::write_file(&path.to_string_lossy(), &self.editor_text) {
-                Ok(_) => {
-                    self.dirty = false;
-                }
-                Err(e) => {
-                    eprintln!("Failed to save file: {}", e);
-                }
-            }
-        }
-    }
-}
-
-impl eframe::App for App {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // Collect events from the sidebar
-        let events = self.sidebar.take_events();
-        self.pending_sidebar_events.extend(events);
-        
-        // Process pending events
-        self.process_sidebar_events();
-        
-        egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
-            ui.horizontal(|ui| {
-                ui.heading("Neote");
-                ui.separator();
-                ui.label(format!("Workspace: {}", if self.workspace_path.is_empty() { "None" } else { &self.workspace_path }));
-                if ui.button("Refresh").clicked() && !self.workspace_path.is_empty() {
-                    match files::list_directory(&self.workspace_path) {
-                        Ok(entries) => {
-                            self.file_entries = entries;
-                            self.workspace_state.lock().unwrap().set_file_tree(self.file_entries.clone());
-                        }
-                        Err(e) => {
-                            eprintln!("Failed to refresh directory: {}", e);
-                        }
-                    }
-                }
-            });
-        });
-
-        egui::SidePanel::left("sidebar").show(ctx, |ui| {
-            self.sidebar.ui(ui);
-        });
-
-        egui::CentralPanel::default().show(ctx, |ui| {
-            if self.workspace_path.is_empty() {
-                ui.vertical_centered(|ui| {
-                    ui.heading("Welcome to Neote");
-                    ui.label("Please open a workspace to get started.");
-                    if ui.button("Open Workspace").clicked() {
-                        // This will be handled by the sidebar
-                    }
-                });
-            } else {
-                ui.columns(2, |columns| {
-                    // Left column: file list
-                    columns[0].vertical(|ui| {
-                        ui.heading("Files");
-                        let mut file_to_open: Option<usize> = None;
-                        egui::ScrollArea::vertical().show(ui, |ui| {
-                            for (i, entry) in self.file_entries.iter().enumerate() {
-                                let label = if entry.is_dir {
-                                    format!("📁 {}", entry.name)
-                                } else {
-                                    format!("📄 {}", entry.name)
-                                };
-                                if ui.selectable_label(self.selected_file_index == Some(i), label).clicked() && !entry.is_dir {
-                                    file_to_open = Some(i);
-                                }
-                            }
-                        });
-                        if let Some(index) = file_to_open {
-                            self.open_file(index);
-                        }
-                    });
-
-                    // Right column: editor
-                    columns[1].vertical(|ui| {
-                        ui.horizontal(|ui| {
-                            if let Some(index) = self.selected_file_index {
-                                let entry = &self.file_entries[index];
-                                ui.heading(&entry.name);
-                                if self.dirty {
-                                    ui.label("(modified)");
-                                }
-                            } else {
-                                ui.heading("No file selected");
-                            }
-                            
-                            if ui.button("Save").clicked() {
-                                self.save_current_file();
-                            }
-                        });
+            Message::FileSelected(index) => {
+                if index < self.file_entries.len() {
+                    let entry = &self.file_entries[index];
+                    if !entry.is_dir {
+                        let path = entry.path.clone();
+                        self.active_file_path = Some(path.clone());
                         
-                        ui.separator();
+                        Task::perform(
+                            async move {
+                                match files::read_file(&path) {
+                                    Ok(content) => Message::FileLoaded(Ok((path, content))),
+                                    Err(e) => Message::FileLoaded(Err(format!("Failed to read file: {}", e))),
+                                }
+                            },
+                            |result| result,
+                        )
+                    } else {
+                        Task::none()
+                    }
+                } else {
+                    Task::none()
+                }
+            }
+            Message::FileLoaded(result) => {
+                match result {
+                    Ok((path, content)) => {
+                        let mut buffer = TextBuffer::new(content.clone());
+                        self.editor_content = content;
+                        self.editor_buffer = Some(buffer);
+                        self.is_dirty = false;
                         
                         let mut state = self.workspace_state.lock().unwrap();
-                        if let Some(buffer) = state.active_buffer_mut() {
-                            let response = ui.add(
-                                egui::TextEdit::multiline(&mut self.editor_text)
-                                    .desired_rows(20)
-                                    .desired_width(f32::INFINITY)
-                            );
-                            
-                            if response.changed() {
-                                buffer.replace_all(self.editor_text.clone());
-                                self.dirty = buffer.is_dirty();
-                            }
-                        } else {
-                            ui.label("Select a file to edit");
-                        }
-                    });
-                });
-            }
-
-            ui.separator();
-            ui.horizontal(|ui| {
-                ui.label("Status:");
-                if self.workspace_path.is_empty() {
-                    ui.label("No workspace open");
-                } else if self.dirty {
-                    ui.label("File has unsaved changes");
-                } else {
-                    ui.label("All changes saved");
+                        state.open_buffer(&path, self.editor_content.clone());
+                        
+                        self.status_message = format!("Loaded: {}", path);
+                        self.error_message = None;
+                    }
+                    Err(e) => {
+                        self.error_message = Some(e);
+                        self.status_message = "Failed to load file".to_string();
+                    }
                 }
-            });
-        });
+                Task::none()
+            }
+            Message::EditorContentChanged(new_content) => {
+                self.editor_content = new_content.clone();
+                if let Some(buffer) = &mut self.editor_buffer {
+                    buffer.replace_all(new_content);
+                    self.is_dirty = buffer.is_dirty();
+                }
+                self.status_message = if self.is_dirty {
+                    "File has unsaved changes".to_string()
+                } else {
+                    "All changes saved".to_string()
+                };
+                Task::none()
+            }
+            Message::SaveFile => {
+                if let Some(path) = &self.active_file_path {
+                    let content = self.editor_content.clone();
+                    let path_clone = path.clone();
+                    
+                    Task::perform(
+                        async move {
+                            match files::write_file(&path_clone, &content) {
+                                Ok(_) => Message::FileSaved(Ok(())),
+                                Err(e) => Message::FileSaved(Err(format!("Failed to save file: {}", e))),
+                            }
+                        },
+                        |result| result,
+                    )
+                } else {
+                    self.status_message = "No file selected to save".to_string();
+                    Task::none()
+                }
+            }
+            Message::FileSaved(result) => {
+                match result {
+                    Ok(_) => {
+                        if let Some(buffer) = &mut self.editor_buffer {
+                            buffer.mark_saved();
+                            self.is_dirty = buffer.is_dirty();
+                        }
+                        self.status_message = "File saved successfully".to_string();
+                        self.error_message = None;
+                    }
+                    Err(e) => {
+                        self.error_message = Some(e);
+                        self.status_message = "Failed to save file".to_string();
+                    }
+                }
+                Task::none()
+            }
+            Message::RefreshWorkspace => {
+                if !self.workspace_path.is_empty() {
+                    let path = self.workspace_path.clone();
+                    Task::perform(
+                        async move {
+                            match files::list_directory(&path) {
+                                Ok(entries) => Message::WorkspaceLoaded(Ok(entries)),
+                                Err(e) => Message::WorkspaceLoaded(Err(format!("Failed to refresh workspace: {}", e))),
+                            }
+                        },
+                        |result| result,
+                    )
+                } else {
+                    Task::none()
+                }
+            }
+        }
+    }
+
+    fn view(&self) -> Element<Message> {
+        let workspace_controls = row![
+            text_input("Workspace path", &self.workspace_path)
+                .on_input(Message::WorkspacePathChanged)
+                .padding(10)
+                .width(Length::FillPortion(3)),
+            button("Open Workspace")
+                .on_press(Message::OpenWorkspace)
+                .padding(10),
+            button("Refresh")
+                .on_press(Message::RefreshWorkspace)
+                .padding(10),
+        ]
+        .spacing(10)
+        .align_items(Alignment::Center);
+
+        let file_list = if self.file_entries.is_empty() {
+            container(text("No files found").size(16))
+                .width(Length::Fill)
+                .height(Length::Fill)
+                .center_x()
+                .center_y()
+        } else {
+            let items: Element<_> = scrollable(
+                column(
+                    self.file_entries
+                        .iter()
+                        .enumerate()
+                        .map(|(i, entry)| {
+                            let label = if entry.is_dir {
+                                format!("📁 {}", entry.name)
+                            } else {
+                                format!("📄 {}", entry.name)
+                            };
+                            button(text(label).size(14))
+                                .on_press(Message::FileSelected(i))
+                                .width(Length::Fill)
+                                .padding(8)
+                                .into()
+                        })
+                        .collect(),
+                )
+                .spacing(5),
+            )
+            .height(Length::Fill)
+            .into();
+
+            container(items).width(Length::Fill).height(Length::Fill)
+        };
+
+        let editor_header = row![
+            text(
+                self.active_file_path
+                    .as_ref()
+                    .map(|p| format!("Editing: {}", p))
+                    .unwrap_or_else(|| "No file selected".to_string())
+            )
+            .size(16),
+            if self.is_dirty {
+                text(" (modified)").size(16).style(iced::Color::from_rgb8(255, 165, 0))
+            } else {
+                text(" (saved)").size(16).style(iced::Color::from_rgb8(0, 128, 0))
+            },
+            button("Save").on_press(Message::SaveFile).padding(8),
+        ]
+        .spacing(10)
+        .align_items(Alignment::Center);
+
+        let editor = scrollable(
+            text_input("", &self.editor_content)
+                .on_input(Message::EditorContentChanged)
+                .padding(10)
+        )
+        .height(Length::Fill);
+
+        let status_bar = row![
+            text(&self.status_message).size(14),
+            if let Some(err) = &self.error_message {
+                text(format!(" | Error: {}", err)).size(14).style(iced::Color::from_rgb8(255, 0, 0))
+            } else {
+                text("").size(14)
+            }
+        ]
+        .spacing(10);
+
+        let content = column![
+            workspace_controls,
+            iced::widget::horizontal_rule(1),
+            row![
+                container(file_list).width(Length::FillPortion(2)),
+                container(
+                    column![
+                        editor_header,
+                        iced::widget::horizontal_rule(1),
+                        editor,
+                    ]
+                    .spacing(10)
+                )
+                .width(Length::FillPortion(5))
+                .padding(10),
+            ]
+            .height(Length::Fill),
+            iced::widget::horizontal_rule(1),
+            status_bar,
+        ]
+        .spacing(10)
+        .padding(10)
+        .height(Length::Fill);
+
+        container(content)
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .into()
     }
 }

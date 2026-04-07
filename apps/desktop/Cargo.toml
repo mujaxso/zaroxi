@@ -13,6 +13,4 @@ workspace-model = { path = "../../crates/workspace-model" }
 editor-buffer = { path = "../../crates/editor-buffer" }
 uuid = { workspace = true }
 workspace-daemon = { path = "../../services/workspace-daemon" }
-eframe = "0.27"
-egui = "0.27"
-rfd = "0.14"
+iced = { version = "0.12", features = ["tokio", "multi-window"] }
