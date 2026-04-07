@@ -12,7 +12,7 @@ pub enum Message {
     OpenWorkspace,
     WorkspaceLoaded(Result<Vec<DirectoryEntry>, String>),
     FileSelected(usize),
-    FileLoaded(Result<(String, String, TextBuffer, text_editor::Content), String>),
+    FileLoaded(Result<(String, String, TextBuffer), String>),
     EditorContentChanged(text_editor::Action),
     SaveFile,
     FileSaved(Result<(), String>),
@@ -157,17 +157,15 @@ impl iced::Application for App {
                                             }
                                             // Create buffer in the background thread
                                             let buffer = TextBuffer::new(content.clone());
-                                            // Also create text editor content here to avoid blocking the UI thread
-                                            let text_editor_content = text_editor::Content::with_text(&content);
-                                            Ok((path, content, buffer, text_editor_content))
+                                            Ok((path, content, buffer))
                                         }
                                         Err(e) => Err(format!("Failed to read file: {}", e)),
                                     }
                                 }).await;
                                 
                                 match result {
-                                    Ok(Ok((path, content, buffer, text_editor_content))) => {
-                                        Message::FileLoaded(Ok((path, content, buffer, text_editor_content)))
+                                    Ok(Ok((path, content, buffer))) => {
+                                        Message::FileLoaded(Ok((path, content, buffer)))
                                     }
                                     Ok(Err(e)) => Message::FileLoaded(Err(e)),
                                     Err(join_err) => Message::FileLoaded(Err(format!("Failed to join task: {}", join_err))),
@@ -184,13 +182,14 @@ impl iced::Application for App {
             }
             Message::FileLoaded(result) => {
                 match result {
-                    Ok((path, content, buffer, text_editor_content)) => {
+                    Ok((path, content, buffer)) => {
                         let file_size = content.len();
                         const WARNING_THRESHOLD: usize = 1_000_000; // 1MB
                         const READ_ONLY_THRESHOLD: usize = 10_000_000; // 10MB
                         
-                        // Use the pre-created text editor content
-                        self.text_editor = text_editor_content;
+                        // Create text editor content on the main thread
+                        // This could block for large files, but we have size limits
+                        self.text_editor = text_editor::Content::with_text(&content);
                         self.editor_content = content.clone();
                         self.editor_buffer = Some(buffer);
                         self.is_dirty = false;
@@ -231,7 +230,7 @@ impl iced::Application for App {
                 self.text_editor.perform(action);
                 
                 // Try to update the buffer incrementally
-                let mut updated_incrementally = false;
+                let updated_incrementally = false;
                 let mut is_very_large_file = false;
                 if let Some(buffer) = &mut self.editor_buffer {
                     // Check if the buffer is too large for incremental updates
