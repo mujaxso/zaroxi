@@ -17,11 +17,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
         println!("Usage: {} <workspace-path>", args[0]);
+        println!("Example: {} /tmp/test_workspace", args[0]);
         return Ok(());
     }
     
     let workspace_path = &args[1];
     println!("Opening workspace at: {}", workspace_path);
+    println!("Neote Desktop - Step 1");
+    println!("======================");
     
     // List directory contents
     let entries = files::list_directory(workspace_path)?;
@@ -30,6 +33,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let type_str = if entry.is_dir { "dir" } else { "file" };
         println!("  {}. {} ({})", i + 1, entry.name, type_str);
     }
+    println!("Note: Only files can be opened for editing.");
     
     // Create workspace state
     let mut workspace_state = WorkspaceState::new(workspace_path);
@@ -54,10 +58,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "1" => {
                 // Open a file
                 println!("Enter file number to open:");
-                for (i, entry) in workspace_state.file_tree().iter().enumerate() {
-                    if !entry.is_dir {
-                        println!("  {}. {}", i + 1, entry.name);
-                    }
+                // Collect non-directory entries
+                let file_entries: Vec<_> = workspace_state.file_tree()
+                    .iter()
+                    .filter(|entry| !entry.is_dir)
+                    .collect();
+                
+                if file_entries.is_empty() {
+                    println!("No files found in the workspace.");
+                    continue;
+                }
+                
+                for (i, entry) in file_entries.iter().enumerate() {
+                    println!("  {}. {}", i + 1, entry.name);
                 }
                 print!("File number: ");
                 io::stdout().flush()?;
@@ -65,30 +78,28 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let mut file_input = String::new();
                 io::stdin().read_line(&mut file_input)?;
                 if let Ok(file_num) = file_input.trim().parse::<usize>() {
-                    let mut file_index = 0;
-                    for (i, entry) in workspace_state.file_tree().iter().enumerate() {
-                        if !entry.is_dir {
-                            file_index += 1;
-                            if file_index == file_num {
-                                // Read the file
-                                match files::read_file(&entry.path) {
-                                    Ok(content) => {
-                                        let buffer_id = workspace_state.open_buffer(&entry.path, content.clone());
-                                        println!("Opened '{}' (buffer ID: {:?})", entry.name, buffer_id);
-                                        println!("Content preview: {}", 
-                                            if content.len() > 50 { 
-                                                format!("{}...", &content[..50]) 
-                                            } else { 
-                                                content 
-                                            }
-                                        );
+                    if file_num >= 1 && file_num <= file_entries.len() {
+                        let entry = file_entries[file_num - 1];
+                        // Read the file
+                        match files::read_file(&entry.path) {
+                            Ok(content) => {
+                                let buffer_id = workspace_state.open_buffer(&entry.path, content.clone());
+                                println!("Opened '{}' (buffer ID: {:?})", entry.name, buffer_id);
+                                println!("Content preview: {}", 
+                                    if content.len() > 50 { 
+                                        format!("{}...", &content[..50]) 
+                                    } else { 
+                                        content 
                                     }
-                                    Err(e) => println!("Error reading file: {}", e),
-                                }
-                                break;
+                                );
                             }
+                            Err(e) => println!("Error reading file: {}", e),
                         }
+                    } else {
+                        println!("Invalid file number. Please enter a number between 1 and {}.", file_entries.len());
                     }
+                } else {
+                    println!("Invalid input. Please enter a number.");
                 }
             }
             "2" => {
@@ -134,6 +145,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     let type_str = if entry.is_dir { "dir" } else { "file" };
                     println!("  {}. {} ({})", i + 1, entry.name, type_str);
                 }
+                println!("Note: Only files can be opened for editing.");
             }
             "5" => {
                 println!("Exiting...");
