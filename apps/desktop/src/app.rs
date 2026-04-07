@@ -133,18 +133,17 @@ impl iced::Application for App {
                         self.active_file_path = Some(path.clone());
                         self.status_message = format!("Loading {}... (this may take a moment for large files)", entry.name);
                         
-                        // Clone path for use in the async block
-                        let path_for_task = path.clone();
-                        
                         Command::perform(
                             async move {
+                                // Clone path for use inside the async block
+                                let path_clone = path.clone();
                                 // Read file in a blocking task to avoid freezing the UI
                                 let content_result = tokio::task::spawn_blocking(move || {
-                                    files::read_file(&path_for_task)
+                                    files::read_file(&path_clone)
                                 }).await;
                                 
                                 match content_result {
-                                    Ok(Ok(content)) => Message::FileLoaded(Ok((path_for_task, content))),
+                                    Ok(Ok(content)) => Message::FileLoaded(Ok((path, content))),
                                     Ok(Err(e)) => Message::FileLoaded(Err(format!("Failed to read file: {}", e))),
                                     Err(join_err) => Message::FileLoaded(Err(format!("Failed to join task: {}", join_err))),
                                 }
