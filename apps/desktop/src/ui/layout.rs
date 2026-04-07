@@ -31,7 +31,7 @@ pub fn ide_layout<'a>(
     // Main content area
     let ai_panel_widget: Element<_> = if ai_panel_visible {
         container(ai_panel(prompt_input))
-            .width(Length::Fixed(320.0))
+            .width(Length::FillPortion(3))
             .height(Length::Fill)
             .style(theme::Container::Box)
             .into()
@@ -53,15 +53,7 @@ pub fn ide_layout<'a>(
             .width(Length::FillPortion(5))
             .height(Length::Fill),
         // AI panel (conditionally visible) - flexible width
-        if ai_panel_visible {
-            container(ai_panel(prompt_input))
-                .width(Length::FillPortion(3))
-                .height(Length::Fill)
-                .style(theme::Container::Box)
-                .into()
-        } else {
-            container(horizontal_space()).width(Length::Fixed(0.0)).into()
-        },
+        ai_panel_widget,
     ]
     .height(Length::Fill);
 
@@ -115,7 +107,7 @@ fn top_bar<'a>(workspace_path: &'a str, is_dirty: bool) -> Element<'a, Message> 
         text_input("Workspace path", workspace_path)
             .on_input(Message::WorkspacePathChanged)
             .padding(8)
-            .width(Length::Fixed(400.0)),
+            .width(Length::FillPortion(3)),
         button("Open")
             .on_press(Message::OpenWorkspace)
             .padding([8, 12])

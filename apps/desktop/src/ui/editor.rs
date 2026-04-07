@@ -25,7 +25,7 @@ pub fn editor<'a>(editor_content: &'a str) -> Element<'a, Message> {
     
     let line_numbers_column = column(line_numbers)
         .spacing(0)
-        .width(Length::Fill);
+        .width(Length::Fixed(60.0));
     
     let editor_input = text_input("", editor_content)
         .on_input(Message::EditorContentChanged)
@@ -37,7 +37,6 @@ pub fn editor<'a>(editor_content: &'a str) -> Element<'a, Message> {
     row![
         container(line_numbers_column)
             .style(iced::theme::Container::Box)
-            .width(Length::Shrink)
             .height(Length::Fill),
         scrollable(
             editor_input
