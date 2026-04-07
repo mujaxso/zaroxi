@@ -15,3 +15,4 @@ uuid = { workspace = true }
 workspace-daemon = { path = "../../services/workspace-daemon" }
 eframe = "0.27"
 egui = "0.27"
+rfd = "0.14"
