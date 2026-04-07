@@ -3,6 +3,7 @@ pub struct App {
     workspace_path: Option<String>,
 }
 
+#[allow(dead_code)]
 impl App {
     pub fn new() -> Self {
         App {
