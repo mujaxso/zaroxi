@@ -16,6 +16,49 @@ Neote is an open-source, AI-first integrated development environment built in Ru
 - **Performance-Focused**: Built in Rust for speed and reliability
 - **Security-First**: Built-in permission system and security best practices
 
+## ⚠️ Git Index Version Compatibility
+
+Some tools (including Aider when used without `--no-git`) may encounter the error:
+
+```
+Unable to read staged files: Unsupported git index version 3, only 1 and 2 are supported
+```
+
+This occurs when your Git repository uses index version 3, but a tool you're using only supports versions 1 and 2.
+
+### Check Your Git Index Version
+
+Run the provided script to check your Git index version:
+
+```bash
+chmod +x scripts/check-git-index.sh
+./scripts/check-git-index.sh
+```
+
+### Quick Fix
+
+If you have index version 3, you can downgrade it to version 2:
+
+```bash
+git update-index --index-version 2
+```
+
+### Alternative Workaround
+
+If you're using Aider, you can use the `--no-git` flag:
+
+```bash
+aider --no-git
+```
+
+### Why This Happens
+
+Modern versions of Git may create index version 3 when certain features are used (like sparse-checkout). Some older Git libraries (like git2 0.20.5) only support versions 1 and 2.
+
+### Technical Details
+
+This repository includes a patch in `Cargo.toml` to use git2 version 0.21.0, which should better support index version 3. However, if you still encounter issues, downgrading the index version as shown above is the most reliable fix.
+
 ## 🏗️ Architecture
 
 Neote follows a modular architecture with clear separation between UI, business logic, and AI capabilities:

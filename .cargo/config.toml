@@ -1,15 +1,13 @@
 # Cargo configuration
-[build]
-# Some build scripts may fail due to Git index version issues
-# This environment variable can help skip Git operations in some cases
-rustc-wrapper = ""
+# This file can help configure cargo behavior
 
-# Network configuration for cargo
+# Use Git CLI for network operations instead of libgit2
+# This can help avoid Git index version compatibility issues
 [net]
-git-fetch-with-cli = true  # Use Git CLI instead of libgit2 for fetching
+git-fetch-with-cli = true
 
-# Environment variables for build scripts
-[env]
-# Try to prevent Git operations in build scripts that might fail
-# due to index version 3 issues
-CARGO_FEATURE_GIT2 = "0"
+# Build configuration
+[build]
+# Some build scripts use Git for version information
+# If they fail due to index version issues, you can try
+# setting rustflags or other options here
