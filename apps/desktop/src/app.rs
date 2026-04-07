@@ -16,6 +16,19 @@ pub enum Message {
     SaveFile,
     FileSaved(Result<(), String>),
     RefreshWorkspace,
+    ToggleAiPanel,
+    ActivitySelected(Activity),
+    PromptInputChanged(String),
+    SendPrompt,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Activity {
+    Explorer,
+    Search,
+    Ai,
+    SourceControl,
+    Settings,
 }
 
 pub struct App {
@@ -28,6 +41,9 @@ pub struct App {
     status_message: String,
     error_message: Option<String>,
     workspace_state: Arc<Mutex<WorkspaceState>>,
+    active_activity: Activity,
+    ai_panel_visible: bool,
+    prompt_input: String,
 }
 
 impl iced::Application for App {
@@ -48,6 +64,9 @@ impl iced::Application for App {
                 status_message: "Ready".to_string(),
                 error_message: None,
                 workspace_state: Arc::new(Mutex::new(WorkspaceState::new(""))),
+                active_activity: Activity::Explorer,
+                ai_panel_visible: true,
+                prompt_input: String::new(),
             },
             Command::none(),
         )
@@ -207,11 +226,29 @@ impl iced::Application for App {
                     Command::none()
                 }
             }
+            Message::ToggleAiPanel => {
+                self.ai_panel_visible = !self.ai_panel_visible;
+                Command::none()
+            }
+            Message::ActivitySelected(activity) => {
+                self.active_activity = activity;
+                Command::none()
+            }
+            Message::PromptInputChanged(text) => {
+                self.prompt_input = text;
+                Command::none()
+            }
+            Message::SendPrompt => {
+                // Placeholder for AI prompt
+                self.status_message = "AI feature coming soon".to_string();
+                self.prompt_input.clear();
+                Command::none()
+            }
         }
     }
 
     fn view(&self) -> Element<'_, Message> {
-        crate::ui::layout::layout(
+        crate::ui::layout::ide_layout(
             &self.workspace_path,
             &self.file_entries,
             self.active_file_path.as_ref(),
@@ -219,6 +256,9 @@ impl iced::Application for App {
             self.is_dirty,
             &self.status_message,
             self.error_message.as_ref(),
+            self.active_activity,
+            self.ai_panel_visible,
+            &self.prompt_input,
         )
     }
 }

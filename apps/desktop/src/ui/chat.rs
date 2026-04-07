@@ -1,8 +1,2 @@
-use iced::Element;
-use crate::app::Message;
-
-#[allow(dead_code)]
-pub fn chat<'a>() -> Element<'a, Message> {
-    // Placeholder for chat UI
-    iced::widget::text("Chat placeholder").into()
-}
+// AI panel is now implemented in layout.rs
+// This file is kept for future chat-specific components
