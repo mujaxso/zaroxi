@@ -4,15 +4,158 @@ mod commands;
 mod ui;
 
 use std::env;
-use std::io::{self, Write};
+use std::sync::{Arc, Mutex};
 
-use bootstrap::init;
+use eframe::egui;
 use workspace_daemon::files;
 use workspace_model::state::WorkspaceState;
 
+struct NeoteApp {
+    workspace_path: String,
+    workspace_state: Arc<Mutex<WorkspaceState>>,
+    file_entries: Vec<core_types::workspace::DirectoryEntry>,
+    selected_file_index: Option<usize>,
+    editor_text: String,
+    dirty: bool,
+}
+
+impl NeoteApp {
+    fn new(workspace_path: String) -> Result<Self, Box<dyn std::error::Error>> {
+        let entries = files::list_directory(&workspace_path)?;
+        let workspace_state = Arc::new(Mutex::new(WorkspaceState::new(&workspace_path)));
+        workspace_state.lock().unwrap().set_file_tree(entries.clone());
+        
+        Ok(Self {
+            workspace_path,
+            workspace_state,
+            file_entries: entries,
+            selected_file_index: None,
+            editor_text: String::new(),
+            dirty: false,
+        })
+    }
+
+    fn open_file(&mut self, index: usize) {
+        if index < self.file_entries.len() {
+            let entry = &self.file_entries[index];
+            if !entry.is_dir {
+                match files::read_file(&entry.path) {
+                    Ok(content) => {
+                        let mut state = self.workspace_state.lock().unwrap();
+                        state.open_buffer(&entry.path, content.clone());
+                        self.editor_text = content;
+                        self.selected_file_index = Some(index);
+                        self.dirty = false;
+                    }
+                    Err(e) => {
+                        eprintln!("Failed to read file: {}", e);
+                    }
+                }
+            }
+        }
+    }
+
+    fn save_current_file(&mut self) {
+        let state = self.workspace_state.lock().unwrap();
+        if let Some((path, _)) = state.save_active_buffer() {
+            match files::write_file(&path.to_string_lossy(), &self.editor_text) {
+                Ok(_) => {
+                    self.dirty = false;
+                }
+                Err(e) => {
+                    eprintln!("Failed to save file: {}", e);
+                }
+            }
+        }
+    }
+}
+
+impl eframe::App for NeoteApp {
+    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        egui::CentralPanel::default().show(ctx, |ui| {
+            ui.heading("Neote - Step 1");
+            ui.horizontal(|ui| {
+                ui.label(format!("Workspace: {}", self.workspace_path));
+                if ui.button("Refresh").clicked() {
+                    if let Ok(entries) = files::list_directory(&self.workspace_path) {
+                        self.file_entries = entries;
+                        self.workspace_state.lock().unwrap().set_file_tree(self.file_entries.clone());
+                    }
+                }
+            });
+
+            ui.separator();
+
+            ui.columns(2, |columns| {
+                // Left column: file list
+                columns[0].vertical(|ui| {
+                    ui.heading("Files");
+                    egui::ScrollArea::vertical().show(ui, |ui| {
+                        for (i, entry) in self.file_entries.iter().enumerate() {
+                            let label = if entry.is_dir {
+                                format!("📁 {}", entry.name)
+                            } else {
+                                format!("📄 {}", entry.name)
+                            };
+                            if ui.selectable_label(self.selected_file_index == Some(i), label).clicked() && !entry.is_dir {
+                                self.open_file(i);
+                            }
+                        }
+                    });
+                });
+
+                // Right column: editor
+                columns[1].vertical(|ui| {
+                    ui.horizontal(|ui| {
+                        if let Some(index) = self.selected_file_index {
+                            let entry = &self.file_entries[index];
+                            ui.heading(&entry.name);
+                            if self.dirty {
+                                ui.label("(modified)");
+                            }
+                        } else {
+                            ui.heading("No file selected");
+                        }
+                        
+                        if ui.button("Save").clicked() {
+                            self.save_current_file();
+                        }
+                    });
+                    
+                    ui.separator();
+                    
+                    let mut state = self.workspace_state.lock().unwrap();
+                    if let Some(buffer) = state.active_buffer_mut() {
+                        let response = ui.add(
+                            egui::TextEdit::multiline(&mut self.editor_text)
+                                .desired_rows(20)
+                                .desired_width(f32::INFINITY)
+                        );
+                        
+                        if response.changed() {
+                            buffer.replace_all(self.editor_text.clone());
+                            self.dirty = buffer.is_dirty();
+                        }
+                    } else {
+                        ui.label("Select a file to edit");
+                    }
+                });
+            });
+
+            ui.separator();
+            ui.horizontal(|ui| {
+                ui.label("Status:");
+                if self.dirty {
+                    ui.label("File has unsaved changes");
+                } else {
+                    ui.label("All changes saved");
+                }
+            });
+        });
+    }
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    init();
-    
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
         println!("Usage: {} <workspace-path>", args[0]);
@@ -20,142 +163,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
     
-    let workspace_path = &args[1];
-    println!("Opening workspace at: {}", workspace_path);
-    println!("Neote Desktop - Step 1");
-    println!("======================");
+    let workspace_path = args[1].clone();
     
-    // List directory contents
-    let entries = files::list_directory(workspace_path)?;
-    println!("Found {} entries:", entries.len());
-    for (i, entry) in entries.iter().enumerate() {
-        let type_str = if entry.is_dir { "dir" } else { "file" };
-        println!("  {}. {} ({})", i + 1, entry.name, type_str);
-    }
-    println!("Note: Only files can be opened for editing.");
+    let options = eframe::NativeOptions {
+        viewport: egui::ViewportBuilder::default()
+            .with_inner_size([1200.0, 800.0])
+            .with_title("Neote - Step 1"),
+        ..Default::default()
+    };
     
-    // Create workspace state
-    let mut workspace_state = WorkspaceState::new(workspace_path);
-    workspace_state.set_file_tree(entries);
-    
-    // Simple interactive loop
-    loop {
-        println!("\nOptions:");
-        println!("  1. Open a file");
-        println!("  2. Edit current file");
-        println!("  3. Save current file");
-        println!("  4. List files again");
-        println!("  5. Exit");
-        print!("Choose an option: ");
-        io::stdout().flush()?;
-        
-        let mut input = String::new();
-        io::stdin().read_line(&mut input)?;
-        let choice = input.trim();
-        
-        match choice {
-            "1" => {
-                // Open a file
-                println!("Enter file number to open:");
-                // Collect non-directory entries and their data before mutable borrow
-                let file_entries: Vec<_> = workspace_state.file_tree()
-                    .iter()
-                    .filter(|entry| !entry.is_dir)
-                    .map(|entry| (entry.path.clone(), entry.name.clone()))
-                    .collect();
-                
-                if file_entries.is_empty() {
-                    println!("No files found in the workspace.");
-                    continue;
-                }
-                
-                for (i, (_, name)) in file_entries.iter().enumerate() {
-                    println!("  {}. {}", i + 1, name);
-                }
-                print!("File number: ");
-                io::stdout().flush()?;
-                
-                let mut file_input = String::new();
-                io::stdin().read_line(&mut file_input)?;
-                if let Ok(file_num) = file_input.trim().parse::<usize>() {
-                    if file_num >= 1 && file_num <= file_entries.len() {
-                        let (path, name) = &file_entries[file_num - 1];
-                        // Read the file
-                        match files::read_file(path) {
-                            Ok(content) => {
-                                let buffer_id = workspace_state.open_buffer(path, content.clone());
-                                println!("Opened '{}' (buffer ID: {:?})", name, buffer_id);
-                                println!("Content preview: {}", 
-                                    if content.len() > 50 { 
-                                        format!("{}...", &content[..50]) 
-                                    } else { 
-                                        content 
-                                    }
-                                );
-                            }
-                            Err(e) => println!("Error reading file: {}", e),
-                        }
-                    } else {
-                        println!("Invalid file number. Please enter a number between 1 and {}.", file_entries.len());
-                    }
-                } else {
-                    println!("Invalid input. Please enter a number.");
+    eframe::run_native(
+        "Neote",
+        options,
+        Box::new(|_cc| {
+            match NeoteApp::new(workspace_path) {
+                Ok(app) => Box::new(app),
+                Err(e) => {
+                    eprintln!("Failed to initialize app: {}", e);
+                    std::process::exit(1);
                 }
             }
-            "2" => {
-                // Edit current file
-                if let Some(buffer) = workspace_state.active_buffer_mut() {
-                    println!("Current content:");
-                    println!("{}", buffer.text());
-                    println!("Enter new content (end with a line containing only 'EOF'):");
-                    
-                    let mut new_content = String::new();
-                    loop {
-                        let mut line = String::new();
-                        io::stdin().read_line(&mut line)?;
-                        if line.trim() == "EOF" {
-                            break;
-                        }
-                        new_content.push_str(&line);
-                    }
-                    
-                    buffer.replace_all(new_content.trim_end());
-                    println!("Content updated. Dirty: {}", buffer.is_dirty());
-                } else {
-                    println!("No file is currently open. Please open a file first.");
-                }
-            }
-            "3" => {
-                // Save current file
-                if let Some((path, content)) = workspace_state.save_active_buffer() {
-                    match files::write_file(&path.to_string_lossy(), &content) {
-                        Ok(_) => println!("File saved successfully."),
-                        Err(e) => println!("Error saving file: {}", e),
-                    }
-                } else {
-                    println!("No active buffer to save.");
-                }
-            }
-            "4" => {
-                // List files again
-                let entries = files::list_directory(workspace_path)?;
-                workspace_state.set_file_tree(entries.clone());
-                println!("Files in workspace:");
-                for (i, entry) in entries.iter().enumerate() {
-                    let type_str = if entry.is_dir { "dir" } else { "file" };
-                    println!("  {}. {} ({})", i + 1, entry.name, type_str);
-                }
-                println!("Note: Only files can be opened for editing.");
-            }
-            "5" => {
-                println!("Exiting...");
-                break;
-            }
-            _ => {
-                println!("Invalid option. Please try again.");
-            }
-        }
-    }
-    
-    Ok(())
+        }),
+    ).map_err(|e| e.into())
 }

@@ -13,3 +13,7 @@ workspace-model = { path = "../../crates/workspace-model" }
 editor-buffer = { path = "../../crates/editor-buffer" }
 uuid = { workspace = true }
 workspace-daemon = { path = "../../services/workspace-daemon" }
+eframe = "0.27"
+egui = "0.27"
+eframe = "0.27"
+egui = "0.27"
