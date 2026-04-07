@@ -1,4 +1,6 @@
 #[allow(dead_code)]
 pub fn init() {
-    // TODO: implement bootstrap
+    // Initialize logging
+    println!("Initializing Neote desktop...");
+    // TODO: Set up proper logging
 }

@@ -7,3 +7,4 @@ pub mod commands;
 pub mod events;
 pub mod ids;
 pub mod protocol;
+pub mod workspace;

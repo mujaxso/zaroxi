@@ -7,3 +7,5 @@ license.workspace = true
 [dependencies]
 serde = { workspace = true }
 uuid = { workspace = true }
+core-types = { path = "../core-types" }
+editor-buffer = { path = "../editor-buffer" }

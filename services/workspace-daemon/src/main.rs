@@ -4,6 +4,8 @@ mod tasks;
 mod terminal;
 
 fn main() {
-    // TODO: implement workspace daemon
-    println!("Workspace daemon placeholder");
+    println!("Workspace daemon started");
+    // For now, just print a message
+    // In a real implementation, we would set up an RPC server
+    println!("TODO: Implement RPC server to handle filesystem operations");
 }
