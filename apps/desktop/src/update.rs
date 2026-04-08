@@ -280,23 +280,38 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
             // First, perform the action on the text editor
             app.text_editor.perform(action.clone());
             
-            // Check if this is a scroll action - we shouldn't update the buffer for scrolls
-            // Scroll actions don't modify the text content
-            match &action {
-                iced::widget::text_editor::Action::Scroll { .. } => {
-                    // Do not update the buffer for scroll actions
-                    // Just update the editor's internal state
-                    return Command::none();
-                }
-                _ => {
-                    // For other actions (insert, delete, etc.), update the canonical buffer
-                    if let Some(ref mut buffer) = app.editor_buffer {
-                        // For simplicity, fall back to full update
-                        let current_text = app.text_editor.text();
-                        buffer.replace_all(&current_text);
-                        app.status_message = "Text updated".to_string();
-                        app.is_dirty = buffer.is_dirty();
-                    }
+            // Check if this action modifies the text content
+            // We need to update our buffer only for edit actions, not for scroll/move/selection actions
+            let should_update_buffer = match &action {
+                iced::widget::text_editor::Action::Edit(_) => true,
+                iced::widget::text_editor::Action::Paste(_) => true,
+                iced::widget::text_editor::Action::Insert(_) => true,
+                iced::widget::text_editor::Action::Backspace => true,
+                iced::widget::text_editor::Action::Delete => true,
+                iced::widget::text_editor::Action::Newline => true,
+                iced::widget::text_editor::Action::Indent => true,
+                iced::widget::text_editor::Action::Outdent => true,
+                iced::widget::text_editor::Action::Tab => true,
+                // These actions don't modify text content
+                iced::widget::text_editor::Action::Scroll { .. } => false,
+                iced::widget::text_editor::Action::Move { .. } => false,
+                iced::widget::text_editor::Action::Select { .. } => false,
+                iced::widget::text_editor::Action::SelectAll => false,
+                iced::widget::text_editor::Action::Copy => false,
+                iced::widget::text_editor::Action::Cut => false,
+                iced::widget::text_editor::Action::Undo => false,
+                iced::widget::text_editor::Action::Redo => false,
+                // Default case: assume it doesn't modify text
+                _ => false,
+            };
+            
+            if should_update_buffer {
+                if let Some(ref mut buffer) = app.editor_buffer {
+                    // For simplicity, fall back to full update
+                    let current_text = app.text_editor.text();
+                    buffer.replace_all(&current_text);
+                    app.status_message = "Text updated".to_string();
+                    app.is_dirty = buffer.is_dirty();
                 }
             }
             Command::none()
