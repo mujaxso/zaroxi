@@ -1,12 +1,8 @@
-mod message;
-mod state;
-mod update;
-mod view;
-
-pub use message::Message;
-pub use state::{App, Activity, FileLoadingState, FileMetadata};
-pub use update::update;
-pub use view::view;
+// Re-export the main types from the crate root modules
+pub use crate::message::Message;
+pub use crate::state::{App, Activity, FileLoadingState, FileMetadata};
+pub use crate::update::update;
+pub use crate::view::view;
 
 use iced::{Element, Command};
 
