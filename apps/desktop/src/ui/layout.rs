@@ -52,7 +52,7 @@ pub fn ide_layout<'a>(
             .height(Length::Fill),
         vertical_rule(1),
         // Editor area - takes most space
-        container(editor_panel(active_file_path, text_editor, is_dirty, editor_buffer, false))
+        container(editor_panel(active_file_path, text_editor, is_dirty, editor_buffer, is_file_too_large_for_editor))
             .width(Length::FillPortion(5))
             .height(Length::Fill),
         // AI panel (conditionally visible) - flexible width
@@ -352,7 +352,10 @@ fn editor_panel<'a>(
     };
 
     // Check if we're loading a file
-    let is_loading = active_file_path.is_some() && editor_buffer.is_none();
+    // Loading if: no buffer yet, OR buffer exists but text editor is empty and file is not too large for editor
+    let is_loading = active_file_path.is_some() && 
+        (editor_buffer.is_none() || 
+         (editor_buffer.is_some() && !is_file_too_large_for_editor && text_editor.text().is_empty()));
     
     let editor_content = if is_loading {
         // Show loading indicator

@@ -13,6 +13,7 @@ pub enum Message {
     WorkspaceLoaded(Result<Vec<DirectoryEntry>, String>),
     FileSelected(usize),
     FileLoaded(Result<(String, String, TextBuffer), String>),
+    TextEditorContentCreated((String, text_editor::Content)),
     EditorContentChanged(text_editor::Action),
     SaveFile,
     FileSaved(Result<(), String>),
@@ -24,6 +25,16 @@ pub enum Message {
     KeyPressed(iced::keyboard::Key, iced::keyboard::Modifiers),
     ToggleDirectory(String),
     ToggleCommandPalette,
+}
+
+/// Create text editor content in a background task to avoid blocking the UI
+async fn create_text_editor_content(path: String, content: String) -> (String, text_editor::Content) {
+    // This runs in a background thread
+    let text_editor_content = tokio::task::spawn_blocking(move || {
+        text_editor::Content::with_text(&content)
+    }).await.unwrap_or_else(|_| text_editor::Content::new());
+    
+    (path, text_editor_content)
 }
 
 
@@ -188,15 +199,15 @@ impl iced::Application for App {
                 match result {
                     Ok((path, content, buffer)) => {
                         let file_size = content.len();
-                        const WARNING_THRESHOLD: usize = 1_000_000; // 1MB
-                        const READ_ONLY_THRESHOLD: usize = 5_000_000; // 5MB - reduced from 10MB
+                        const EDITOR_THRESHOLD: usize = 100_000; // 100KB - only use text editor for files under this size
+                        const MAX_FILE_SIZE: usize = 5_000_000; // 5MB - maximum file size to open
                         
                         // For files larger than 5MB, show error
-                        if file_size > READ_ONLY_THRESHOLD {
+                        if file_size > MAX_FILE_SIZE {
                             self.status_message = format!(
                                 "File too large ({} MB). Maximum supported size is {} MB.",
                                 file_size / 1_000_000,
-                                READ_ONLY_THRESHOLD / 1_000_000
+                                MAX_FILE_SIZE / 1_000_000
                             );
                             self.error_message = Some("File is too large to open in editor".to_string());
                             // Clear loading state
@@ -207,23 +218,39 @@ impl iced::Application for App {
                             return Command::none();
                         }
                         
-                        // For files larger than 1MB, mark as too large for editor
-                        if file_size > WARNING_THRESHOLD {
+                        // For files larger than 100KB, use read-only view
+                        if file_size > EDITOR_THRESHOLD {
                             self.is_file_too_large_for_editor = true;
                             self.status_message = format!(
-                                "Large file ({} MB) opened in read-only mode",
-                                file_size / 1_000_000
+                                "File opened in read-only mode ({} KB)",
+                                file_size / 1_000
                             );
                             self.error_message = Some("File is large - opened in read-only mode".to_string());
                         } else {
                             self.is_file_too_large_for_editor = false;
-                            // For small files, create text editor content directly
-                            self.text_editor = text_editor::Content::with_text(&content);
-                            self.status_message = format!("Loaded: {} ({} bytes)", path, file_size);
+                            // For small files, create text editor content
+                            // But to prevent blocking, we'll do it in a background task
+                            self.status_message = format!("Creating editor for {} ({} bytes)...", path, file_size);
                             self.error_message = None;
+                            // Store content and buffer first
+                            self.editor_content = content.clone();
+                            self.editor_buffer = Some(buffer);
+                            self.is_dirty = false;
+                            
+                            // Update workspace state
+                            {
+                                let mut state = self.workspace_state.lock().unwrap();
+                                state.open_buffer(&path, self.editor_content.clone());
+                            }
+                            
+                            // Create text editor content in background
+                            return Command::perform(
+                                create_text_editor_content(path, content),
+                                Message::TextEditorContentCreated
+                            );
                         }
                         
-                        // Always store content and buffer
+                        // For read-only files, just store content
                         self.editor_content = content.clone();
                         self.editor_buffer = Some(buffer);
                         self.is_dirty = false;
@@ -242,9 +269,14 @@ impl iced::Application for App {
                 Command::none()
             }
             Message::EditorContentChanged(action) => {
-                // Don't process edits if the file is too large
+                // Don't process edits if the file is too large for editor
                 if self.is_file_too_large_for_editor {
-                    self.status_message = "File is large - editing disabled".to_string();
+                    self.status_message = "File is read-only - editing disabled".to_string();
+                    return Command::none();
+                }
+                
+                // Don't process if text editor is empty (still loading)
+                if self.text_editor.text().is_empty() {
                     return Command::none();
                 }
                 
@@ -368,6 +400,12 @@ impl iced::Application for App {
             Message::ToggleCommandPalette => {
                 // For now, just show a status message
                 self.status_message = "Command palette (Ctrl+Shift+P) - coming soon".to_string();
+                Command::none()
+            }
+            Message::TextEditorContentCreated((path, text_editor_content)) => {
+                self.text_editor = text_editor_content;
+                self.status_message = format!("Loaded: {} ({} bytes)", path, self.editor_content.len());
+                self.error_message = None;
                 Command::none()
             }
             Message::ToggleDirectory(path) => {
