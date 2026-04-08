@@ -745,6 +745,7 @@ fn explorer_panel_with_expanded<'a>(
         let path = std::path::Path::new(&entry.path);
         if let Some(parent) = path.parent() {
             let parent_str = parent.to_string_lossy().to_string();
+            // Normalize the parent path to match entry.path format
             children_map.entry(parent_str).or_insert_with(Vec::new).push(i);
         } else {
             // This is a root entry
@@ -752,18 +753,27 @@ fn explorer_panel_with_expanded<'a>(
         }
     }
     
-    // Also add entries that are in the workspace root
+    // Also add entries that are directly in the workspace root
+    // We need to identify entries whose parent is the workspace root
+    // For simplicity, let's assume workspace root is the common prefix
+    // But for now, let's find entries with no parent or parent is current directory
     for (i, entry) in file_entries.iter().enumerate() {
         let path = std::path::Path::new(&entry.path);
         if let Some(parent) = path.parent() {
-            if parent.to_string_lossy() == "" || parent.to_string_lossy() == "." {
-                // Check if this entry is already in root_entries by comparing paths
-                let already_exists = root_indices.iter().any(|&idx| file_entries[idx].path == entry.path);
-                if !already_exists {
+            // Check if parent is "." or empty (current directory)
+            let parent_str = parent.to_string_lossy();
+            if parent_str == "." || parent_str == "" {
+                // Check if not already in root_indices
+                if !root_indices.contains(&i) {
                     root_indices.push(i);
                 }
             }
         }
+    }
+    
+    // If still no root entries, add all entries as root (fallback)
+    if root_indices.is_empty() {
+        root_indices = (0..file_entries.len()).collect();
     }
     
     // Sort indices: directories first, then files, both alphabetically
@@ -778,7 +788,7 @@ fn explorer_panel_with_expanded<'a>(
     });
     
     // Render the tree
-    let content: Element<_> = if root_indices.is_empty() {
+    let content: Element<_> = if file_entries.is_empty() {
         container(
             column![
                 text("No files in workspace")
@@ -796,6 +806,13 @@ fn explorer_panel_with_expanded<'a>(
         .height(Length::Fill)
         .into()
     } else {
+        // For debugging: if expanded_directories is empty, show a flat list
+        // This helps verify files are being loaded
+        if expanded_directories.is_empty() && children_map.is_empty() {
+            // Fall back to the simple explorer_panel
+            return explorer_panel(file_entries);
+        }
+        
         // Collect all elements first to avoid lifetime issues
         let mut all_elements = Vec::new();
         for &idx in &root_indices {
@@ -809,6 +826,11 @@ fn explorer_panel_with_expanded<'a>(
                 0,
             );
             all_elements.append(&mut elements);
+        }
+        
+        // If no elements were generated (tree building failed), fall back to flat list
+        if all_elements.is_empty() {
+            return explorer_panel(file_entries);
         }
         
         scrollable(
