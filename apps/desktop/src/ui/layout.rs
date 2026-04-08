@@ -897,18 +897,8 @@ pub fn explorer_panel_with_expanded<'a>(
     // Use the explorer module to build a proper tree
     let tree = crate::ui::explorer::build_tree(file_entries, workspace_path);
     
-    // If tree is empty, fall back to flat list
-    let visible_nodes = if tree.is_empty() {
-        // Create a simple flat list with depth 0
-        let mut nodes = Vec::new();
-        for entry in file_entries {
-            // Create a temporary TreeNode
-            nodes.push((0, entry));
-        }
-        nodes
-    } else {
-        crate::ui::explorer::get_visible_nodes(&tree, expanded_directories, 0)
-    };
+    // Always use get_visible_nodes, even if tree is empty (it will return empty)
+    let visible_nodes = crate::ui::explorer::get_visible_nodes(&tree, expanded_directories, 0);
     
     let content: Element<_> = if file_entries.is_empty() {
         container(
@@ -931,12 +921,7 @@ pub fn explorer_panel_with_expanded<'a>(
         let mut elements = Vec::new();
         
         for (depth, node) in visible_nodes {
-            let entry = if let Some(treeNode) = node.as_tree_node() {
-                &treeNode.entry
-            } else {
-                // node is a &DirectoryEntry from our fallback
-                node
-            };
+            let entry = &node.entry;
             
             // Check if this directory is expanded
             let normalized_path = normalize_path(&entry.path);
@@ -990,6 +975,58 @@ pub fn explorer_panel_with_expanded<'a>(
             elements.push(entry_element);
         }
         
+        // If no elements were generated but we have files, show a flat list
+        if elements.is_empty() && !file_entries.is_empty() {
+            // Fall back to simple flat list
+            for entry in file_entries {
+                let normalized_path = normalize_path(&entry.path);
+                let is_expanded = expanded_directories.contains(&normalized_path);
+                
+                let icon = if entry.is_dir {
+                    if is_expanded { "📂" } else { "📁" }
+                } else {
+                    "📄"
+                };
+                
+                let text_color = if entry.is_dir {
+                    iced::Color::from_rgb8(180, 180, 255)
+                } else {
+                    iced::Color::from_rgb8(220, 220, 220)
+                };
+                
+                let entry_element = container(
+                    button(
+                        row![
+                            if entry.is_dir {
+                                let chevron = if is_expanded { "▼" } else { "▶" };
+                                text(chevron).size(12)
+                                    .style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150)))
+                            } else {
+                                text("  ").size(12)
+                            },
+                            text(icon).size(14),
+                            text(&entry.name).size(14)
+                                .style(iced::theme::Text::Color(text_color)),
+                        ]
+                        .spacing(8)
+                        .align_items(Alignment::Center),
+                    )
+                    .on_press(if entry.is_dir {
+                        Message::ToggleDirectory(entry.path.clone())
+                    } else {
+                        Message::FileSelectedByPath(entry.path.clone())
+                    })
+                    .padding([6, 12])
+                    .width(Length::Fill)
+                    .style(iced::theme::Button::Secondary),
+                )
+                .padding(iced::Padding::new(0.0))
+                .into();
+                
+                elements.push(entry_element);
+            }
+        }
+        
         if elements.is_empty() {
             container(
                 text("No files to display")
@@ -1025,23 +1062,6 @@ pub fn explorer_panel_with_expanded<'a>(
     ]
     .height(Length::Fill)
     .into()
-}
-
-// Helper trait to handle both TreeNode and DirectoryEntry
-trait NodeOrEntry {
-    fn as_tree_node(&self) -> Option<&crate::ui::explorer::TreeNode>;
-}
-
-impl NodeOrEntry for crate::ui::explorer::TreeNode {
-    fn as_tree_node(&self) -> Option<&crate::ui::explorer::TreeNode> {
-        Some(self)
-    }
-}
-
-impl NodeOrEntry for core_types::workspace::DirectoryEntry {
-    fn as_tree_node(&self) -> Option<&crate::ui::explorer::TreeNode> {
-        None
-    }
 }
 
 
