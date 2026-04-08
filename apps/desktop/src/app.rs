@@ -40,29 +40,19 @@ async fn create_text_editor_content(path: String, _content: String) -> String {
 
 // Helper to extract edit information from text editor action
 fn extract_edit_info(action: &text_editor::Action) -> Option<EditInfo> {
-    use std::mem::discriminant;
-    
-    // Get discriminant of the action
-    let action_disc = discriminant(action);
-    
-    // We need to compare with discriminants of Action variants
-    // Create dummy values to get discriminants
-    let dummy_insert = text_editor::Action::Edit(
-        // We can't create EditAction directly, but we can use a match
-        // Let's use a different approach
-    );
-    
-    // Instead, let's use pattern matching with placeholders
     match action {
-        text_editor::Action::Edit(edit_action) => {
-            // Convert to string and parse (temporary solution)
-            let debug_str = format!("{:?}", edit_action);
-            if debug_str.starts_with("InsertText") {
-                // Parse using a simple regex-like approach
+        text_editor::Action::Edit(edit) => {
+            // The Edit struct has a field `action` of type EditAction
+            // We can access it directly
+            // Use debug formatting to extract information
+            let debug_str = format!("{:?}", edit);
+            // The debug format looks like: "Edit { action: InsertText { char_idx: 5, text: "hello" }, .. }"
+            // or "Edit { action: DeleteRange { start: 5, end: 10 }, .. }"
+            if debug_str.contains("InsertText") {
                 if let Some((char_idx, text)) = parse_insert_text(&debug_str) {
                     return Some(EditInfo::Insert { char_idx, text });
                 }
-            } else if debug_str.starts_with("DeleteRange") {
+            } else if debug_str.contains("DeleteRange") {
                 if let Some((start, end)) = parse_delete_range(&debug_str) {
                     return Some(EditInfo::Delete { start, end });
                 }
@@ -75,26 +65,30 @@ fn extract_edit_info(action: &text_editor::Action) -> Option<EditInfo> {
 
 // Parse InsertText from debug string
 fn parse_insert_text(debug_str: &str) -> Option<(usize, String)> {
-    // Example: "InsertText { char_idx: 5, text: \"hello\" }"
-    let mut chars = debug_str.chars();
-    let mut char_idx_str = String::new();
-    let mut text_str = String::new();
-    
+    // Example: "Edit { action: InsertText { char_idx: 5, text: \"hello\" }, .. }"
     // Find char_idx
-    if let Some(idx) = debug_str.find("char_idx: ") {
+    let char_idx_str = if let Some(idx) = debug_str.find("char_idx: ") {
         let rest = &debug_str[idx + 10..];
         if let Some(end) = rest.find(',') {
-            char_idx_str = rest[..end].trim().to_string();
+            rest[..end].trim().to_string()
+        } else {
+            String::new()
         }
-    }
+    } else {
+        String::new()
+    };
     
     // Find text
-    if let Some(idx) = debug_str.find("text: \"") {
+    let text_str = if let Some(idx) = debug_str.find("text: \"") {
         let rest = &debug_str[idx + 7..];
         if let Some(end) = rest.find('\"') {
-            text_str = rest[..end].to_string();
+            rest[..end].to_string()
+        } else {
+            String::new()
         }
-    }
+    } else {
+        String::new()
+    };
     
     if char_idx_str.is_empty() || text_str.is_empty() {
         return None;
@@ -106,25 +100,31 @@ fn parse_insert_text(debug_str: &str) -> Option<(usize, String)> {
 
 // Parse DeleteRange from debug string
 fn parse_delete_range(debug_str: &str) -> Option<(usize, usize)> {
-    // Example: "DeleteRange { start: 5, end: 10 }"
-    let mut start_str = String::new();
-    let mut end_str = String::new();
-    
+    // Example: "Edit { action: DeleteRange { start: 5, end: 10 }, .. }"
     // Find start
-    if let Some(idx) = debug_str.find("start: ") {
+    let start_str = if let Some(idx) = debug_str.find("start: ") {
         let rest = &debug_str[idx + 7..];
         if let Some(end) = rest.find(',') {
-            start_str = rest[..end].trim().to_string();
+            rest[..end].trim().to_string()
+        } else {
+            String::new()
         }
-    }
+    } else {
+        String::new()
+    };
     
     // Find end
-    if let Some(idx) = debug_str.find("end: ") {
+    let end_str = if let Some(idx) = debug_str.find("end: ") {
         let rest = &debug_str[idx + 5..];
+        // Look for the closing brace of DeleteRange
         if let Some(end) = rest.find('}') {
-            end_str = rest[..end].trim().to_string();
+            rest[..end].trim().to_string()
+        } else {
+            String::new()
         }
-    }
+    } else {
+        String::new()
+    };
     
     if start_str.is_empty() || end_str.is_empty() {
         return None;
