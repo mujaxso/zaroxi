@@ -1,7 +1,5 @@
 use crate::message::Message;
 use crate::state::{App, Activity, FileLoadingState, FileMetadata};
-use core_types::workspace::DirectoryEntry;
-use editor_buffer::buffer::TextBuffer;
 use file_ops::{FileLoader, WorkspaceLoader};
 use iced::Command;
 

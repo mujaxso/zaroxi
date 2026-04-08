@@ -296,7 +296,7 @@ fn editor_panel<'a>(
     is_dirty: bool,
     editor_buffer: Option<&'a editor_buffer::buffer::TextBuffer>,
     is_file_too_large_for_editor: bool,
-    file_loading_state: &'a crate::app::FileLoadingState,
+    file_loading_state: &'a FileLoadingState,
 ) -> Element<'a, Message> {
     let header = if let Some(path) = active_file_path {
         let mut status_elements = Vec::new();
@@ -683,7 +683,16 @@ fn search_panel<'a>() -> Element<'a, Message> {
 }
 
 fn terminal_panel<'a>() -> Element<'a, Message> {
-    super::terminal::terminal("")
+    // For now, return a placeholder since terminal module might not be updated
+    container(
+        text("Terminal placeholder")
+            .style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150)))
+    )
+    .center_y()
+    .center_x()
+    .width(Length::Fill)
+    .height(Length::Fill)
+    .into()
 }
 
 fn settings_panel<'a>() -> Element<'a, Message> {

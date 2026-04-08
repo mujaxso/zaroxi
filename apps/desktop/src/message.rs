@@ -1,7 +1,7 @@
 use iced::widget::text_editor;
 use core_types::workspace::DirectoryEntry;
 use editor_buffer::buffer::TextBuffer;
-use crate::state::{Activity, FileLoadingState, FileMetadata};
+use crate::state::{Activity, FileMetadata};
 
 #[derive(Debug, Clone)]
 pub enum Message {
