@@ -748,16 +748,30 @@ fn explorer_panel_with_expanded<'a>(
         normalize_path(workspace_path)
     };
     
+    // Debug: print paths
+    eprintln!("Workspace root: {}", workspace_root);
+    for (i, entry) in file_entries.iter().enumerate() {
+        eprintln!("Entry {}: {} (is_dir: {})", i, entry.path, entry.is_dir);
+    }
+    
     // Build children map: parent path -> indices of children
     for (i, entry) in file_entries.iter().enumerate() {
         let path = std::path::Path::new(&entry.path);
         if let Some(parent) = path.parent() {
             let parent_str = normalize_path(&parent.to_string_lossy());
+            eprintln!("  Entry {} parent: {}", i, parent_str);
             children_map.entry(parent_str).or_insert_with(Vec::new).push(i);
         } else {
             // Entry has no parent (root of filesystem)
+            eprintln!("  Entry {} has no parent", i);
             root_indices.push(i);
         }
+    }
+    
+    // Debug: print children map
+    eprintln!("Children map:");
+    for (key, indices) in &children_map {
+        eprintln!("  {}: {:?}", key, indices);
     }
     
     // Identify root entries: those whose parent is the workspace root
@@ -768,6 +782,7 @@ fn explorer_panel_with_expanded<'a>(
             let parent_str = normalize_path(&parent.to_string_lossy());
             if parent_str == workspace_root {
                 if !root_indices.contains(&i) {
+                    eprintln!("Adding {} as root entry (parent matches workspace root)", i);
                     root_indices.push(i);
                 }
             }
@@ -783,6 +798,7 @@ fn explorer_panel_with_expanded<'a>(
                 let parent_str = parent.to_string_lossy();
                 if parent_str == "." || parent_str == "" {
                     if !root_indices.contains(&i) {
+                        eprintln!("Adding {} as root entry (parent is . or empty)", i);
                         root_indices.push(i);
                     }
                 }
@@ -792,8 +808,11 @@ fn explorer_panel_with_expanded<'a>(
     
     // Final fallback: if still empty, add all entries
     if root_indices.is_empty() {
+        eprintln!("No root entries found, adding all as fallback");
         root_indices = (0..file_entries.len()).collect();
     }
+    
+    eprintln!("Root indices: {:?}", root_indices);
     
     // Sort indices: directories first, then files, both alphabetically
     root_indices.sort_by(|&a_idx, &b_idx| {
@@ -875,8 +894,20 @@ fn explorer_panel_with_expanded<'a>(
 // Helper function to normalize paths for consistent comparison
 fn normalize_path(path: &str) -> String {
     let path = std::path::Path::new(path);
+    // Convert to absolute path if possible
+    let path = if path.is_absolute() {
+        path.to_path_buf()
+    } else {
+        // Try to canonicalize to get absolute path
+        match std::fs::canonicalize(path) {
+            Ok(p) => p,
+            Err(_) => path.to_path_buf(),
+        }
+    };
     // Convert to string and remove trailing separator if present
-    path.to_string_lossy().to_string()
+    let s = path.to_string_lossy().to_string();
+    // Remove any trailing separator
+    s.trim_end_matches(std::path::MAIN_SEPARATOR).to_string()
 }
 
 fn render_directory_entry_with_indices<'a, 'b>(
@@ -946,8 +977,11 @@ fn render_directory_entry_with_indices<'a, 'b>(
     if entry.is_dir && is_expanded {
         // Normalize the path for lookup
         let normalized_path = normalize_path(&entry.path);
+        eprintln!("Looking for children of: {} (normalized: {})", entry.path, normalized_path);
+        eprintln!("Children map keys: {:?}", children_map.keys());
         // Try to find children in the map
         if let Some(child_indices) = children_map.get(&normalized_path) {
+            eprintln!("Found {} children for {}", child_indices.len(), normalized_path);
             // Sort child indices: directories first, then files
             let mut sorted_child_indices: Vec<usize> = child_indices.clone();
             sorted_child_indices.sort_by(|&a_idx, &b_idx| {
@@ -972,6 +1006,7 @@ fn render_directory_entry_with_indices<'a, 'b>(
                 ));
             }
         } else {
+            eprintln!("No children found in map for {}", normalized_path);
             // No children found - this could mean:
             // 1. The directory is empty
             // 2. The directory only contains subdirectories (which are in file_entries)
@@ -992,6 +1027,7 @@ fn render_directory_entry_with_indices<'a, 'b>(
             }
             
             if !manual_children.is_empty() {
+                eprintln!("Found {} children manually", manual_children.len());
                 // We found children manually - sort them
                 manual_children.sort_by(|&a_idx, &b_idx| {
                     let a = &file_entries[a_idx];
@@ -1015,6 +1051,7 @@ fn render_directory_entry_with_indices<'a, 'b>(
                     ));
                 }
             } else {
+                eprintln!("Directory {} is truly empty", normalized_path);
                 // Directory is truly empty
                 let placeholder = container(
                     text("(empty)")
