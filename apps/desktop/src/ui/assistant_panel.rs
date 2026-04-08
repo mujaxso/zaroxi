@@ -1,8 +1,9 @@
-use iced::{Element, Length, widget::{button, column, container, row, scrollable, text, text_input}};
+use iced::{Element, Length, Color, widget::{button, column, container, row, scrollable, text, text_input}};
 use iced::widget::text_input;
 use crate::message::Message;
 use crate::state::App;
 use super::style::StyleHelpers;
+use crate::theme::SemanticColors;
 
 pub fn assistant_panel(app: &App) -> Element<'_, Message> {
     let style = StyleHelpers::new(app.theme);
@@ -80,23 +81,77 @@ pub fn assistant_panel(app: &App) -> Element<'_, Message> {
         .padding(12)
     );
     
+    struct AssistantInputStyle {
+        colors: SemanticColors,
+    }
+    
+    impl iced::widget::text_input::StyleSheet for AssistantInputStyle {
+        type Style = iced::Theme;
+        
+        fn active(&self, _style: &Self::Style) -> iced::widget::text_input::Appearance {
+            iced::widget::text_input::Appearance {
+                background: self.colors.input_background.into(),
+                border: iced::Border {
+                    color: self.colors.border,
+                    width: 1.0,
+                    radius: crate::ui::common::RADIUS_SM.into(),
+                },
+                icon_color: self.colors.text_muted,
+            }
+        }
+        
+        fn focused(&self, _style: &Self::Style) -> iced::widget::text_input::Appearance {
+            iced::widget::text_input::Appearance {
+                background: self.colors.input_background.into(),
+                border: iced::Border {
+                    color: self.colors.accent,
+                    width: 1.0,
+                    radius: crate::ui::common::RADIUS_SM.into(),
+                },
+                icon_color: self.colors.text_muted,
+            }
+        }
+        
+        fn placeholder_color(&self, _style: &Self::Style) -> Color {
+            self.colors.text_muted
+        }
+        
+        fn value_color(&self, _style: &Self::Style) -> Color {
+            self.colors.text_primary
+        }
+        
+        fn selection_color(&self, _style: &Self::Style) -> Color {
+            self.colors.accent_soft_background
+        }
+        
+        fn disabled_color(&self, _style: &Self::Style) -> Color {
+            self.colors.text_muted
+        }
+        
+        fn disabled(&self, _style: &Self::Style) -> iced::widget::text_input::Appearance {
+            iced::widget::text_input::Appearance {
+                background: self.colors.input_background.into(),
+                border: iced::Border {
+                    color: self.colors.border,
+                    width: 1.0,
+                    radius: crate::ui::common::RADIUS_SM.into(),
+                },
+                icon_color: self.colors.text_muted,
+            }
+        }
+    }
+    
+    let input_style = AssistantInputStyle {
+        colors: style.colors,
+    };
+    
     let input_area = container(
         column![
             text_input("Ask Neote AI...", &app.prompt_input)
                 .on_input(Message::PromptInputChanged)
                 .padding([12, 14])
                 .width(Length::Fill)
-                .style(iced::theme::TextInput::Custom(Box::new(move |_theme| {
-                    text_input::Appearance {
-                        background: style.colors.input_background.into(),
-                        border: iced::Border {
-                            color: style.colors.border,
-                            width: 1.0,
-                            radius: crate::ui::common::RADIUS_SM.into(),
-                        },
-                        icon_color: style.colors.text_muted,
-                    }
-                }))),
+                .style(iced::theme::TextInput::Custom(Box::new(input_style))),
             row![
                 button("Send")
                     .on_press(Message::SendPrompt)
