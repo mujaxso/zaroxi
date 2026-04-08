@@ -74,11 +74,37 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
             header,
             container(editor_content)
                 .width(Length::Fill)
-                .height(Length::Fill),
+                .height(Length::Fill)
+                .style(iced::theme::Container::Custom(Box::new(move |theme| {
+                    container::Appearance {
+                        background: Some(iced::Background::Color(match theme {
+                            iced::Theme::Dark => Color::from_rgb(0.08, 0.08, 0.10),
+                            _ => Color::from_rgb(1.0, 1.0, 1.0),
+                        })),
+                        border: iced::Border::default(),
+                        ..Default::default()
+                    }
+                }))),
         ]
     )
     .width(Length::Fill)
     .height(Length::Fill)
-    .style(iced::theme::Container::Box)
+    .style(iced::theme::Container::Custom(Box::new(move |theme| {
+        container::Appearance {
+            background: Some(iced::Background::Color(match theme {
+                iced::Theme::Dark => Color::from_rgb(0.10, 0.10, 0.12),
+                _ => Color::from_rgb(0.98, 0.98, 0.98),
+            })),
+            border: iced::Border {
+                color: match theme {
+                    iced::Theme::Dark => Color::from_rgb(0.2, 0.2, 0.25),
+                    _ => Color::from_rgb(0.8, 0.8, 0.8),
+                },
+                width: 1.0,
+                radius: 0.0.into(),
+            },
+            ..Default::default()
+        }
+    })))
     .into()
 }

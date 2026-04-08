@@ -91,21 +91,21 @@ pub fn ide_layout<'a>(
 }
 
 fn top_bar<'a>(workspace_path: &'a str, is_dirty: bool) -> Element<'a, Message> {
-    // We need to get the theme colors, but this function doesn't have access to them
-    // We'll use the theme from the outer scope or use default colors
-    // For now, we'll keep the colors but make them more vibrant
+    // Use theme colors from the outer scope
+    // Since we can't access them directly, we'll use a more IDE-like approach
+    // For now, use colors that match IDE conventions
     let status_indicator: Element<_> = if is_dirty {
         row![
-            text("●").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(255, 200, 50))),
-            text("Unsaved").size(12)
+            text("●").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(255, 180, 0))),
+            text("Unsaved").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(220, 220, 220)))
         ]
         .spacing(4)
         .align_items(Alignment::Center)
         .into()
     } else {
         row![
-            text("✓").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(50, 220, 100))),
-            text("Saved").size(12)
+            text("✓").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(0, 200, 100))),
+            text("Saved").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(180, 180, 180)))
         ]
         .spacing(4)
         .align_items(Alignment::Center)
@@ -183,15 +183,15 @@ fn activity_rail<'a>(active_activity: Activity) -> Element<'a, Message> {
                 Message::ActivitySelected(activity)
             };
             
-            // Active indicator
+            // Active indicator - More visible for IDE
             let active_indicator: Element<_> = if is_active {
                 struct ActiveIndicatorStyle;
                 impl iced::widget::container::StyleSheet for ActiveIndicatorStyle {
                     type Style = iced::Theme;
-                        
+                            
                     fn appearance(&self, _style: &Self::Style) -> iced::widget::container::Appearance {
                         iced::widget::container::Appearance {
-                            background: Some(iced::Color::from_rgb(0.35, 0.60, 0.95).into()),
+                            background: Some(iced::Color::from_rgb(0.35, 0.65, 1.0).into()),
                             border: iced::Border::default(),
                             shadow: Default::default(),
                             text_color: None,
@@ -199,11 +199,11 @@ fn activity_rail<'a>(active_activity: Activity) -> Element<'a, Message> {
                     }
                 }
                 let container = container(
-                    iced::widget::Space::new(Length::Fixed(3.0), Length::Fixed(24.0))
+                    iced::widget::Space::new(Length::Fixed(3.0), Length::Fixed(32.0))
                 )
                 .style(iced::theme::Container::Custom(Box::new(ActiveIndicatorStyle)))
                 .width(Length::Fixed(3.0))
-                .height(Length::Fixed(24.0));
+                .height(Length::Fixed(32.0));
                 container.into()
             } else {
                 iced::widget::Space::new(Length::Fixed(0.0), Length::Fixed(0.0)).into()
@@ -653,17 +653,17 @@ fn ai_panel<'a>(prompt_input: &'a str) -> Element<'a, Message> {
         iced::widget::horizontal_rule(1),
         scrollable(
             column![
-                // Welcome card
+                // Welcome card - More solid for IDE
                 {
                     struct WelcomeCardStyle;
                     impl iced::widget::container::StyleSheet for WelcomeCardStyle {
                         type Style = iced::Theme;
-                        
+                
                         fn appearance(&self, _style: &Self::Style) -> iced::widget::container::Appearance {
                             iced::widget::container::Appearance {
-                                background: Some(iced::Color::from_rgba(100.0/255.0, 160.0/255.0, 255.0/255.0, 0.08).into()),
+                                background: Some(iced::Color::from_rgb(0.12, 0.12, 0.16).into()),
                                 border: iced::Border {
-                                    color: iced::Color::from_rgb(100.0/255.0, 160.0/255.0, 255.0/255.0),
+                                    color: iced::Color::from_rgb(0.25, 0.45, 0.85),
                                     width: 1.0,
                                     radius: 8.0.into(),
                                 },
@@ -676,13 +676,13 @@ fn ai_panel<'a>(prompt_input: &'a str) -> Element<'a, Message> {
                         column![
                             row![
                                 text("🤖").size(20),
-                                text("Neote AI").size(16),
+                                text("Neote AI").size(16).style(iced::theme::Text::Color(iced::Color::from_rgb8(220, 220, 255))),
                             ]
                             .spacing(8)
                             .align_items(Alignment::Center),
                             text("Ask questions about your code, get explanations, refactor suggestions, and more.")
                                 .size(13)
-                                .style(iced::theme::Text::Color(iced::Color::from_rgb8(180, 180, 190))),
+                                .style(iced::theme::Text::Color(iced::Color::from_rgb8(180, 190, 210))),
                         ]
                         .spacing(10)
                         .padding(20)
@@ -1163,9 +1163,9 @@ fn status_bar<'a>(
             
             fn appearance(&self, _style: &Self::Style) -> iced::widget::container::Appearance {
                 iced::widget::container::Appearance {
-                    background: Some(iced::Color::from_rgba(255.0/255.0, 120.0/255.0, 120.0/255.0, 0.1).into()),
+                    background: Some(iced::Color::from_rgb(0.25, 0.08, 0.08).into()),
                     border: iced::Border {
-                        color: iced::Color::from_rgb(255.0/255.0, 120.0/255.0, 120.0/255.0),
+                        color: iced::Color::from_rgb(0.8, 0.2, 0.2),
                         width: 1.0,
                         radius: 4.0.into(),
                     },
@@ -1176,8 +1176,8 @@ fn status_bar<'a>(
         }
         container(
             row![
-                text("⚠").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(255, 120, 120))),
-                text(err).size(11).style(iced::theme::Text::Color(iced::Color::from_rgb8(255, 160, 160))),
+                text("⚠").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(255, 100, 100))),
+                text(err).size(11).style(iced::theme::Text::Color(iced::Color::from_rgb8(255, 180, 180))),
             ]
             .spacing(6)
             .align_items(Alignment::Center)
