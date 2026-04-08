@@ -18,5 +18,6 @@ pub fn view(app: &App) -> Element<'_, Message> {
         app.editor_buffer.as_ref(),
         app.is_file_too_large_for_editor,
         &app.file_loading_state,
+        app.theme,
     )
 }

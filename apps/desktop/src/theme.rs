@@ -1,5 +1,4 @@
 use iced::{Color, Theme};
-use iced::theme::{Palette, SemanticOverrides};
 
 /// Design system tokens for Neote IDE
 #[derive(Debug, Clone, Copy)]
@@ -177,42 +176,12 @@ pub fn current_colors(theme: NeoteTheme) -> SemanticColors {
     theme.colors()
 }
 
-/// Helper to create container styles
-pub mod container {
-    use iced::{Color, Theme};
-    use iced::widget::container::{Appearance, StyleSheet};
-    
-    pub struct Panel;
-    
-    impl StyleSheet for Panel {
-        type Style = Theme;
-        
-        fn appearance(&self, theme: &Self::Style) -> Appearance {
-            let palette = theme.palette();
-            Appearance {
-                background: Some(palette.background.into()),
-                border_color: palette.background,
-                border_width: 0.0,
-                border_radius: 0.0.into(),
-                text_color: None,
-            }
-        }
-    }
-    
-    pub struct Elevated;
-    
-    impl StyleSheet for Elevated {
-        type Style = Theme;
-        
-        fn appearance(&self, theme: &Self::Style) -> Appearance {
-            let palette = theme.palette();
-            Appearance {
-                background: Some(palette.background.into()),
-                border_color: Color::from_rgba(0.0, 0.0, 0.0, 0.1),
-                border_width: 1.0,
-                border_radius: 6.0.into(),
-                text_color: None,
-            }
-        }
-    }
-}
+```
+Now, let's run a quick test to see if there are any remaining issues. However, I can't run commands, so I'll trust these changes should fix most compilation errors.
+
+Let me also check if there are any other references to `theme::Button::` in layout.rs that need to be fixed. Since there are many, I'll create a few more SEARCH/REPLACE blocks for common patterns:
+
+apps/desktop/src/ui/layout.rs
+```rust
+<<<<<<< SEARCH
+                theme::Button::Primary

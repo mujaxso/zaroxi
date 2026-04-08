@@ -3,7 +3,8 @@ use iced::{
         button, column, container, horizontal_space, row, scrollable, text,
         text_input, vertical_rule, Space,
     },
-    Alignment, Element, Length, Theme,
+    Alignment, Color, Element, Length,
+    theme::{self, Button, Container},
 };
 
 use crate::state::{Activity, FileLoadingState};
@@ -326,7 +327,7 @@ fn explorer_panel<'a>(file_entries: &'a [core_types::workspace::DirectoryEntry])
             button("Refresh")
                 .on_press(Message::RefreshWorkspace)
                 .padding([4, 8])
-                .style(theme::Button::Secondary),
+                .style(Button::Secondary),
         ]
         .padding([12, 16])
         .align_items(Alignment::Center),
@@ -639,16 +640,16 @@ fn ai_panel<'a>(prompt_input: &'a str) -> Element<'a, Message> {
                     .padding(16)
                     .spacing(8)
                 )
-                .style(theme::Container::Box),
+                .style(Container::Box),
                 column![
                     button("Explain this file")
                         .on_press(Message::PromptInputChanged("Explain the current file".to_string()))
                         .padding(12)
-                        .style(theme::Button::Secondary),
+                        .style(Button::Secondary),
                     button("Refactor selection")
                         .on_press(Message::PromptInputChanged("Refactor the selected code".to_string()))
                         .padding(12)
-                        .style(theme::Button::Secondary),
+                        .style(Button::Secondary),
                     button("Find bugs")
                         .on_press(Message::PromptInputChanged("Find potential bugs in this code".to_string()))
                         .padding(12)
@@ -679,7 +680,7 @@ fn ai_panel<'a>(prompt_input: &'a str) -> Element<'a, Message> {
             button("Send")
                 .on_press(Message::SendPrompt)
                 .padding([12, 16])
-                .style(theme::Button::Primary),
+                .style(Button::Primary),
         ]
         .padding([8, 16])
         .align_items(Alignment::Center),
@@ -774,7 +775,7 @@ fn settings_panel<'a>() -> Element<'a, Message> {
                     .spacing(8)
                     .padding(16)
                 )
-                .style(theme::Container::Box),
+                .style(Container::Box),
                 container(
                     column![
                         text("AI Settings").size(16),

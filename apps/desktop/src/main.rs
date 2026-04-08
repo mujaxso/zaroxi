@@ -28,7 +28,7 @@ fn main() -> iced::Result {
         // Enable antialiasing for better text rendering
         antialiasing: true,
         default_font: iced::font::Font::MONOSPACE,
-        default_text_size: 14.0,
+        default_text_size: iced::Pixels(14.0),
         ..Default::default()
     })
 }
