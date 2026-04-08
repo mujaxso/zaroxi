@@ -14,22 +14,33 @@ pub fn list_directory(path: &str) -> Result<Vec<DirectoryEntry>, String> {
     }
 
     let mut entries = Vec::new();
-    for entry in fs::read_dir(dir_path).map_err(|e| format!("Failed to read directory: {}", e))? {
-        let entry = entry.map_err(|e| format!("Failed to read entry: {}", e))?;
-        let path = entry.path();
-        let name = entry
-            .file_name()
-            .into_string()
-            .map_err(|_| "Invalid UTF-8 in filename".to_string())?;
-        
-        let is_dir = path.is_dir();
-        let path_str = path.to_string_lossy().to_string();
-        
-        entries.push(DirectoryEntry {
-            path: path_str,
-            name,
-            is_dir,
-        });
+    // Use a stack for depth-first traversal
+    let mut stack = vec![dir_path.to_path_buf()];
+    
+    while let Some(current_path) = stack.pop() {
+        // Read the current directory
+        for entry in fs::read_dir(&current_path).map_err(|e| format!("Failed to read directory: {}", e))? {
+            let entry = entry.map_err(|e| format!("Failed to read entry: {}", e))?;
+            let path = entry.path();
+            let name = entry
+                .file_name()
+                .into_string()
+                .map_err(|_| "Invalid UTF-8 in filename".to_string())?;
+            
+            let is_dir = path.is_dir();
+            let path_str = path.to_string_lossy().to_string();
+            
+            entries.push(DirectoryEntry {
+                path: path_str,
+                name,
+                is_dir,
+            });
+            
+            // If it's a directory, add to stack for further traversal
+            if is_dir {
+                stack.push(path);
+            }
+        }
     }
     
     // Sort directories first, then files
