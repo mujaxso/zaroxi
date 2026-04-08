@@ -1,4 +1,5 @@
 use iced::{Element, Length, widget::{button, column, container, row, scrollable, text, text_input}};
+use iced::widget::text_input;
 use crate::message::Message;
 use crate::state::App;
 use super::style::StyleHelpers;
@@ -84,7 +85,18 @@ pub fn assistant_panel(app: &App) -> Element<'_, Message> {
             text_input("Ask Neote AI...", &app.prompt_input)
                 .on_input(Message::PromptInputChanged)
                 .padding([12, 14])
-                .width(Length::Fill),
+                .width(Length::Fill)
+                .style(iced::theme::TextInput::Custom(Box::new(move |_theme| {
+                    text_input::Appearance {
+                        background: style.colors.input_background.into(),
+                        border: iced::Border {
+                            color: style.colors.border,
+                            width: 1.0,
+                            radius: crate::ui::common::RADIUS_SM.into(),
+                        },
+                        icon_color: style.colors.text_muted,
+                    }
+                }))),
             row![
                 button("Send")
                     .on_press(Message::SendPrompt)
@@ -116,6 +128,16 @@ pub fn assistant_panel(app: &App) -> Element<'_, Message> {
     )
     .width(Length::Fill)
     .height(Length::Fill)
-    .style(iced::theme::Container::Box)
+    .style(iced::theme::Container::Custom(Box::new(move |_theme| {
+        container::Appearance {
+            background: Some(style.colors.panel_background.into()),
+            border: iced::Border {
+                color: style.colors.border,
+                width: 1.0,
+                radius: 0.0.into(),
+            },
+            ..Default::default()
+        }
+    })))
     .into()
 }

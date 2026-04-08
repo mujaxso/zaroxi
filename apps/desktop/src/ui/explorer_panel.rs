@@ -53,8 +53,8 @@ pub fn explorer_panel(app: &App) -> Element<'_, Message> {
                 let text_color = if is_selected {
                     style.colors.text_on_accent
                 } else if entry.is_dir {
-                    // Make directories more visible
-                    iced::Color::from_rgb(0.7, 0.8, 1.0)
+                    // Make directories more visible with accent color
+                    style.colors.accent
                 } else {
                     // Make file text more readable
                     style.colors.text_secondary
@@ -139,6 +139,16 @@ pub fn explorer_panel(app: &App) -> Element<'_, Message> {
     )
     .width(Length::Fill)
     .height(Length::Fill)
-    .style(iced::theme::Container::Box)
+    .style(iced::theme::Container::Custom(Box::new(move |_theme| {
+        container::Appearance {
+            background: Some(style.colors.panel_background.into()),
+            border: iced::Border {
+                color: style.colors.border,
+                width: 1.0,
+                radius: 0.0.into(),
+            },
+            ..Default::default()
+        }
+    })))
     .into()
 }
