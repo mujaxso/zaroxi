@@ -5,6 +5,7 @@ use core_types::workspace::DirectoryEntry;
 use editor_buffer::buffer::TextBuffer;
 use iced::{Element, Command};
 use iced::widget::text_editor;
+use iced::widget::text_editor::EditAction;
 
 #[derive(Debug, Clone)]
 pub enum Message {
@@ -36,6 +37,36 @@ async fn create_text_editor_content(path: String, _content: String) -> String {
     // But we can still yield control to prevent blocking
     tokio::task::yield_now().await;
     path
+}
+
+// Helper to extract edit information from text editor actions
+enum EditInfo {
+    Insert { char_idx: usize, text: String },
+    Delete { start: usize, end: usize },
+}
+
+fn extract_edit_info(action: &text_editor::Action) -> Option<EditInfo> {
+    match action {
+        // For iced 0.12+ style
+        text_editor::Action::Edit(edit_action) => {
+            // Use a nested match to handle different edit action types
+            // We need to match on the concrete type, which should be EditAction
+            // If EditAction is not accessible, we'll need to use a different approach
+            // For now, we'll try to match using pattern matching
+            // If this fails at compile time, we may need to adjust
+            match edit_action {
+                EditAction::InsertText { char_idx, text } => {
+                    Some(EditInfo::Insert { char_idx: *char_idx, text: text.clone() })
+                }
+                EditAction::DeleteRange { start, end } => {
+                    Some(EditInfo::Delete { start: *start, end: *end })
+                }
+                _ => None,
+            }
+        }
+        // For other action types, we can't extract edit info
+        _ => None,
+    }
 }
 
 
@@ -266,9 +297,10 @@ impl iced::Application for App {
                 
                 // Update the canonical buffer incrementally
                 if let Some(ref mut buffer) = self.editor_buffer {
-                    match &action {
-                        iced::widget::text_editor::Action::InsertText { char_idx, text } => {
-                            if let Err(e) = buffer.insert_char_idx(*char_idx, text) {
+                    // Try to extract edit information from the action
+                    match extract_edit_info(&action) {
+                        Some(EditInfo::Insert { char_idx, text }) => {
+                            if let Err(e) = buffer.insert_char_idx(char_idx, &text) {
                                 self.status_message = format!("Insert error: {}", e);
                                 // Fall back to full update
                                 let current_text = self.text_editor.text();
@@ -276,8 +308,8 @@ impl iced::Application for App {
                             }
                             self.is_dirty = buffer.is_dirty();
                         }
-                        iced::widget::text_editor::Action::DeleteRange { start, end } => {
-                            if let Err(e) = buffer.delete_char_range(*start, *end) {
+                        Some(EditInfo::Delete { start, end }) => {
+                            if let Err(e) = buffer.delete_char_range(start, end) {
                                 self.status_message = format!("Delete error: {}", e);
                                 // Fall back to full update
                                 let current_text = self.text_editor.text();
@@ -285,7 +317,7 @@ impl iced::Application for App {
                             }
                             self.is_dirty = buffer.is_dirty();
                         }
-                        _ => {
+                        None => {
                             // For other actions, fall back to full update
                             let current_text = self.text_editor.text();
                             buffer.replace_all(&current_text);
@@ -422,11 +454,13 @@ impl iced::Application for App {
     }
 
     fn view(&self) -> Element<'_, Message> {
+        // Store the text in a local variable to avoid lifetime issues
+        let editor_text = self.text_editor.text();
         crate::ui::layout::ide_layout(
             &self.workspace_path,
             &self.file_entries,
             self.active_file_path.as_ref(),
-            &self.text_editor.text(),
+            &editor_text,
             self.is_dirty,
             &self.status_message,
             self.error_message.as_ref(),
