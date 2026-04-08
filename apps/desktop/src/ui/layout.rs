@@ -47,7 +47,7 @@ pub fn ide_layout<'a>(
         activity_rail,
         vertical_rule(1),
         // Left panel (explorer) - flexible width
-        container(left_panel_with_expanded(file_entries, active_activity, _expanded_directories))
+        container(left_panel_with_expanded(file_entries, active_activity, _expanded_directories, workspace_path))
             .width(Length::FillPortion(2))
             .height(Length::Fill),
         vertical_rule(1),
@@ -184,9 +184,10 @@ fn left_panel_with_expanded<'a>(
     file_entries: &'a [core_types::workspace::DirectoryEntry],
     active_activity: Activity,
     _expanded_directories: &'a std::collections::HashSet<String>,
+    workspace_path: &'a str,
 ) -> Element<'a, Message> {
     match active_activity {
-        Activity::Explorer => explorer_panel_with_expanded(file_entries, _expanded_directories),
+        Activity::Explorer => explorer_panel_with_expanded(file_entries, _expanded_directories, workspace_path),
         Activity::Search => search_panel(),
         Activity::SourceControl => terminal_panel(),
         Activity::Settings => settings_panel(),
@@ -732,6 +733,7 @@ fn settings_panel<'a>() -> Element<'a, Message> {
 fn explorer_panel_with_expanded<'a>(
     file_entries: &'a [core_types::workspace::DirectoryEntry],
     expanded_directories: &'a std::collections::HashSet<String>,
+    workspace_path: &'a str,
 ) -> Element<'a, Message> {
     // Build a tree structure from the flat list of entries
     // We'll use indices to avoid lifetime issues
@@ -739,29 +741,28 @@ fn explorer_panel_with_expanded<'a>(
     let mut children_map: std::collections::HashMap<String, Vec<usize>> = 
         std::collections::HashMap::new();
     
-    // First, collect all entries
+    // Use the provided workspace path
+    let workspace_root = normalize_path(workspace_path);
+    
+    // Build children map: parent path -> indices of children
     for (i, entry) in file_entries.iter().enumerate() {
-        // Find the parent path
         let path = std::path::Path::new(&entry.path);
         if let Some(parent) = path.parent() {
-            // Normalize the parent path
             let parent_str = normalize_path(&parent.to_string_lossy());
             children_map.entry(parent_str).or_insert_with(Vec::new).push(i);
         } else {
-            // This is a root entry
+            // Entry has no parent (root of filesystem)
             root_indices.push(i);
         }
     }
     
-    // Also add entries that are directly in the workspace root
-    // We need to identify entries whose parent is the workspace root
-    // For simplicity, let's find entries with parent "." or empty string
+    // Identify root entries: those whose parent is the workspace root
+    // Also include entries with no parent (already added above)
     for (i, entry) in file_entries.iter().enumerate() {
         let path = std::path::Path::new(&entry.path);
         if let Some(parent) = path.parent() {
-            let parent_str = parent.to_string_lossy();
-            if parent_str == "." || parent_str == "" {
-                // Check if not already in root_indices
+            let parent_str = normalize_path(&parent.to_string_lossy());
+            if parent_str == workspace_root {
                 if !root_indices.contains(&i) {
                     root_indices.push(i);
                 }
@@ -769,7 +770,23 @@ fn explorer_panel_with_expanded<'a>(
         }
     }
     
-    // If still no root entries, add all entries as root (fallback)
+    // If we still have no root entries, maybe all files are at workspace root
+    // Add entries whose parent is empty or "."
+    if root_indices.is_empty() {
+        for (i, entry) in file_entries.iter().enumerate() {
+            let path = std::path::Path::new(&entry.path);
+            if let Some(parent) = path.parent() {
+                let parent_str = parent.to_string_lossy();
+                if parent_str == "." || parent_str == "" {
+                    if !root_indices.contains(&i) {
+                        root_indices.push(i);
+                    }
+                }
+            }
+        }
+    }
+    
+    // Final fallback: if still empty, add all entries
     if root_indices.is_empty() {
         root_indices = (0..file_entries.len()).collect();
     }
@@ -949,6 +966,17 @@ fn render_directory_entry_with_indices<'a, 'b>(
                     depth + 1,
                 ));
             }
+        } else {
+            // Directory is empty or has no files (only subdirectories maybe)
+            // Add a placeholder element
+            let placeholder = container(
+                text("(empty)")
+                    .size(12)
+                    .style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150)))
+            )
+            .padding(iced::Padding::new((depth + 1) * 20 as f32 + 20.0))
+            .into();
+            elements.push(placeholder);
         }
     }
     
