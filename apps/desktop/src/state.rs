@@ -4,6 +4,8 @@ use core_types::workspace::DirectoryEntry;
 use editor_buffer::buffer::TextBuffer;
 use iced::widget::text_editor;
 
+use crate::theme::NeoteTheme;
+
 #[derive(Debug, Clone)]
 pub struct FileMetadata {
     pub path: String,
@@ -50,6 +52,8 @@ pub struct App {
     pub file_loading_state: FileLoadingState,
     // Track if current file was loaded in read-only mode
     pub is_file_read_only: bool,
+    // Theme
+    pub theme: NeoteTheme,
 }
 
 impl App {
@@ -72,6 +76,7 @@ impl App {
                 is_file_too_large_for_editor: false,
                 file_loading_state: FileLoadingState::Idle,
                 is_file_read_only: false,
+                theme: NeoteTheme::System,
             },
             iced::Command::none(),
         )

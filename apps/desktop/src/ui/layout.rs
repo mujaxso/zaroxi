@@ -1,14 +1,15 @@
 use iced::{
     widget::{
         button, column, container, horizontal_space, row, scrollable, text,
-        text_input, vertical_rule,
+        text_input, vertical_rule, Space,
     },
-    Alignment, Element, Length,
-    theme,
+    Alignment, Element, Length, Theme,
 };
 
 use crate::state::{Activity, FileLoadingState};
 use crate::message::Message;
+use crate::theme::NeoteTheme;
+use crate::ui::style::StyleHelpers;
 
 pub fn ide_layout<'a>(
     workspace_path: &'a str,
@@ -25,37 +26,60 @@ pub fn ide_layout<'a>(
     editor_buffer: Option<&'a editor_buffer::buffer::TextBuffer>,
     is_file_too_large_for_editor: bool,
     file_loading_state: &'a FileLoadingState,
+    theme: NeoteTheme,
 ) -> Element<'a, Message> {
+    let style = StyleHelpers::new(theme);
+    let colors = style.colors;
+    let tokens = style.tokens;
+    
     // Top bar
-    let top_bar = top_bar(workspace_path, is_dirty);
+    let top_bar = top_bar(workspace_path, is_dirty, theme);
 
     // Activity rail
-    let activity_rail = activity_rail(active_activity);
+    let activity_rail = activity_rail(active_activity, theme);
 
     // Main content area
     let ai_panel_widget: Element<_> = if ai_panel_visible {
-        container(ai_panel(prompt_input))
+        container(ai_panel(prompt_input, theme))
             .width(Length::FillPortion(3))
             .height(Length::Fill)
-            .style(theme::Container::Box)
+            .style(crate::ui::style::theme::panel_container(theme))
             .into()
     } else {
-        container(horizontal_space()).width(Length::Fixed(0.0)).into()
+        container(Space::new(Length::Fixed(0.0), Length::Fixed(0.0)))
+            .width(Length::Fixed(0.0))
+            .into()
     };
 
     let main_content = row![
         // Activity rail
         activity_rail,
-        vertical_rule(1),
+        vertical_rule(1).style(iced::theme::Rule::Custom(Box::new(move || {
+            iced::widget::rule::Appearance {
+                color: colors.divider,
+                width: 1,
+                radius: 0.0.into(),
+                fill_mode: iced::widget::rule::FillMode::Full,
+            }
+        }))),
         // Left panel (explorer) - flexible width
-        container(left_panel_with_expanded(file_entries, active_activity, _expanded_directories, workspace_path))
+        container(left_panel_with_expanded(file_entries, active_activity, _expanded_directories, workspace_path, theme))
             .width(Length::FillPortion(2))
-            .height(Length::Fill),
-        vertical_rule(1),
+            .height(Length::Fill)
+            .style(crate::ui::style::theme::panel_container(theme)),
+        vertical_rule(1).style(iced::theme::Rule::Custom(Box::new(move || {
+            iced::widget::rule::Appearance {
+                color: colors.divider,
+                width: 1,
+                radius: 0.0.into(),
+                fill_mode: iced::widget::rule::FillMode::Full,
+            }
+        }))),
         // Editor area - takes most space
-        container(editor_panel(active_file_path, text_editor, is_dirty, editor_buffer, is_file_too_large_for_editor, file_loading_state))
+        container(editor_panel(active_file_path, text_editor, is_dirty, editor_buffer, is_file_too_large_for_editor, file_loading_state, theme))
             .width(Length::FillPortion(5))
-            .height(Length::Fill),
+            .height(Length::Fill)
+            .style(crate::ui::style::theme::elevated_container(theme)),
         // AI panel (conditionally visible) - flexible width
         ai_panel_widget,
     ]
@@ -67,14 +91,29 @@ pub fn ide_layout<'a>(
         error_message,
         active_file_path,
         file_entries.len(),
+        theme,
     );
 
     // Combine everything
     let content = column![
         top_bar,
-        iced::widget::horizontal_rule(1),
+        iced::widget::horizontal_rule(1).style(iced::theme::Rule::Custom(Box::new(move || {
+            iced::widget::rule::Appearance {
+                color: colors.divider,
+                width: 1,
+                radius: 0.0.into(),
+                fill_mode: iced::widget::rule::FillMode::Full,
+            }
+        }))),
         main_content,
-        iced::widget::horizontal_rule(1),
+        iced::widget::horizontal_rule(1).style(iced::theme::Rule::Custom(Box::new(move || {
+            iced::widget::rule::Appearance {
+                color: colors.divider,
+                width: 1,
+                radius: 0.0.into(),
+                fill_mode: iced::widget::rule::FillMode::Full,
+            }
+        }))),
         status_bar,
     ]
     .height(Length::Fill);
@@ -82,7 +121,15 @@ pub fn ide_layout<'a>(
     container(content)
         .width(Length::Fill)
         .height(Length::Fill)
-        .style(theme::Container::Box)
+        .style(iced::theme::Container::Custom(Box::new(move || {
+            iced::widget::container::Appearance {
+                background: Some(colors.app_background.into()),
+                border_color: Color::TRANSPARENT,
+                border_width: 0.0,
+                border_radius: 0.0.into(),
+                text_color: None,
+            }
+        })))
         .into()
 }
 

@@ -5,11 +5,12 @@ mod ui;
 mod events;
 mod message;
 mod state;
+mod theme;
 mod update;
 mod view;
 
 use app::App;
-use iced::{Application, Settings};
+use iced::{Application, Settings, Theme};
 
 fn main() -> iced::Result {
     // Force X11 backend to avoid Wayland issues
@@ -26,6 +27,8 @@ fn main() -> iced::Result {
         },
         // Enable antialiasing for better text rendering
         antialiasing: true,
+        default_font: iced::font::Font::MONOSPACE,
+        default_text_size: 14.0,
         ..Default::default()
     })
 }

@@ -1,6 +1,7 @@
 // Re-export the main types from the crate root modules
 pub use crate::message::Message;
 pub use crate::state::App;
+pub use crate::theme::NeoteTheme;
 pub use crate::update::update;
 pub use crate::view::view;
 
@@ -18,6 +19,10 @@ impl iced::Application for App {
 
     fn title(&self) -> String {
         String::from("Neote")
+    }
+
+    fn theme(&self) -> iced::Theme {
+        self.theme.to_iced_theme()
     }
 
     fn update(&mut self, message: Message) -> Command<Message> {
