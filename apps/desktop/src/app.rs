@@ -13,8 +13,6 @@ pub enum Message {
     WorkspaceLoaded(Result<Vec<DirectoryEntry>, String>),
     FileSelected(usize),
     FileLoaded(Result<(String, String, TextBuffer), String>),
-    TextEditorChunkLoaded(String), // Just the path
-    TextEditorContentCreated(String), // Path for final content creation
     EditorContentChanged(text_editor::Action),
     SaveFile,
     FileSaved(Result<(), String>),
@@ -28,29 +26,6 @@ pub enum Message {
     ToggleCommandPalette,
 }
 
-/// Load text editor content in chunks to avoid blocking the UI
-/// This function processes the file in chunks and yields control to keep UI responsive
-/// It returns just the path to signal completion
-async fn load_text_editor_chunked(path: String, content: String) -> String {
-    // Split content into lines
-    let lines: Vec<&str> = content.lines().collect();
-    let _total_lines = lines.len();
-    
-    // Process in chunks of 1000 lines to yield control
-    const CHUNK_SIZE: usize = 1000;
-    for (chunk_idx, _chunk) in lines.chunks(CHUNK_SIZE).enumerate() {
-        // Yield control every few chunks to keep UI responsive
-        if chunk_idx % 10 == 0 {
-            tokio::task::yield_now().await;
-        }
-    }
-    
-    // Add final newline if needed (we don't actually build content here)
-    // The content is already stored in self.editor_content
-    // We'll create the text_editor::Content in the update handler
-    
-    path
-}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Activity {
@@ -76,6 +51,8 @@ pub struct App {
     prompt_input: String,
     expanded_directories: std::collections::HashSet<String>,
     text_editor: text_editor::Content,
+    // Track if the current file is too large for the text editor
+    is_file_too_large_for_editor: bool,
 }
 
 impl iced::Application for App {
@@ -101,6 +78,7 @@ impl iced::Application for App {
                 prompt_input: String::new(),
                 expanded_directories: std::collections::HashSet::new(),
                 text_editor: text_editor::Content::new(),
+                is_file_too_large_for_editor: false,
             },
             Command::none(),
         )
@@ -229,26 +207,23 @@ impl iced::Application for App {
                             return Command::none();
                         }
                         
-                        // For files between 1MB and 5MB, show warning and process in chunks
+                        // For files larger than 1MB, mark as too large for editor
                         if file_size > WARNING_THRESHOLD {
+                            self.is_file_too_large_for_editor = true;
                             self.status_message = format!(
-                                "Processing large file ({} MB)...",
+                                "Large file ({} MB) opened in read-only mode",
                                 file_size / 1_000_000
                             );
-                            self.error_message = Some("Large file - processing in background".to_string());
-                            // Store the content and buffer
-                            self.editor_content = content.clone();
-                            self.editor_buffer = Some(buffer);
-                            
-                            // Start background processing (chunked loading)
-                            return Command::perform(
-                                load_text_editor_chunked(path, content),
-                                Message::TextEditorChunkLoaded
-                            );
+                            self.error_message = Some("File is large - opened in read-only mode".to_string());
+                        } else {
+                            self.is_file_too_large_for_editor = false;
+                            // For small files, create text editor content directly
+                            self.text_editor = text_editor::Content::with_text(&content);
+                            self.status_message = format!("Loaded: {} ({} bytes)", path, file_size);
+                            self.error_message = None;
                         }
                         
-                        // For small files, create text editor content directly
-                        self.text_editor = text_editor::Content::with_text(&content);
+                        // Always store content and buffer
                         self.editor_content = content.clone();
                         self.editor_buffer = Some(buffer);
                         self.is_dirty = false;
@@ -258,9 +233,6 @@ impl iced::Application for App {
                             let mut state = self.workspace_state.lock().unwrap();
                             state.open_buffer(&path, self.editor_content.clone());
                         }
-                        
-                        self.status_message = format!("Loaded: {} ({} bytes)", path, file_size);
-                        self.error_message = None;
                     }
                     Err(e) => {
                         self.error_message = Some(e);
@@ -270,43 +242,30 @@ impl iced::Application for App {
                 Command::none()
             }
             Message::EditorContentChanged(action) => {
+                // Don't process edits if the file is too large
+                if self.is_file_too_large_for_editor {
+                    self.status_message = "File is large - editing disabled".to_string();
+                    return Command::none();
+                }
+                
                 // First, perform the action on the text editor
                 self.text_editor.perform(action);
                 
-                // Try to update the buffer incrementally
-                let updated_incrementally = false;
-                let mut is_very_large_file = false;
+                // Update the buffer
                 if let Some(buffer) = &mut self.editor_buffer {
-                    // Check if the buffer is too large for incremental updates
-                    if buffer.is_very_large() {
-                        is_very_large_file = true;
-                        // For very large files, we might want to mark them as read-only
-                        // But for now, we'll just update with a full replacement
-                        buffer.replace_all(&self.text_editor.text());
-                        self.is_dirty = buffer.is_dirty();
-                    } else {
-                        // For now, always fall back to full replacement
-                        // TODO: Implement proper incremental updates by examining the action
-                        buffer.replace_all(&self.text_editor.text());
-                        self.is_dirty = buffer.is_dirty();
-                    }
+                    buffer.replace_all(&self.text_editor.text());
+                    self.is_dirty = buffer.is_dirty();
                 }
                 
-                // Update the editor content string only if needed
-                if !updated_incrementally {
-                    self.editor_content = self.text_editor.text().to_string();
-                }
+                // Update the editor content string
+                self.editor_content = self.text_editor.text().to_string();
                 
                 // Set status message
-                if is_very_large_file {
-                    self.status_message = "Very large file - editing may be slow".to_string();
+                self.status_message = if self.is_dirty {
+                    "File has unsaved changes".to_string()
                 } else {
-                    self.status_message = if self.is_dirty {
-                        "File has unsaved changes".to_string()
-                    } else {
-                        "All changes saved".to_string()
-                    };
-                }
+                    "All changes saved".to_string()
+                };
                 Command::none()
             }
             Message::SaveFile => {
@@ -411,35 +370,6 @@ impl iced::Application for App {
                 self.status_message = "Command palette (Ctrl+Shift+P) - coming soon".to_string();
                 Command::none()
             }
-            Message::TextEditorChunkLoaded(path) => {
-                // Update status to show we're creating the editor
-                self.status_message = format!("Creating editor for {}...", path);
-                // Force a UI update by returning a command that will trigger another message
-                Command::perform(
-                    async move {
-                        // Small delay to allow UI to update
-                        tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
-                        path
-                    },
-                    |path| Message::TextEditorContentCreated(path),
-                )
-            }
-            Message::TextEditorContentCreated(path) => {
-                // Create text editor content from the already loaded content
-                // This may block, but we've already yielded control
-                self.text_editor = text_editor::Content::with_text(&self.editor_content);
-                self.is_dirty = false;
-                
-                // Update workspace state
-                {
-                    let mut state = self.workspace_state.lock().unwrap();
-                    state.open_buffer(&path, self.editor_content.clone());
-                }
-                
-                self.status_message = format!("Loaded: {} ({} bytes)", path, self.editor_content.len());
-                self.error_message = None;
-                Command::none()
-            }
             Message::ToggleDirectory(path) => {
                 if self.expanded_directories.contains(&path) {
                     self.expanded_directories.remove(&path);
@@ -466,6 +396,7 @@ impl iced::Application for App {
             &self.expanded_directories,
             &self.text_editor,
             self.editor_buffer.as_ref(),
+            self.is_file_too_large_for_editor,
         )
     }
 

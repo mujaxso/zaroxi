@@ -23,6 +23,7 @@ pub fn ide_layout<'a>(
     _expanded_directories: &'a std::collections::HashSet<String>,
     text_editor: &'a iced::widget::text_editor::Content,
     editor_buffer: Option<&'a editor_buffer::buffer::TextBuffer>,
+    is_file_too_large_for_editor: bool,
 ) -> Element<'a, Message> {
     // Top bar
     let top_bar = top_bar(workspace_path, is_dirty);
@@ -51,7 +52,7 @@ pub fn ide_layout<'a>(
             .height(Length::Fill),
         vertical_rule(1),
         // Editor area - takes most space
-        container(editor_panel(active_file_path, text_editor, is_dirty, editor_buffer))
+        container(editor_panel(active_file_path, text_editor, is_dirty, editor_buffer, false))
             .width(Length::FillPortion(5))
             .height(Length::Fill),
         // AI panel (conditionally visible) - flexible width
@@ -292,6 +293,7 @@ fn editor_panel<'a>(
     text_editor: &'a iced::widget::text_editor::Content,
     is_dirty: bool,
     editor_buffer: Option<&'a editor_buffer::buffer::TextBuffer>,
+    is_file_too_large_for_editor: bool,
 ) -> Element<'a, Message> {
     let header = if let Some(path) = active_file_path {
         let mut status_elements = Vec::new();
@@ -316,9 +318,9 @@ fn editor_panel<'a>(
                         .into()
                 );
                 status_elements.push(horizontal_space().width(Length::Fixed(10.0)).into());
-            } else if buffer.is_large() {
+            } else if buffer.is_large() || is_file_too_large_for_editor {
                 status_elements.push(
-                    text("⚠ Large")
+                    text("⚠ Large (Read-Only)")
                         .size(12)
                         .style(iced::theme::Text::Color(iced::Color::from_rgb8(255, 200, 0)))
                         .into()
@@ -327,13 +329,15 @@ fn editor_panel<'a>(
             }
         }
         
-        // Dirty status
-        let status_text = if is_dirty {
-            text("● Unsaved").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(255, 165, 0)))
-        } else {
-            text("✓ Saved").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(0, 200, 0)))
-        };
-        status_elements.push(status_text.into());
+        // Dirty status (only show if not read-only)
+        if !is_file_too_large_for_editor {
+            let status_text = if is_dirty {
+                text("● Unsaved").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(255, 165, 0)))
+            } else {
+                text("✓ Saved").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(0, 200, 0)))
+            };
+            status_elements.push(status_text.into());
+        }
         
         row(status_elements)
             .padding([12, 16])
@@ -348,10 +352,7 @@ fn editor_panel<'a>(
     };
 
     // Check if we're loading a file
-    // Either no buffer yet, or buffer exists but text editor is empty (chunked loading)
-    let is_loading = active_file_path.is_some() && 
-        (editor_buffer.is_none() || 
-         (editor_buffer.is_some() && text_editor.text().is_empty()));
+    let is_loading = active_file_path.is_some() && editor_buffer.is_none();
     
     let editor_content = if is_loading {
         // Show loading indicator
@@ -373,7 +374,19 @@ fn editor_panel<'a>(
         .height(Length::Fill)
         .into()
     } else if active_file_path.is_some() {
-        super::editor::editor(text_editor)
+        if is_file_too_large_for_editor {
+            // Show read-only text view for large files
+            let content = editor_buffer.map(|b| b.text()).unwrap_or_default();
+            scrollable(
+                text(content)
+                    .font(iced::Font::MONOSPACE)
+                    .size(14)
+            )
+            .height(Length::Fill)
+            .into()
+        } else {
+            super::editor::editor(text_editor)
+        }
     } else {
         container(
             column![
