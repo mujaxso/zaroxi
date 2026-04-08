@@ -93,16 +93,16 @@ pub fn ide_layout<'a>(
 fn top_bar<'a>(workspace_path: &'a str, is_dirty: bool) -> Element<'a, Message> {
     let status_indicator: Element<_> = if is_dirty {
         row![
-            text("●").size(14).style(iced::theme::Text::Color(iced::Color::from_rgb8(255, 165, 0))),
-            text("Unsaved").size(14)
+            text("●").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(255, 180, 0))),
+            text("Unsaved").size(12)
         ]
         .spacing(4)
         .align_items(Alignment::Center)
         .into()
     } else {
         row![
-            text("✓").size(14).style(iced::theme::Text::Color(iced::Color::from_rgb8(0, 200, 0))),
-            text("Saved").size(14)
+            text("✓").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(0, 210, 0))),
+            text("Saved").size(12)
         ]
         .spacing(4)
         .align_items(Alignment::Center)
@@ -110,28 +110,47 @@ fn top_bar<'a>(workspace_path: &'a str, is_dirty: bool) -> Element<'a, Message> 
     };
 
     row![
-        text("Neote").size(20).style(iced::theme::Text::Color(iced::Color::from_rgb8(100, 150, 255))),
+        // Logo/brand
+        row![
+            text("N").size(20).style(iced::theme::Text::Color(iced::Color::from_rgb8(100, 160, 255))),
+            text("eote").size(20).style(iced::theme::Text::Color(iced::Color::from_rgb8(220, 220, 230))),
+        ]
+        .spacing(0)
+        .align_items(Alignment::Center),
         horizontal_space(),
-        text_input("Workspace path", workspace_path)
-            .on_input(Message::WorkspacePathChanged)
-            .padding(8)
-            .width(Length::FillPortion(3)),
-        button("Open")
-            .on_press(Message::OpenWorkspace)
-            .padding([8, 12])
-            .style(iced::theme::Button::Secondary),
-        button("Refresh")
-            .on_press(Message::RefreshWorkspace)
-            .padding([8, 12])
-            .style(iced::theme::Button::Secondary),
+        // Workspace path input
+        container(
+            text_input("Workspace path", workspace_path)
+                .on_input(Message::WorkspacePathChanged)
+                .padding([10, 12])
+                .width(Length::Fill)
+        )
+        .width(Length::FillPortion(3))
+        .style(iced::theme::Container::Box),
+        // Buttons
+        row![
+            button("Open")
+                .on_press(Message::OpenWorkspace)
+                .padding([8, 14])
+                .style(iced::theme::Button::Secondary),
+            button("Refresh")
+                .on_press(Message::RefreshWorkspace)
+                .padding([8, 14])
+                .style(iced::theme::Button::Secondary),
+        ]
+        .spacing(8),
         horizontal_space(),
-        status_indicator,
+        // Status indicator
+        container(status_indicator)
+            .padding([6, 12])
+            .style(iced::theme::Container::Box),
+        // Save button
         button("Save")
             .on_press(Message::SaveFile)
-            .padding([8, 16])
+            .padding([10, 18])
             .style(iced::theme::Button::Primary),
     ]
-    .padding([8, 16])
+    .padding([12, 20])
     .align_items(Alignment::Center)
     .into()
 }
@@ -160,28 +179,56 @@ fn activity_rail<'a>(active_activity: Activity) -> Element<'a, Message> {
             } else {
                 Message::ActivitySelected(activity)
             };
-            container(
-                button(
-                    column![
-                        text(icon).size(20),
-                        text(label).size(12),
-                    ]
-                    .align_items(Alignment::Center)
-                    .spacing(4),
+            
+            // Active indicator
+            let active_indicator = if is_active {
+                container(
+                    iced::widget::Space::new(Length::Fixed(3.0), Length::Fixed(24.0))
                 )
-                .on_press(message)
-                .padding(12)
-                .style(button_style),
+                .style(iced::theme::Container::Custom(Box::new(move || {
+                    iced::widget::container::Appearance {
+                        background: Some(iced::Color::from_rgb(0.35, 0.60, 0.95).into()),
+                        border: iced::Border::default(),
+                        shadow: Default::default(),
+                        text_color: None,
+                    }
+                })))
+                .width(Length::Fixed(3.0))
+                .height(Length::Fixed(24.0))
+                .into()
+            } else {
+                iced::widget::Space::new(Length::Fixed(0.0), Length::Fixed(0.0)).into()
+            };
+            
+            container(
+                row![
+                    active_indicator,
+                    container(
+                        button(
+                            column![
+                                text(icon).size(18),
+                                text(label).size(11),
+                            ]
+                            .align_items(Alignment::Center)
+                            .spacing(2),
+                        )
+                        .on_press(message)
+                        .padding([12, 8])
+                        .style(button_style)
+                    )
+                    .width(Length::Fixed(64.0))
+                    .center_x()
+                ]
+                .align_items(Alignment::Center)
             )
             .width(Length::Fixed(70.0))
-            .center_x()
             .into()
         })
         .collect();
 
     column(children)
-        .spacing(8)
-        .padding([16, 8])
+        .spacing(4)
+        .padding([16, 4])
         .into()
 }
 
@@ -277,16 +324,21 @@ fn explorer_panel<'a>(file_entries: &'a [core_types::workspace::DirectoryEntry])
     };
 
     column![
-        row![
-            text("EXPLORER").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150))),
-            horizontal_space(),
-            button("Refresh")
-                .on_press(Message::RefreshWorkspace)
-                .padding([4, 8])
-                .style(iced::theme::Button::Secondary),
-        ]
-        .padding([12, 16])
-        .align_items(Alignment::Center),
+        container(
+            row![
+                text("EXPLORER").size(11)
+                    .style(iced::theme::Text::Color(iced::Color::from_rgb8(160, 160, 170)))
+                    .font(iced::Font::with_weight(iced::Font::DEFAULT, iced::font::Weight::Bold)),
+                horizontal_space(),
+                button("⟳")
+                    .on_press(Message::RefreshWorkspace)
+                    .padding([6, 8])
+                    .style(iced::theme::Button::Secondary),
+            ]
+            .align_items(Alignment::Center)
+        )
+        .padding([14, 16])
+        .width(Length::Fill),
         iced::widget::horizontal_rule(1),
         content,
     ]
@@ -1092,11 +1144,27 @@ fn status_bar<'a>(
     file_count: usize,
 ) -> Element<'a, Message> {
     let error_widget: Element<_> = if let Some(err) = error_message {
-        row![
-            text(" | Error:").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(255, 100, 100))),
-            text(err).size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(255, 150, 150))),
-        ]
-        .spacing(4)
+        container(
+            row![
+                text("⚠").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(255, 120, 120))),
+                text(err).size(11).style(iced::theme::Text::Color(iced::Color::from_rgb8(255, 160, 160))),
+            ]
+            .spacing(6)
+            .align_items(Alignment::Center)
+        )
+        .padding([4, 8])
+        .style(iced::theme::Container::Custom(Box::new(|| {
+            iced::widget::container::Appearance {
+                background: Some(iced::Color::from_rgba(255, 120, 120, 0.1).into()),
+                border: iced::Border {
+                    color: iced::Color::from_rgb8(255, 120, 120),
+                    width: 1.0,
+                    radius: 4.0.into(),
+                },
+                shadow: Default::default(),
+                text_color: None,
+            }
+        })))
         .into()
     } else {
         horizontal_space().into()
@@ -1125,33 +1193,75 @@ fn status_bar<'a>(
     let status_indicator: Element<_> = if status_message.contains("Loading") || status_message.contains("loading") {
         row![
             text("⏳").size(12),
-            text(status_message).size(12),
+            text(status_message).size(11),
         ]
-        .spacing(4)
+        .spacing(6)
+        .align_items(Alignment::Center)
         .into()
     } else {
-        text(status_message).size(12).into()
+        container(
+            text(status_message).size(11)
+        )
+        .padding([4, 8])
+        .style(iced::theme::Container::Box)
+        .into()
     };
 
     row![
-        text(format!("📁 {} files", file_count)).size(12),
+        // File count
+        container(
+            row![
+                text("📁").size(12),
+                text(format!("{}", file_count)).size(11)
+                    .style(iced::theme::Text::Color(iced::Color::from_rgb8(180, 180, 200))),
+            ]
+            .spacing(6)
+            .align_items(Alignment::Center)
+        )
+        .padding([4, 8])
+        .style(iced::theme::Container::Box),
         horizontal_space(),
+        // Active file
         if let Some(path) = active_file_path {
-            // Show only the file name, not the full path
             let file_name = path.split('/').last().unwrap_or(path);
-            text(file_name).size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(180, 180, 255)))
+            container(
+                text(file_name).size(11)
+                    .style(iced::theme::Text::Color(iced::Color::from_rgb8(180, 180, 255)))
+            )
+            .padding([4, 8])
+            .style(iced::theme::Container::Box)
+            .into()
         } else {
-            text("No active file").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150)))
+            container(
+                text("No active file").size(11)
+                    .style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 170)))
+            )
+            .padding([4, 8])
+            .style(iced::theme::Container::Box)
+            .into()
         },
         horizontal_space(),
+        // Status indicator
         status_indicator,
+        // Error widget
         error_widget,
         horizontal_space(),
-        text("Ln 1, Col 1").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150))),
-        horizontal_space(),
-        text(file_type).size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(200, 200, 100))),
+        // Line and column
+        container(
+            text("Ln 1, Col 1").size(11)
+                .style(iced::theme::Text::Color(iced::Color::from_rgb8(160, 160, 180)))
+        )
+        .padding([4, 8])
+        .style(iced::theme::Container::Box),
+        // File type
+        container(
+            text(file_type).size(11)
+                .style(iced::theme::Text::Color(iced::Color::from_rgb8(200, 200, 120)))
+        )
+        .padding([4, 8])
+        .style(iced::theme::Container::Box),
     ]
-    .padding([8, 16])
+    .padding([8, 12])
     .align_items(Alignment::Center)
     .into()
 }
