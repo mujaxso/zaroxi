@@ -1,5 +1,4 @@
 use iced::{Element, Length, Color, widget::{button, column, container, row, scrollable, text, text_input}};
-use iced::widget::text_input;
 use crate::message::Message;
 use crate::state::App;
 use super::style::StyleHelpers;
@@ -26,6 +25,30 @@ pub fn assistant_panel(app: &App) -> Element<'_, Message> {
     .padding([8, 12])
     .width(Length::Fill);
     
+    struct WelcomeCardStyle {
+        colors: SemanticColors,
+    }
+    
+    impl iced::widget::container::StyleSheet for WelcomeCardStyle {
+        type Style = iced::Theme;
+        
+        fn appearance(&self, _style: &Self::Style) -> iced::widget::container::Appearance {
+            container::Appearance {
+                background: Some(self.colors.elevated_panel_background.into()),
+                border: iced::Border {
+                    color: self.colors.accent,
+                    width: 1.0,
+                    radius: crate::ui::common::RADIUS_MD.into(),
+                },
+                ..Default::default()
+            }
+        }
+    }
+    
+    let welcome_card_style = WelcomeCardStyle {
+        colors: style.colors,
+    };
+    
     let welcome_card = container(
         column![
             row![
@@ -42,17 +65,7 @@ pub fn assistant_panel(app: &App) -> Element<'_, Message> {
         .spacing(8)
         .padding(16)
     )
-    .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
-        container::Appearance {
-            background: Some(style.colors.elevated_panel_background.into()),
-            border: iced::Border {
-                color: style.colors.accent,
-                width: 1.0,
-                radius: crate::ui::common::RADIUS_MD.into(),
-            },
-            ..Default::default()
-        }
-    })));
+    .style(iced::theme::Container::Custom(Box::new(welcome_card_style)));
     
     let quick_actions = container(
         column![
@@ -165,6 +178,30 @@ pub fn assistant_panel(app: &App) -> Element<'_, Message> {
     .padding(16)
     .width(Length::Fill);
     
+    struct AssistantPanelContainerStyle {
+        colors: SemanticColors,
+    }
+    
+    impl iced::widget::container::StyleSheet for AssistantPanelContainerStyle {
+        type Style = iced::Theme;
+        
+        fn appearance(&self, _style: &Self::Style) -> iced::widget::container::Appearance {
+            container::Appearance {
+                background: Some(self.colors.panel_background.into()),
+                border: iced::Border {
+                    color: self.colors.border,
+                    width: 1.0,
+                    radius: 0.0.into(),
+                },
+                ..Default::default()
+            }
+        }
+    }
+    
+    let container_style = AssistantPanelContainerStyle {
+        colors: style.colors,
+    };
+    
     container(
         column![
             header,
@@ -183,16 +220,6 @@ pub fn assistant_panel(app: &App) -> Element<'_, Message> {
     )
     .width(Length::Fill)
     .height(Length::Fill)
-    .style(iced::theme::Container::Custom(Box::new(move |_theme| {
-        container::Appearance {
-            background: Some(style.colors.panel_background.into()),
-            border: iced::Border {
-                color: style.colors.border,
-                width: 1.0,
-                radius: 0.0.into(),
-            },
-            ..Default::default()
-        }
-    })))
+    .style(iced::theme::Container::Custom(Box::new(container_style)))
     .into()
 }

@@ -2,6 +2,7 @@ use iced::{Element, Length, widget::{button, column, container, row, scrollable,
 use crate::message::Message;
 use crate::state::App;
 use super::style::StyleHelpers;
+use crate::theme::SemanticColors;
 
 pub fn explorer_panel(app: &App) -> Element<'_, Message> {
     let style = StyleHelpers::new(app.theme);
@@ -129,6 +130,30 @@ pub fn explorer_panel(app: &App) -> Element<'_, Message> {
         .into()
     };
     
+    struct ExplorerPanelContainerStyle {
+        colors: SemanticColors,
+    }
+    
+    impl iced::widget::container::StyleSheet for ExplorerPanelContainerStyle {
+        type Style = iced::Theme;
+        
+        fn appearance(&self, _style: &Self::Style) -> iced::widget::container::Appearance {
+            container::Appearance {
+                background: Some(self.colors.panel_background.into()),
+                border: iced::Border {
+                    color: self.colors.border,
+                    width: 1.0,
+                    radius: 0.0.into(),
+                },
+                ..Default::default()
+            }
+        }
+    }
+    
+    let container_style = ExplorerPanelContainerStyle {
+        colors: style.colors,
+    };
+    
     container(
         column![
             header,
@@ -139,16 +164,6 @@ pub fn explorer_panel(app: &App) -> Element<'_, Message> {
     )
     .width(Length::Fill)
     .height(Length::Fill)
-    .style(iced::theme::Container::Custom(Box::new(move |_theme| {
-        container::Appearance {
-            background: Some(style.colors.panel_background.into()),
-            border: iced::Border {
-                color: style.colors.border,
-                width: 1.0,
-                radius: 0.0.into(),
-            },
-            ..Default::default()
-        }
-    })))
+    .style(iced::theme::Container::Custom(Box::new(container_style)))
     .into()
 }
