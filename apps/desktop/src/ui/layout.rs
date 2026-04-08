@@ -7,7 +7,8 @@ use iced::{
     theme,
 };
 
-use crate::app::{Activity, Message};
+use crate::state::{Activity, FileLoadingState};
+use crate::message::Message;
 
 pub fn ide_layout<'a>(
     workspace_path: &'a str,
@@ -23,7 +24,7 @@ pub fn ide_layout<'a>(
     text_editor: &'a iced::widget::text_editor::Content,
     editor_buffer: Option<&'a editor_buffer::buffer::TextBuffer>,
     is_file_too_large_for_editor: bool,
-    file_loading_state: &'a crate::app::FileLoadingState,
+    file_loading_state: &'a FileLoadingState,
 ) -> Element<'a, Message> {
     // Top bar
     let top_bar = top_bar(workspace_path, is_dirty);
@@ -366,7 +367,7 @@ fn editor_panel<'a>(
 
     // Check loading state
     let editor_content = match file_loading_state {
-        crate::app::FileLoadingState::LoadingMetadata { path } => {
+        FileLoadingState::LoadingMetadata { path } => {
             container(
                 column![
                     text("Checking file size...")
@@ -385,7 +386,7 @@ fn editor_panel<'a>(
             .height(Length::Fill)
             .into()
         }
-        crate::app::FileLoadingState::LoadingContent { path, size } => {
+        FileLoadingState::LoadingContent { path, size } => {
             let size_mb = size / (1024 * 1024);
             let size_kb = size / 1024;
             let size_str = if size_mb > 0 {
@@ -414,7 +415,7 @@ fn editor_panel<'a>(
             .height(Length::Fill)
             .into()
         }
-        crate::app::FileLoadingState::LargeFileWarning { path, size } => {
+        FileLoadingState::LargeFileWarning { path, size } => {
             let size_mb = size / (1024 * 1024);
             container(
                 column![
@@ -437,7 +438,7 @@ fn editor_panel<'a>(
             .height(Length::Fill)
             .into()
         }
-        crate::app::FileLoadingState::VeryLargeFileWarning { path, size } => {
+        FileLoadingState::VeryLargeFileWarning { path, size } => {
             let size_mb = size / (1024 * 1024);
             container(
                 column![
@@ -460,7 +461,7 @@ fn editor_panel<'a>(
             .height(Length::Fill)
             .into()
         }
-        crate::app::FileLoadingState::ReadOnlyPreview { path, size } => {
+        FileLoadingState::ReadOnlyPreview { path, size } => {
             let size_mb = size / (1024 * 1024);
             container(
                 column![
@@ -483,7 +484,7 @@ fn editor_panel<'a>(
             .height(Length::Fill)
             .into()
         }
-        crate::app::FileLoadingState::Idle => {
+        FileLoadingState::Idle => {
             // Original logic for when not loading
             if active_file_path.is_some() {
                 if is_file_too_large_for_editor {
