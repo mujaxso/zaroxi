@@ -38,33 +38,6 @@ async fn create_text_editor_content(path: String, _content: String) -> String {
     path
 }
 
-// Helper to extract edit information from text editor actions
-enum EditInfo {
-    Insert { char_idx: usize, text: String },
-    Delete { start: usize, end: usize },
-}
-
-fn extract_edit_info(action: &text_editor::Action) -> Option<EditInfo> {
-    match action {
-        // For iced 0.12+ style
-        text_editor::Action::Edit(edit_action) => {
-            // Use a nested match to handle different edit action types
-            // We need to match on the concrete type, which should be EditAction
-            // Use the full path to avoid import issues
-            match edit_action {
-                text_editor::EditAction::InsertText { char_idx, text } => {
-                    Some(EditInfo::Insert { char_idx: *char_idx, text: text.clone() })
-                }
-                text_editor::EditAction::DeleteRange { start, end } => {
-                    Some(EditInfo::Delete { start: *start, end: *end })
-                }
-                _ => None,
-            }
-        }
-        // For other action types, we can't extract edit info
-        _ => None,
-    }
-}
 
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -292,36 +265,13 @@ impl iced::Application for App {
                 // First, perform the action on the text editor
                 self.text_editor.perform(action.clone());
                 
-                // Update the canonical buffer incrementally
+                // Update the canonical buffer with full update for now
+                // TODO: Implement incremental updates when EditAction is accessible
                 if let Some(ref mut buffer) = self.editor_buffer {
-                    // Try to extract edit information from the action
-                    match extract_edit_info(&action) {
-                        Some(EditInfo::Insert { char_idx, text }) => {
-                            if let Err(e) = buffer.insert_char_idx(char_idx, &text) {
-                                self.status_message = format!("Insert error: {}", e);
-                                // Fall back to full update
-                                let current_text = self.text_editor.text();
-                                buffer.replace_all(&current_text);
-                            }
-                            self.is_dirty = buffer.is_dirty();
-                        }
-                        Some(EditInfo::Delete { start, end }) => {
-                            if let Err(e) = buffer.delete_char_range(start, end) {
-                                self.status_message = format!("Delete error: {}", e);
-                                // Fall back to full update
-                                let current_text = self.text_editor.text();
-                                buffer.replace_all(&current_text);
-                            }
-                            self.is_dirty = buffer.is_dirty();
-                        }
-                        None => {
-                            // For other actions, fall back to full update
-                            let current_text = self.text_editor.text();
-                            buffer.replace_all(&current_text);
-                            self.is_dirty = buffer.is_dirty();
-                            self.status_message = "Used full update for other action".to_string();
-                        }
-                    }
+                    let current_text = self.text_editor.text();
+                    buffer.replace_all(&current_text);
+                    self.is_dirty = buffer.is_dirty();
+                    self.status_message = "Updated buffer".to_string();
                 }
                 Command::none()
             }
@@ -451,13 +401,10 @@ impl iced::Application for App {
     }
 
     fn view(&self) -> Element<'_, Message> {
-        // Store the text in a local variable to avoid lifetime issues
-        let editor_text = self.text_editor.text();
         crate::ui::layout::ide_layout(
             &self.workspace_path,
             &self.file_entries,
             self.active_file_path.as_ref(),
-            &editor_text,
             self.is_dirty,
             &self.status_message,
             self.error_message.as_ref(),
