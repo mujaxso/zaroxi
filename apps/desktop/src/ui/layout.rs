@@ -11,6 +11,19 @@ use crate::message::Message;
 use crate::theme::NeoteTheme;
 use crate::ui::style::StyleHelpers;
 
+// Helper function to normalize paths for consistent comparison
+fn normalize_path(path: &str) -> String {
+    use std::path::Path;
+    let path = Path::new(path);
+    // Remove trailing separators and normalize
+    let mut normalized = path.to_string_lossy().to_string();
+    // Remove trailing separator if present
+    while normalized.ends_with(std::path::MAIN_SEPARATOR) {
+        normalized.pop();
+    }
+    normalized
+}
+
 pub fn ide_layout<'a>(
     workspace_path: &'a str,
     file_entries: &'a [core_types::workspace::DirectoryEntry],
@@ -907,7 +920,9 @@ pub fn explorer_panel_with_expanded<'a>(
         
         for (depth, node) in visible_nodes {
             let entry = &node.entry;
-            let is_expanded = expanded_directories.contains(&entry.path);
+            // Normalize the path for comparison (update.rs normalizes paths)
+            let normalized_path = normalize_path(&entry.path);
+            let is_expanded = expanded_directories.contains(&normalized_path);
             
             // Determine icon
             let icon = if entry.is_dir {

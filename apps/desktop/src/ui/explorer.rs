@@ -1,6 +1,17 @@
 use std::collections::HashSet;
 use core_types::workspace::DirectoryEntry;
 
+/// Helper function to normalize paths for consistent comparison
+fn normalize_path(path: &str) -> String {
+    use std::path::Path;
+    let path = Path::new(path);
+    let mut normalized = path.to_string_lossy().to_string();
+    while normalized.ends_with(std::path::MAIN_SEPARATOR) {
+        normalized.pop();
+    }
+    normalized
+}
+
 /// Represents a node in the file tree
 #[derive(Debug, Clone)]
 pub struct TreeNode {
@@ -16,17 +27,6 @@ pub fn build_tree(
     // Sort entries by path for consistent ordering
     let mut sorted_entries = entries.to_vec();
     sorted_entries.sort_by(|a, b| a.path.cmp(&b.path));
-    
-    // Helper function to normalize paths
-    fn normalize_path(path: &str) -> String {
-        use std::path::Path;
-        let path = Path::new(path);
-        let mut normalized = path.to_string_lossy().to_string();
-        while normalized.ends_with(std::path::MAIN_SEPARATOR) {
-            normalized.pop();
-        }
-        normalized
-    }
     
     let workspace_root = if workspace_path.is_empty() {
         "".to_string()
@@ -85,20 +85,24 @@ pub fn build_tree(
 }
 
 /// Get visible tree nodes based on expanded directories
-pub fn get_visible_nodes(
-    tree: &[TreeNode],
-    expanded_directories: &HashSet<String>,
+pub fn get_visible_nodes<'a>(
+    tree: &'a [TreeNode],
+    expanded_directories: &'a HashSet<String>,
     depth: usize,
-) -> Vec<(usize, &TreeNode)> {
+) -> Vec<(usize, &'a TreeNode)> {
     let mut visible = Vec::new();
     
     for node in tree {
         visible.push((depth, node));
         
         // If this is a directory and it's expanded, add its children
-        if node.entry.is_dir && expanded_directories.contains(&node.entry.path) {
-            let child_visible = get_visible_nodes(&node.children, expanded_directories, depth + 1);
-            visible.extend(child_visible);
+        // Normalize the path for comparison (update.rs normalizes paths)
+        if node.entry.is_dir {
+            let normalized_path = normalize_path(&node.entry.path);
+            if expanded_directories.contains(&normalized_path) {
+                let child_visible = get_visible_nodes(&node.children, expanded_directories, depth + 1);
+                visible.extend(child_visible);
+            }
         }
     }
     
