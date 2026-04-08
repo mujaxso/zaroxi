@@ -293,16 +293,34 @@ impl iced::Application for App {
                         self.status_message = format!("Checking {}...", entry.name);
                         self.error_message = None;
                         
-                        // Request metadata check
-                        Message::FileOpenRequested(path)
+                        // Request metadata check by returning a command that will trigger FileOpenRequested
+                        // We need to return a Command, not a Message directly
+                        Command::perform(
+                            async move {
+                                // Small delay to ensure UI updates first
+                                tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
+                                Message::FileOpenRequested(path)
+                            },
+                            |msg| msg,
+                        )
                     } else {
-                        Message::ToggleDirectory(entry.path.clone())
+                        // For directories, toggle expansion
+                        let path = entry.path.clone();
+                        self.expanded_directories.insert(path.clone());
+                        Command::perform(
+                            async move {
+                                Message::ToggleDirectory(path)
+                            },
+                            |msg| msg,
+                        )
                     }
                 } else {
-                    Message::ToggleDirectory("".to_string())
+                    Command::none()
                 }
             }
             Message::FileOpenRequested(path) => {
+                // This message is now handled directly in FileSelected
+                // But keep it for compatibility
                 self.file_loading_state = FileLoadingState::LoadingMetadata { 
                     path: path.clone() 
                 };
