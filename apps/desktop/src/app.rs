@@ -43,18 +43,8 @@ pub enum Message {
 pub struct FileMetadata {
     pub path: String,
     pub size: u64,
+    // is_binary is kept for future use
     pub is_binary: bool,
-}
-
-/// Create text editor content in a background task to avoid blocking the UI
-async fn create_text_editor_content(path: String, _content: String) -> String {
-    // This runs in a background thread
-    // We don't actually create text_editor::Content here because it's not Send
-    // Instead, we just process the content to keep the UI responsive
-    // The actual content creation will happen on the main thread
-    // But we can still yield control to prevent blocking
-    tokio::task::yield_now().await;
-    path
 }
 
 // Helper to extract edit information from text editor action
@@ -189,6 +179,8 @@ pub struct App {
     is_file_too_large_for_editor: bool,
     // New: File loading state
     file_loading_state: FileLoadingState,
+    // Track if current file was loaded in read-only mode
+    is_file_read_only: bool,
 }
 
 // New: File loading states
@@ -203,7 +195,6 @@ pub enum FileLoadingState {
 }
 
 // New: File size thresholds
-const SMALL_FILE_THRESHOLD: u64 = 100 * 1024; // 100KB
 const LARGE_FILE_THRESHOLD: u64 = 5 * 1024 * 1024; // 5MB
 const VERY_LARGE_FILE_THRESHOLD: u64 = 50 * 1024 * 1024; // 50MB
 
@@ -231,6 +222,7 @@ impl iced::Application for App {
                 text_editor: text_editor::Content::new(),
                 is_file_too_large_for_editor: false,
                 file_loading_state: FileLoadingState::Idle,
+                is_file_read_only: false,
             },
             Command::none(),
         )
@@ -292,6 +284,7 @@ impl iced::Application for App {
                         };
                         self.status_message = format!("Checking {}...", entry.name);
                         self.error_message = None;
+                        self.is_file_read_only = false;
                         
                         // Load metadata directly in a background task
                         Command::perform(
@@ -337,43 +330,9 @@ impl iced::Application for App {
                     Command::none()
                 }
             }
-            Message::FileOpenRequested(path) => {
-                // This message is now handled directly in FileSelected
-                // But keep it for compatibility
-                self.file_loading_state = FileLoadingState::LoadingMetadata { 
-                    path: path.clone() 
-                };
-                self.status_message = format!("Checking file size...");
-                
-                Command::perform(
-                    async move {
-                        // Get file metadata in a background task
-                        let result = tokio::task::spawn_blocking(move || {
-                            match std::fs::metadata(&path) {
-                                Ok(metadata) => {
-                                    // Simple binary detection: check first few bytes
-                                    let is_binary = match std::fs::read(&path) {
-                                        Ok(bytes) => bytes.iter().take(1024).any(|&b| b == 0),
-                                        Err(_) => false,
-                                    };
-                                    Ok(FileMetadata {
-                                        path: path.clone(),
-                                        size: metadata.len(),
-                                        is_binary,
-                                    })
-                                }
-                                Err(e) => Err(format!("Failed to read file metadata: {}", e)),
-                            }
-                        }).await;
-                        
-                        match result {
-                            Ok(Ok(metadata)) => Message::FileMetadataLoaded(Ok(metadata)),
-                            Ok(Err(e)) => Message::FileMetadataLoaded(Err(e)),
-                            Err(join_err) => Message::FileMetadataLoaded(Err(format!("Failed to join task: {}", join_err))),
-                        }
-                    },
-                    |result| result,
-                )
+            // FileOpenRequested is no longer used, but keep the match arm for completeness
+            Message::FileOpenRequested(_path) => {
+                Command::none()
             }
             Message::FileMetadataLoaded(result) => {
                 match result {
@@ -487,6 +446,7 @@ impl iced::Application for App {
                 self.status_message = format!("Opening in read-only mode...");
                 self.active_file_path = Some(path.clone());
                 self.is_file_too_large_for_editor = true;
+                self.is_file_read_only = true;
                 
                 // For very large files, only load a preview
                 Command::perform(
@@ -538,39 +498,38 @@ impl iced::Application for App {
                         
                         let file_size = content.len();
                         
-                        // Determine if we're in read-only mode based on the loading state
-                        match &self.file_loading_state {
-                            FileLoadingState::ReadOnlyPreview { .. } => {
-                                self.is_file_too_large_for_editor = true;
+                        // Use the read-only flag to determine how to handle the file
+                        if self.is_file_read_only {
+                            self.is_file_too_large_for_editor = true;
+                            self.status_message = format!(
+                                "Very large file opened in read-only preview ({} bytes shown)",
+                                file_size
+                            );
+                            // For read-only preview, show the content directly
+                            self.text_editor = text_editor::Content::with_text(&format!(
+                                "// Read-only preview (first 100KB)\n// File is very large\n\n{}",
+                                content
+                            ));
+                            // Reset the flag for next time
+                            self.is_file_read_only = false;
+                        } else {
+                            // Check thresholds for normal files
+                            if file_size > LARGE_FILE_THRESHOLD as usize {
                                 self.status_message = format!(
-                                    "Very large file opened in read-only preview ({} bytes shown)",
-                                    file_size
+                                    "Large file opened ({} MB) - editing enabled",
+                                    file_size / (1024 * 1024)
                                 );
-                                // For read-only preview, show the content directly
-                                self.text_editor = text_editor::Content::with_text(&format!(
-                                    "// Read-only preview (first 100KB)\n// File is very large\n\n{}",
-                                    content
-                                ));
+                                self.is_file_too_large_for_editor = false;
+                            } else {
+                                self.status_message = format!("File loaded: {} ({} bytes)", path, file_size);
+                                self.is_file_too_large_for_editor = false;
                             }
-                            _ => {
-                                // Check thresholds for normal files
-                                if file_size > LARGE_FILE_THRESHOLD as usize {
-                                    self.status_message = format!(
-                                        "Large file opened ({} MB) - editing enabled",
-                                        file_size / (1024 * 1024)
-                                    );
-                                    self.is_file_too_large_for_editor = false;
-                                } else {
-                                    self.status_message = format!("File loaded: {} ({} bytes)", path, file_size);
-                                    self.is_file_too_large_for_editor = false;
-                                }
-                                
-                                // Initialize editor content, but do it in a way that doesn't block
-                                // This is still synchronous, but for files under the threshold it should be fine
-                                if let Some(ref buffer) = self.editor_buffer {
-                                    let text = buffer.text();
-                                    self.text_editor = text_editor::Content::with_text(&text);
-                                }
+                            
+                            // Initialize editor content, but do it in a way that doesn't block
+                            // This is still synchronous, but for files under the threshold it should be fine
+                            if let Some(ref buffer) = self.editor_buffer {
+                                let text = buffer.text();
+                                self.text_editor = text_editor::Content::with_text(&text);
                             }
                         }
                         
@@ -585,6 +544,7 @@ impl iced::Application for App {
                     }
                     Err(e) => {
                         self.file_loading_state = FileLoadingState::Idle;
+                        self.is_file_read_only = false;
                         self.error_message = Some(e);
                         self.status_message = "Failed to load file".to_string();
                     }
@@ -743,11 +703,8 @@ impl iced::Application for App {
                 self.status_message = "Command palette (Ctrl+Shift+P) - coming soon".to_string();
                 Command::none()
             }
-            Message::TextEditorContentCreated(path) => {
+            Message::TextEditorContentCreated(_path) => {
                 // This message is no longer needed since we handle loading directly in FileLoaded
-                // But keep it for compatibility
-                self.status_message = format!("Loaded: {}", path);
-                self.error_message = None;
                 Command::none()
             }
             Message::ToggleDirectory(path) => {
