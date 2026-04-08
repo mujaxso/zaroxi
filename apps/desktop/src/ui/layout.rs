@@ -4,6 +4,7 @@ use iced::{
         text_input, vertical_rule, Space,
     },
     Alignment, Element, Length,
+    theme::Text,
 };
 
 use crate::state::{Activity, FileLoadingState};

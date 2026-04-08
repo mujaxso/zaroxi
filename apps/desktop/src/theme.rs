@@ -43,6 +43,11 @@ impl Default for DesignTokens {
     }
 }
 
+/// Helper to get current theme colors from app state
+pub fn current_colors(theme: NeoteTheme) -> SemanticColors {
+    theme.colors()
+}
+
 /// Semantic color roles for Neote IDE
 #[derive(Debug, Clone, Copy)]
 pub struct SemanticColors {
