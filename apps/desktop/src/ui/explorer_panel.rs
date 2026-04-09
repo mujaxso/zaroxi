@@ -26,6 +26,7 @@ pub fn explorer_panel<'a>(app: &'a App) -> Element<'a, Message> {
                 // New file button
                 button(
                     text("📄").size(if is_compact { 12 } else { 13 })
+                        .style(iced::theme::Text::Color(style.colors.text_secondary))
                 )
                 .on_press(Message::Explorer(ExplorerMessage::CreateFileRequested))
                 .padding(if is_compact { [2, 4] } else { [3, 6] })
@@ -33,6 +34,7 @@ pub fn explorer_panel<'a>(app: &'a App) -> Element<'a, Message> {
                 // New folder button
                 button(
                     text("📁").size(if is_compact { 12 } else { 13 })
+                        .style(iced::theme::Text::Color(style.colors.text_secondary))
                 )
                 .on_press(Message::Explorer(ExplorerMessage::CreateFolderRequested))
                 .padding(if is_compact { [2, 4] } else { [3, 6] })
@@ -40,6 +42,7 @@ pub fn explorer_panel<'a>(app: &'a App) -> Element<'a, Message> {
                 // Refresh button
                 button(
                     text("⟳").size(if is_compact { 12 } else { 13 })
+                        .style(iced::theme::Text::Color(style.colors.text_secondary))
                 )
                 .on_press(Message::Explorer(ExplorerMessage::Refresh))
                 .padding(if is_compact { [2, 4] } else { [3, 6] })
@@ -174,6 +177,15 @@ fn explorer_row(row: crate::explorer::state::VisibleRow, theme: NeoteTheme, is_c
         style.colors.text_secondary
     };
     
+    // Icon color - always use a visible color
+    let icon_color = if row.is_selected {
+        style.colors.text_on_accent
+    } else if row.is_dir {
+        style.colors.accent
+    } else {
+        style.colors.text_secondary
+    };
+    
     // Background color
     let background = if row.is_selected {
         style.colors.accent
@@ -192,9 +204,10 @@ fn explorer_row(row: crate::explorer::state::VisibleRow, theme: NeoteTheme, is_c
                 .size(9)
                 .style(iced::theme::Text::Color(style.colors.text_muted)),
             iced::widget::Space::with_width(Length::Fixed(4.0)),
-            // Icon
+            // Icon - with explicit color
             text(icon)
-                .size(if is_compact { 12 } else { 13 }),
+                .size(if is_compact { 12 } else { 13 })
+                .style(iced::theme::Text::Color(icon_color)),
             // Spacing between icon and name
             iced::widget::Space::with_width(Length::Fixed(6.0)),
             // File/folder name
@@ -205,16 +218,18 @@ fn explorer_row(row: crate::explorer::state::VisibleRow, theme: NeoteTheme, is_c
             iced::widget::horizontal_space(),
             if row.is_hovered || row.is_selected {
                 row![
-                    // Rename button
+                    // Rename button - with visible icon
                     button(
                         text("✏").size(10)
+                            .style(iced::theme::Text::Color(style.colors.text_secondary))
                     )
                     .on_press(Message::Explorer(ExplorerMessage::RenameRequested(row.path.clone())))
                     .padding([2, 4])
                     .style(iced::theme::Button::Secondary),
-                    // Delete button
+                    // Delete button - with visible icon
                     button(
                         text("🗑").size(10)
+                            .style(iced::theme::Text::Color(style.colors.text_secondary))
                     )
                     .on_press(Message::Explorer(ExplorerMessage::DeleteRequested(row.path.clone())))
                     .padding([2, 4])
@@ -234,9 +249,10 @@ fn explorer_row(row: crate::explorer::state::VisibleRow, theme: NeoteTheme, is_c
             iced::widget::Space::with_width(Length::Fixed(indent as f32)),
             // Space for missing chevron (files don't have chevrons)
             iced::widget::Space::with_width(Length::Fixed(16.0)),
-            // Icon
+            // Icon - with explicit color
             text(icon)
-                .size(if is_compact { 12 } else { 13 }),
+                .size(if is_compact { 12 } else { 13 })
+                .style(iced::theme::Text::Color(icon_color)),
             // Spacing between icon and name
             iced::widget::Space::with_width(Length::Fixed(6.0)),
             // File/folder name
@@ -247,16 +263,18 @@ fn explorer_row(row: crate::explorer::state::VisibleRow, theme: NeoteTheme, is_c
             iced::widget::horizontal_space(),
             if row.is_hovered || row.is_selected {
                 row![
-                    // Rename button
+                    // Rename button - with visible icon
                     button(
                         text("✏").size(10)
+                            .style(iced::theme::Text::Color(style.colors.text_secondary))
                     )
                     .on_press(Message::Explorer(ExplorerMessage::RenameRequested(row.path.clone())))
                     .padding([2, 4])
                     .style(iced::theme::Button::Secondary),
-                    // Delete button
+                    // Delete button - with visible icon
                     button(
                         text("🗑").size(10)
+                            .style(iced::theme::Text::Color(style.colors.text_secondary))
                     )
                     .on_press(Message::Explorer(ExplorerMessage::DeleteRequested(row.path.clone())))
                     .padding([2, 4])
@@ -336,6 +354,10 @@ fn inline_edit_row(app: &App, depth: usize, is_dir: bool) -> Element<'static, Me
     let indent = depth * 12;
     let icon = if is_dir { "📁" } else { "📄" };
     
+    // Create a simple style for the icon
+    // We'll use a default text color
+    let icon_color = iced::Color::from_rgb8(150, 150, 150);
+    
     let input = text_input("Name", &app.explorer_state.inline_edit_name)
         .on_input(|name| Message::Explorer(ExplorerMessage::InlineEditNameChanged(name)))
         .on_submit(Message::Explorer(ExplorerMessage::InlineEditConfirmed))
@@ -348,7 +370,8 @@ fn inline_edit_row(app: &App, depth: usize, is_dir: bool) -> Element<'static, Me
             // Space for chevron
             iced::widget::Space::with_width(Length::Fixed(16.0)),
             // Icon
-            text(icon).size(12),
+            text(icon).size(12)
+                .style(iced::theme::Text::Color(icon_color)),
             iced::widget::Space::with_width(Length::Fixed(6.0)),
             input,
         ]

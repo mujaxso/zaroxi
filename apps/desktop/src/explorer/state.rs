@@ -11,6 +11,8 @@ fn normalize_path(path: &PathBuf) -> PathBuf {
     while normalized.ends_with('/') || normalized.ends_with('\\') {
         normalized.pop();
     }
+    // Also convert to absolute path if possible, but for now just ensure consistency
+    // On Windows, we might want to handle case sensitivity, but for now keep as is
     PathBuf::from(normalized)
 }
 
@@ -57,17 +59,12 @@ impl ExplorerState {
     }
     
     pub fn toggle_directory(&mut self, path: PathBuf) {
-        // Normalize the path by removing any trailing separator
         let normalized_path = normalize_path(&path);
-        let normalized_str = normalized_path.to_string_lossy().to_string();
         
-        // Convert to PathBuf for storage
-        let path_buf = PathBuf::from(&normalized_str);
-        
-        if self.expanded_directories.contains(&path_buf) {
-            self.expanded_directories.remove(&path_buf);
+        if self.expanded_directories.contains(&normalized_path) {
+            self.expanded_directories.remove(&normalized_path);
         } else {
-            self.expanded_directories.insert(path_buf);
+            self.expanded_directories.insert(normalized_path);
         }
     }
     
@@ -78,10 +75,7 @@ impl ExplorerState {
     
     pub fn is_expanded(&self, path: &PathBuf) -> bool {
         let normalized_path = normalize_path(path);
-        let normalized_str = normalized_path.to_string_lossy().to_string();
-        let path_buf = PathBuf::from(&normalized_str);
-        
-        self.expanded_directories.contains(&path_buf)
+        self.expanded_directories.contains(&normalized_path)
     }
     
     pub fn is_selected(&self, path: &PathBuf) -> bool {
