@@ -6,7 +6,7 @@ use crate::theme::SemanticColors;
 use crate::explorer::actions::ExplorerMessage;
 use crate::explorer::state::InlineEditMode;
 
-pub fn explorer_panel(app: &App) -> Element<'_, Message> {
+pub fn explorer_panel<'a>(app: &'a App) -> Element<'a, Message> {
     let style = StyleHelpers::new(app.theme);
     
     let is_compact = matches!(app.layout_mode, crate::state::LayoutMode::Medium | crate::state::LayoutMode::Narrow);
@@ -154,7 +154,7 @@ pub fn explorer_panel(app: &App) -> Element<'_, Message> {
     .into()
 }
 
-fn explorer_row(app: &App, row: &crate::explorer::state::VisibleRow, style: &StyleHelpers, is_compact: bool) -> Element<'_, Message> {
+fn explorer_row<'a>(app: &'a App, row: &'a crate::explorer::state::VisibleRow, style: &'a StyleHelpers, is_compact: bool) -> Element<'a, Message> {
     let indent = row.depth * 12;
     
     // Choose icon based on type and state
@@ -330,7 +330,7 @@ fn explorer_row(app: &App, row: &crate::explorer::state::VisibleRow, style: &Sty
     .into()
 }
 
-fn inline_edit_row(app: &App, colors: SemanticColors, depth: usize, is_dir: bool) -> Element<'_, Message> {
+fn inline_edit_row<'a>(app: &'a App, _colors: SemanticColors, depth: usize, is_dir: bool) -> Element<'a, Message> {
     let indent = depth * 12;
     let icon = if is_dir { "📁" } else { "📄" };
     

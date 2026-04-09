@@ -529,7 +529,7 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                         async move {
                             match WorkspaceLoader::delete_item(&path_str) {
                                 Ok(_) => Message::Explorer(ExplorerMessage::Refresh),
-                                Err(e) => {
+                                Err(_e) => {
                                     // We need to return a message that can update the app's error state
                                     // For now, we'll trigger a refresh anyway, but in a real implementation
                                     // we'd want to show an error message

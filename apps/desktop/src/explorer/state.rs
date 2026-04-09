@@ -109,7 +109,9 @@ impl ExplorerState {
     }
     
     pub fn start_rename(&mut self, target: PathBuf) {
-        self.inline_edit = InlineEditMode::Rename { target };
+        // Clone target to avoid move issues
+        let target_clone = target.clone();
+        self.inline_edit = InlineEditMode::Rename { target: target_clone };
         // Set initial name to current name
         if let Some(node) = self.find_node(&target) {
             self.inline_edit_name = node.name.clone();
