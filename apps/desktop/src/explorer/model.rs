@@ -18,17 +18,34 @@ impl ExplorerNode {
         // Collect children
         let mut children = Vec::new();
         if is_dir {
-            for child_entry in all_entries {
-                let child_path = PathBuf::from(&child_entry.path);
-                // Check if this child is directly inside the current directory
-                if let Some(parent) = child_path.parent() {
-                    // Normalize paths for comparison
-                    let parent_normalized = parent.to_string_lossy().to_string();
-                    let path_normalized = path.to_string_lossy().to_string();
-                    if parent_normalized == path_normalized {
-                        children.push(ExplorerNode::from_directory_entry(child_entry, all_entries));
+            // First, collect all potential children
+            let mut child_entries: Vec<&DirectoryEntry> = all_entries
+                .iter()
+                .filter(|child_entry| {
+                    let child_path = PathBuf::from(&child_entry.path);
+                    if let Some(parent) = child_path.parent() {
+                        // Check if this child is directly inside the current directory
+                        parent == path
+                    } else {
+                        false
                     }
+                })
+                .collect();
+            
+            // Sort children: directories first, then files, both alphabetically
+            child_entries.sort_by(|a, b| {
+                // Directories first
+                if a.is_dir != b.is_dir {
+                    b.is_dir.cmp(&a.is_dir) // true (dir) comes before false (file)
+                } else {
+                    // Then alphabetically
+                    a.name.to_lowercase().cmp(&b.name.to_lowercase())
                 }
+            });
+            
+            // Recursively build child nodes
+            for child_entry in child_entries {
+                children.push(ExplorerNode::from_directory_entry(child_entry, all_entries));
             }
         }
         
@@ -42,32 +59,55 @@ impl ExplorerNode {
 }
 
 pub fn build_explorer_tree(entries: &[DirectoryEntry]) -> Vec<ExplorerNode> {
-    let mut root_nodes = Vec::new();
+    if entries.is_empty() {
+        return Vec::new();
+    }
     
-    // First, find all entries that don't have a parent in the list (i.e., are at root level)
+    // Find workspace root (the shortest path)
+    let workspace_root = entries
+        .iter()
+        .map(|e| PathBuf::from(&e.path))
+        .min_by_key(|p| p.components().count())
+        .unwrap_or_else(|| PathBuf::from(""));
+    
+    // Find root entries (those whose parent is the workspace root or don't have a parent in the list)
+    let mut root_entries: Vec<&DirectoryEntry> = Vec::new();
+    
     for entry in entries {
         let path = PathBuf::from(&entry.path);
-        let mut has_parent_in_list = false;
-        
-        for other_entry in entries {
-            if other_entry.path == entry.path {
-                continue;
-            }
-            let other_path = PathBuf::from(&other_entry.path);
-            // Check if other_entry is a parent of this entry
-            if let Some(parent) = path.parent() {
-                let parent_normalized = parent.to_string_lossy().to_string();
-                let other_path_normalized = other_path.to_string_lossy().to_string();
-                if parent_normalized == other_path_normalized {
-                    has_parent_in_list = true;
-                    break;
+        if let Some(parent) = path.parent() {
+            if parent == workspace_root {
+                root_entries.push(entry);
+            } else {
+                // Check if parent exists in entries
+                let parent_exists = entries.iter().any(|e| {
+                    PathBuf::from(&e.path) == parent
+                });
+                if !parent_exists {
+                    root_entries.push(entry);
                 }
             }
+        } else {
+            // Entry has no parent (shouldn't happen with proper paths)
+            root_entries.push(entry);
         }
-        
-        if !has_parent_in_list {
-            root_nodes.push(ExplorerNode::from_directory_entry(entry, entries));
+    }
+    
+    // Sort root entries: directories first, then files, both alphabetically
+    root_entries.sort_by(|a, b| {
+        // Directories first
+        if a.is_dir != b.is_dir {
+            b.is_dir.cmp(&a.is_dir) // true (dir) comes before false (file)
+        } else {
+            // Then alphabetically
+            a.name.to_lowercase().cmp(&b.name.to_lowercase())
         }
+    });
+    
+    // Build tree from root entries
+    let mut root_nodes = Vec::new();
+    for entry in root_entries {
+        root_nodes.push(ExplorerNode::from_directory_entry(entry, entries));
     }
     
     root_nodes

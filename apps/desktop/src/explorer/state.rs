@@ -5,12 +5,29 @@ use core_types::workspace::DirectoryEntry;
 
 // Helper function to normalize paths for consistent comparison
 fn normalize_path(path: &PathBuf) -> PathBuf {
-    let mut normalized = path.to_string_lossy().to_string();
-    // Remove trailing separator if present
-    while normalized.ends_with(std::path::MAIN_SEPARATOR) {
-        normalized.pop();
+    use std::path::Component;
+    
+    // Get the components and rebuild the path
+    let mut components: Vec<_> = path.components().collect();
+    
+    // Handle empty path
+    if components.is_empty() {
+        return PathBuf::new();
     }
-    PathBuf::from(normalized)
+    
+    // Rebuild path from components
+    let mut normalized = PathBuf::new();
+    for component in components {
+        normalized.push(component);
+    }
+    
+    // Convert to string and remove any trailing separator
+    let mut normalized_str = normalized.to_string_lossy().to_string();
+    while normalized_str.ends_with(std::path::MAIN_SEPARATOR) {
+        normalized_str.pop();
+    }
+    
+    PathBuf::from(normalized_str)
 }
 
 #[derive(Debug, Clone)]
@@ -50,7 +67,8 @@ impl ExplorerState {
     }
     
     pub fn select_file(&mut self, path: PathBuf) {
-        self.selected_file = Some(path);
+        let normalized_path = normalize_path(&path);
+        self.selected_file = Some(normalized_path);
     }
     
     pub fn is_expanded(&self, path: &PathBuf) -> bool {
@@ -59,7 +77,13 @@ impl ExplorerState {
     }
     
     pub fn is_selected(&self, path: &PathBuf) -> bool {
-        self.selected_file.as_ref() == Some(path)
+        if let Some(selected) = &self.selected_file {
+            let normalized_selected = normalize_path(selected);
+            let normalized_path = normalize_path(path);
+            normalized_selected == normalized_path
+        } else {
+            false
+        }
     }
     
     // Get visible rows for rendering
