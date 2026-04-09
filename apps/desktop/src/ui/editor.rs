@@ -21,7 +21,6 @@ pub fn editor<'a>(
     let editor = text_editor::TextEditor::new(text_editor_content)
         .on_action(Message::EditorContentChanged)
         .font(font)
-        .line_height(typography.line_height)
         .height(Length::Fill);
     
     // Place the editor in a container with padding

@@ -100,7 +100,7 @@ pub fn editor_font_settings_panel(app: &App) -> Element<'_, Message> {
         horizontal_space(),
         toggler(
             typography.ligatures_enabled,
-            None::<String>,
+            true,
             Message::LigaturesToggled
         )
         .width(Length::Shrink)
