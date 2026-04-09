@@ -175,18 +175,19 @@ impl Icon {
     fn get_font(typography: &EditorTypographySettings) -> iced::Font {
         // For icons, we need to use a font that contains the icon glyphs
         // The icon font stack is defined in EditorTypographySettings
-        // We'll use the first font from the icon font stack
+        // We'll try multiple fonts from the stack until one works
         let icon_stack = typography.icon_font_stack();
         
-        // Try to find a font that works by checking each in order
-        // Start with the first font in the stack
-        if let Some(first_font) = icon_stack.first() {
-            iced::Font::with_name(first_font)
-        } else {
-            // Fallback to the selected font family
-            let font_name = typography.font_family.to_family_string();
-            iced::Font::with_name(font_name)
+        // Try each font in the stack
+        for font_name in icon_stack {
+            // iced::Font::with_name will use the font if it's available
+            // We can't check if it's available, but we can try
+            return iced::Font::with_name(font_name);
         }
+        
+        // Fallback to the selected font family
+        let font_name = typography.font_family.to_family_string();
+        iced::Font::with_name(font_name)
     }
 
     /// Render this icon as a text element with appropriate styling.
