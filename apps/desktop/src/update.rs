@@ -419,6 +419,13 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                     // Ctrl+Shift+P for command palette
                     update(app, Message::ToggleCommandPalette)
                 }
+                iced::keyboard::Key::Named(iced::keyboard::key::Named::Escape) => {
+                    // Escape to cancel inline editing
+                    if !matches!(app.explorer_state.inline_edit, InlineEditMode::None) {
+                        app.explorer_state.cancel_inline_edit();
+                    }
+                    Command::none()
+                }
                 _ => Command::none(),
             }
         }
@@ -488,6 +495,10 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                     } else {
                         app.explorer_state.workspace_root.clone()
                     };
+                    // Ensure the parent directory is expanded
+                    if !app.explorer_state.is_expanded(&parent) {
+                        app.explorer_state.toggle_directory(parent.clone());
+                    }
                     app.explorer_state.start_create_file(parent);
                 }
                 ExplorerMessage::CreateFolderRequested => {
@@ -502,26 +513,27 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                     } else {
                         app.explorer_state.workspace_root.clone()
                     };
+                    // Ensure the parent directory is expanded
+                    if !app.explorer_state.is_expanded(&parent) {
+                        app.explorer_state.toggle_directory(parent.clone());
+                    }
                     app.explorer_state.start_create_folder(parent);
                 }
                 ExplorerMessage::RenameRequested(path) => {
                     app.explorer_state.start_rename(path);
                 }
                 ExplorerMessage::DeleteRequested(path) => {
-                    // For now, just delete immediately (in a real app, we'd ask for confirmation)
-                    let path_clone = path.clone();
+                    // Use the file-ops crate to delete the item
+                    let path_str = path.to_string_lossy().to_string();
                     return Command::perform(
                         async move {
-                            match std::fs::remove_file(&path_clone) {
+                            match WorkspaceLoader::delete_item(&path_str) {
                                 Ok(_) => Message::Explorer(ExplorerMessage::Refresh),
-                                Err(_) => {
-                                    // Try removing as directory
-                                    match std::fs::remove_dir_all(&path_clone) {
-                                        Ok(_) => Message::Explorer(ExplorerMessage::Refresh),
-                                        Err(e) => {
-                                            Message::Explorer(ExplorerMessage::SetFileTree(vec![]))
-                                        }
-                                    }
+                                Err(e) => {
+                                    // We need to return a message that can update the app's error state
+                                    // For now, we'll trigger a refresh anyway, but in a real implementation
+                                    // we'd want to show an error message
+                                    Message::Explorer(ExplorerMessage::Refresh)
                                 }
                             }
                         },
@@ -539,11 +551,11 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                             if !name.is_empty() {
                                 let mut full_path = parent.clone();
                                 full_path.push(&name);
-                                let path_clone = full_path.clone();
+                                let path_str = full_path.to_string_lossy().to_string();
                                 app.explorer_state.cancel_inline_edit();
                                 return Command::perform(
                                     async move {
-                                        match std::fs::File::create(&path_clone) {
+                                        match WorkspaceLoader::create_file(&path_str) {
                                             Ok(_) => Message::Explorer(ExplorerMessage::Refresh),
                                             Err(_) => Message::Explorer(ExplorerMessage::Refresh),
                                         }
@@ -557,11 +569,11 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                             if !name.is_empty() {
                                 let mut full_path = parent.clone();
                                 full_path.push(&name);
-                                let path_clone = full_path.clone();
+                                let path_str = full_path.to_string_lossy().to_string();
                                 app.explorer_state.cancel_inline_edit();
                                 return Command::perform(
                                     async move {
-                                        match std::fs::create_dir(&path_clone) {
+                                        match WorkspaceLoader::create_directory(&path_str) {
                                             Ok(_) => Message::Explorer(ExplorerMessage::Refresh),
                                             Err(_) => Message::Explorer(ExplorerMessage::Refresh),
                                         }
@@ -575,12 +587,12 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                             if !new_name.is_empty() {
                                 let mut new_path = target.parent().unwrap_or(&app.explorer_state.workspace_root).to_path_buf();
                                 new_path.push(&new_name);
-                                let target_clone = target.clone();
-                                let new_path_clone = new_path.clone();
+                                let old_path_str = target.to_string_lossy().to_string();
+                                let new_path_str = new_path.to_string_lossy().to_string();
                                 app.explorer_state.cancel_inline_edit();
                                 return Command::perform(
                                     async move {
-                                        match std::fs::rename(&target_clone, &new_path_clone) {
+                                        match WorkspaceLoader::rename_item(&old_path_str, &new_path_str) {
                                             Ok(_) => Message::Explorer(ExplorerMessage::Refresh),
                                             Err(_) => Message::Explorer(ExplorerMessage::Refresh),
                                         }

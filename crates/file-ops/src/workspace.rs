@@ -70,6 +70,10 @@ impl WorkspaceLoader {
 
     pub fn delete_item(path: &str) -> Result<(), WorkspaceError> {
         let path_obj = Path::new(path);
+        if !path_obj.exists() {
+            return Err(WorkspaceError::NotFound(path.to_string()));
+        }
+        
         if path_obj.is_dir() {
             fs::remove_dir_all(path_obj)?;
         } else {
