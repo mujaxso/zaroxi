@@ -1,6 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -e
 
+# This script works in both bash and zsh environments
 # Create fonts directory
 mkdir -p apps/desktop/assets/fonts
 cd apps/desktop/assets/fonts
