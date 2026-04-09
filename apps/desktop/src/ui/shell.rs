@@ -7,7 +7,7 @@ use super::{
     editor_panel::editor_panel,
     status_bar::status_bar,
     top_bar::top_bar,
-    layout::explorer_panel_with_expanded,
+    explorer_panel::explorer_panel,
 };
 
 /// Main shell that composes all UI components - Premium compact layout
@@ -35,13 +35,9 @@ pub fn shell(app: &App) -> Element<'_, Message> {
         .width(Length::Fixed(crate::ui::common::ACTIVITY_BAR_WIDTH))
         .height(Length::Fill);
     
-    // Use the explorer panel with expanded directories support
+    // Use the new explorer panel
     let explorer_panel = container(
-        explorer_panel_with_expanded(
-            &app.file_entries,
-            &app.expanded_directories,
-            &app.workspace_path,
-        )
+        explorer_panel(app)
     )
     .width(Length::Fixed(explorer_width))
     .height(Length::Fill);

@@ -2,6 +2,7 @@ use iced::widget::text_editor;
 use core_types::workspace::DirectoryEntry;
 use editor_buffer::buffer::TextBuffer;
 use crate::state::{Activity, FileMetadata};
+use crate::explorer::actions::ExplorerMessage;
 
 #[derive(Debug, Clone)]
 pub enum Message {
@@ -30,4 +31,6 @@ pub enum Message {
     ToggleDirectory(String),
     ToggleCommandPalette,
     WindowResized(u32, u32),
+    // Explorer messages
+    Explorer(ExplorerMessage),
 }

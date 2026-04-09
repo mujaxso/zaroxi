@@ -2,6 +2,7 @@ pub mod model;
 pub mod state;
 pub mod actions;
 
-pub use model::*;
-pub use state::*;
-pub use actions::*;
+// Re-export types for convenience
+pub use model::{ExplorerNode, build_explorer_tree};
+pub use state::{ExplorerState, VisibleRow};
+pub use actions::ExplorerMessage;
