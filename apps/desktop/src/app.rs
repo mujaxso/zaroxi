@@ -99,10 +99,6 @@ impl iced::Application for App {
             all_commands.push(command);
             (app, Command::batch(all_commands))
         }
-            (app, command)
-        } else {
-            (app, Command::batch(font_commands).then(|| command))
-        }
     }
 
     fn title(&self) -> String {
