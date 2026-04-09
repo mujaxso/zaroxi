@@ -894,7 +894,7 @@ pub fn explorer_panel_with_expanded<'a>(
     expanded_directories: &'a std::collections::HashSet<String>,
     workspace_path: &'a str,
 ) -> Element<'a, Message> {
-    // Always show at least a flat list if tree building fails
+    // Always show at least a flat list
     let content: Element<_> = if file_entries.is_empty() {
         container(
             column![
@@ -913,118 +913,83 @@ pub fn explorer_panel_with_expanded<'a>(
         .height(Length::Fill)
         .into()
     } else {
-        // Try to build tree, but if it fails, use simple approach
-        let tree = crate::ui::explorer::build_tree(file_entries, workspace_path);
+        // Always use simple approach for now to ensure something is shown
         let mut elements = Vec::new();
         
-        if tree.is_empty() {
-            // Simple flat list approach
-            for entry in file_entries {
-                let normalized_path = normalize_path(&entry.path);
-                let is_expanded = expanded_directories.contains(&normalized_path);
-                
-                let icon = if entry.is_dir {
-                    if is_expanded { "📂" } else { "📁" }
-                } else {
-                    "📄"
-                };
-                
-                let text_color = if entry.is_dir {
-                    iced::Color::from_rgb8(180, 180, 255)
-                } else {
-                    iced::Color::from_rgb8(220, 220, 220)
-                };
-                
-                // Simple depth calculation: count path separators
-                let depth = entry.path.matches(std::path::MAIN_SEPARATOR).count();
-                let padding_left = depth * 20;
-                
-                let entry_element = container(
-                    button(
-                        row![
-                            if entry.is_dir {
-                                let chevron = if is_expanded { "▼" } else { "▶" };
-                                text(chevron).size(12)
-                                    .style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150)))
-                            } else {
-                                text("  ").size(12)
-                            },
-                            text(icon).size(14),
-                            text(&entry.name).size(14)
-                                .style(iced::theme::Text::Color(text_color)),
-                        ]
-                        .spacing(8)
-                        .align_items(Alignment::Center),
-                    )
-                    .on_press(if entry.is_dir {
-                        Message::ToggleDirectory(entry.path.clone())
-                    } else {
-                        Message::FileSelectedByPath(entry.path.clone())
-                    })
-                    .padding([6, 12])
-                    .width(Length::Fill)
-                    .style(iced::theme::Button::Secondary),
-                )
-                .padding(iced::Padding::new(padding_left as f32))
-                .into();
-                
-                elements.push(entry_element);
+        // Sort entries by name for better display
+        let mut sorted_entries = file_entries.to_vec();
+        sorted_entries.sort_by(|a, b| {
+            // Directories first, then by name
+            if a.is_dir != b.is_dir {
+                b.is_dir.cmp(&a.is_dir) // Directories first
+            } else {
+                a.name.cmp(&b.name)
             }
-        } else {
-            // Use tree-based approach
-            let visible_nodes = crate::ui::explorer::get_visible_nodes(&tree, expanded_directories, 0);
+        });
+        
+        for entry in &sorted_entries {
+            let normalized_path = normalize_path(&entry.path);
+            let is_expanded = expanded_directories.contains(&normalized_path);
             
-            for (depth, node) in visible_nodes {
-                let entry = &node.entry;
-                
-                let normalized_path = normalize_path(&entry.path);
-                let is_expanded = expanded_directories.contains(&normalized_path);
-                
-                let icon = if entry.is_dir {
-                    if is_expanded { "📂" } else { "📁" }
+            let icon = if entry.is_dir {
+                if is_expanded { "📂" } else { "📁" }
+            } else {
+                "📄"
+            };
+            
+            let text_color = if entry.is_dir {
+                iced::Color::from_rgb8(180, 180, 255)
+            } else {
+                iced::Color::from_rgb8(220, 220, 220)
+            };
+            
+            // Simple depth calculation: count path separators
+            // Remove workspace path from the entry path to get relative depth
+            let depth = if workspace_path.is_empty() {
+                entry.path.matches(std::path::MAIN_SEPARATOR).count()
+            } else {
+                let workspace_normalized = normalize_path(workspace_path);
+                let entry_normalized = normalize_path(&entry.path);
+                if entry_normalized.starts_with(&workspace_normalized) {
+                    let relative = &entry_normalized[workspace_normalized.len()..];
+                    relative.matches(std::path::MAIN_SEPARATOR).count()
                 } else {
-                    "📄"
-                };
-                
-                let text_color = if entry.is_dir {
-                    iced::Color::from_rgb8(180, 180, 255)
-                } else {
-                    iced::Color::from_rgb8(220, 220, 220)
-                };
-                
-                let padding_left = depth * 20;
-                
-                let entry_element = container(
-                    button(
-                        row![
-                            if entry.is_dir {
-                                let chevron = if is_expanded { "▼" } else { "▶" };
-                                text(chevron).size(12)
-                                    .style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150)))
-                            } else {
-                                text("  ").size(12)
-                            },
-                            text(icon).size(14),
-                            text(&entry.name).size(14)
-                                .style(iced::theme::Text::Color(text_color)),
-                        ]
-                        .spacing(8)
-                        .align_items(Alignment::Center),
-                    )
-                    .on_press(if entry.is_dir {
-                        Message::ToggleDirectory(entry.path.clone())
-                    } else {
-                        Message::FileSelectedByPath(entry.path.clone())
-                    })
-                    .padding([6, 12])
-                    .width(Length::Fill)
-                    .style(iced::theme::Button::Secondary),
+                    entry.path.matches(std::path::MAIN_SEPARATOR).count()
+                }
+            };
+            
+            let padding_left = depth * 20;
+            
+            let entry_element = container(
+                button(
+                    row![
+                        if entry.is_dir {
+                            let chevron = if is_expanded { "▼" } else { "▶" };
+                            text(chevron).size(12)
+                                .style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150)))
+                        } else {
+                            text("  ").size(12)
+                        },
+                        text(icon).size(14),
+                        text(&entry.name).size(14)
+                            .style(iced::theme::Text::Color(text_color)),
+                    ]
+                    .spacing(8)
+                    .align_items(Alignment::Center),
                 )
-                .padding(iced::Padding::new(padding_left as f32))
-                .into();
-                
-                elements.push(entry_element);
-            }
+                .on_press(if entry.is_dir {
+                    Message::ToggleDirectory(entry.path.clone())
+                } else {
+                    Message::FileSelectedByPath(entry.path.clone())
+                })
+                .padding([6, 12])
+                .width(Length::Fill)
+                .style(iced::theme::Button::Secondary),
+            )
+            .padding(iced::Padding::new(padding_left as f32))
+            .into();
+            
+            elements.push(entry_element);
         }
         
         if elements.is_empty() {

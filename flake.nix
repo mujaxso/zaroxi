@@ -33,10 +33,10 @@
             freetype
             expat
             libglvnd
-            xorg.libX11
-            xorg.libXcursor
-            xorg.libXi
-            xorg.libXrandr
+            libX11
+            libXcursor
+            libXi
+            libXrandr
             vulkan-loader
             wayland
 
@@ -55,10 +55,10 @@
               freetype
               expat
               libglvnd
-              xorg.libX11
-              xorg.libXcursor
-              xorg.libXi
-              xorg.libXrandr
+              libX11
+              libXcursor
+              libXi
+              libXrandr
               vulkan-loader
               wayland
               openssl
@@ -91,10 +91,10 @@
             freetype
             expat
             libglvnd
-            xorg.libX11
-            xorg.libXcursor
-            xorg.libXi
-            xorg.libXrandr
+            libX11
+            libXcursor
+            libXi
+            libXrandr
             vulkan-loader
             wayland
             openssl
