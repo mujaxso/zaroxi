@@ -203,11 +203,15 @@ impl Icon {
             IconMode::Unicode => self.unicode_fallback(),
             IconMode::Disabled => " ",
         };
-        text(icon_char)
+        let text_widget = text(icon_char)
             .size(icon_size)
-            .font(Self::get_font(typography))
-            .style(iced::theme::Text::Color(style.text_secondary()))
-            .into()
+            .style(iced::theme::Text::Color(style.text_secondary()));
+        
+        // Only apply custom font for NerdFonts mode
+        match typography.icon_mode {
+            IconMode::NerdFonts => text_widget.font(Self::get_font(typography)),
+            _ => text_widget,
+        }.into()
     }
 
     /// Render this icon as a text element with custom color.
@@ -226,11 +230,15 @@ impl Icon {
             IconMode::Unicode => self.unicode_fallback(),
             IconMode::Disabled => " ",
         };
-        text(icon_char)
+        let text_widget = text(icon_char)
             .size(icon_size)
-            .font(Self::get_font(typography))
-            .style(iced::theme::Text::Color(color))
-            .into()
+            .style(iced::theme::Text::Color(color));
+        
+        // Only apply custom font for NerdFonts mode
+        match typography.icon_mode {
+            IconMode::NerdFonts => text_widget.font(Self::get_font(typography)),
+            _ => text_widget,
+        }.into()
     }
 }
 

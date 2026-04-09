@@ -173,7 +173,8 @@ pub enum IconMode {
 
 impl Default for IconMode {
     fn default() -> Self {
-        IconMode::NerdFonts
+        // Temporarily use Unicode to debug icon rendering
+        IconMode::Unicode
     }
 }
 
