@@ -8,6 +8,7 @@ mod state;
 mod theme;
 mod update;
 mod view;
+mod explorer;
 
 use app::App;
 use iced::{Application, Settings};

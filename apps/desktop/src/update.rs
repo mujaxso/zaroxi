@@ -2,6 +2,7 @@ use crate::message::Message;
 use crate::state::{App, Activity, FileLoadingState, FileMetadata};
 use file_ops::{FileLoader, WorkspaceLoader};
 use iced::Command;
+use crate::explorer::actions::ExplorerMessage;
 
 // Helper function to normalize paths for consistent comparison
 fn normalize_path(path: &str) -> String {
@@ -46,9 +47,12 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
         Message::WorkspaceLoaded(result) => {
             match result {
                 Ok(entries) => {
-                    app.file_entries = entries;
+                    app.file_entries = entries.clone();
                     app.status_message = format!("Workspace loaded: {} files", app.file_entries.len());
                     app.error_message = None;
+                    
+                    // Update explorer state
+                    app.explorer_state.set_file_tree(entries);
                     
                     let mut state = app.workspace_state.lock().unwrap();
                     state.set_workspace_root(&app.workspace_path);
@@ -417,14 +421,8 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
             }
         }
         Message::ToggleDirectory(path) => {
-            // Normalize the path to ensure consistent comparison
-            let normalized_path = normalize_path(&path);
-            if app.expanded_directories.contains(&normalized_path) {
-                app.expanded_directories.remove(&normalized_path);
-            } else {
-                app.expanded_directories.insert(normalized_path);
-            }
-            Command::none()
+            // Convert to ExplorerMessage
+            update(app, Message::Explorer(ExplorerMessage::ToggleDirectory(std::path::PathBuf::from(path))))
         }
         Message::ToggleCommandPalette => {
             // For now, just show a status message
@@ -435,6 +433,47 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
             app.window_width = width;
             app.window_height = height;
             app.update_layout_mode();
+            Command::none()
+        }
+        Message::Explorer(explorer_msg) => {
+            match explorer_msg {
+                ExplorerMessage::ToggleDirectory(path) => {
+                    app.explorer_state.toggle_directory(path);
+                }
+                ExplorerMessage::SelectFile(path) => {
+                    app.explorer_state.select_file(path.clone());
+                    // Convert to string and trigger file loading
+                    if let Some(path_str) = path.to_str() {
+                        app.active_file_path = Some(path_str.to_string());
+                        // Trigger file loading
+                        return Command::perform(
+                            async move { path_str.to_string() },
+                            |path| Message::FileSelectedByPath(path),
+                        );
+                    }
+                }
+                ExplorerMessage::Refresh => {
+                    // Trigger a workspace refresh
+                    if !app.workspace_path.is_empty() {
+                        let path = app.workspace_path.clone();
+                        return Command::perform(
+                            async move {
+                                match WorkspaceLoader::list_directory(&path) {
+                                    Ok(entries) => Message::WorkspaceLoaded(Ok(entries)),
+                                    Err(e) => Message::WorkspaceLoaded(Err(format!("Failed to refresh workspace: {}", e))),
+                                }
+                            },
+                            |result| result,
+                        );
+                    }
+                }
+                ExplorerMessage::SetWorkspaceRoot(root) => {
+                    app.explorer_state.set_workspace_root(root);
+                }
+                ExplorerMessage::SetFileTree(entries) => {
+                    app.explorer_state.set_file_tree(entries);
+                }
+            }
             Command::none()
         }
     }

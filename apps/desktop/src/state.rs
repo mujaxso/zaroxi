@@ -6,6 +6,7 @@ use iced::widget::text_editor;
 use iced;
 
 use crate::theme::NeoteTheme;
+use crate::explorer::state::ExplorerState;
 
 #[derive(Debug, Clone)]
 pub struct FileMetadata {
@@ -43,6 +44,7 @@ pub enum LayoutMode {
 pub struct App {
     pub workspace_path: String,
     pub file_entries: Vec<DirectoryEntry>,
+    pub explorer_state: ExplorerState,
     pub active_file_path: Option<String>,
     pub editor_buffer: Option<TextBuffer>,
     pub is_dirty: bool,
@@ -52,7 +54,6 @@ pub struct App {
     pub active_activity: Activity,
     pub ai_panel_visible: bool,
     pub prompt_input: String,
-    pub expanded_directories: std::collections::HashSet<String>,
     pub text_editor: text_editor::Content,
     // Track if the current file is too large for the text editor
     pub is_file_too_large_for_editor: bool,
@@ -74,6 +75,7 @@ impl App {
             App {
                 workspace_path: String::new(),
                 file_entries: Vec::new(),
+                explorer_state: ExplorerState::new(),
                 active_file_path: None,
                 editor_buffer: None,
                 is_dirty: false,
@@ -83,7 +85,6 @@ impl App {
                 active_activity: Activity::Explorer,
                 ai_panel_visible: true,
                 prompt_input: String::new(),
-                expanded_directories: std::collections::HashSet::new(),
                 text_editor: text_editor::Content::new(),
                 is_file_too_large_for_editor: false,
                 file_loading_state: FileLoadingState::Idle,
