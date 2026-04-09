@@ -2,7 +2,7 @@ use iced::{Element, Length, widget::{button, column, container, row, scrollable,
 use crate::message::Message;
 use crate::state::App;
 use super::style::StyleHelpers;
-use crate::theme::SemanticColors;
+use crate::theme::{SemanticColors, NeoteTheme};
 use crate::explorer::actions::ExplorerMessage;
 use crate::explorer::state::InlineEditMode;
 
@@ -82,18 +82,18 @@ pub fn explorer_panel<'a>(app: &'a App) -> Element<'a, Message> {
             // If this is the target for inline edit, insert the edit row before it
             if let InlineEditMode::Rename { ref target } = app.explorer_state.inline_edit {
                 if &row.path == target && !has_inserted_inline {
-                    rows.push(inline_edit_row(app, style.colors, row.depth, row.is_dir));
+                    rows.push(inline_edit_row(app, row.depth, row.is_dir));
                     has_inserted_inline = true;
                     continue;
                 }
             }
             
-            rows.push(explorer_row(app, &row, &style, is_compact));
+            rows.push(explorer_row(row.clone(), app.theme, is_compact));
             
             // If creating inside this directory, insert the create row after it
             if let InlineEditMode::CreateFile { ref parent } | InlineEditMode::CreateFolder { ref parent } = app.explorer_state.inline_edit {
                 if &row.path == parent && row.is_dir && row.is_expanded && !has_inserted_inline {
-                    rows.push(inline_edit_row(app, style.colors, row.depth + 1, matches!(app.explorer_state.inline_edit, InlineEditMode::CreateFolder { .. })));
+                    rows.push(inline_edit_row(app, row.depth + 1, matches!(app.explorer_state.inline_edit, InlineEditMode::CreateFolder { .. })));
                     has_inserted_inline = true;
                 }
             }
@@ -102,7 +102,7 @@ pub fn explorer_panel<'a>(app: &'a App) -> Element<'a, Message> {
         // If creating at root and not inserted yet
         if let InlineEditMode::CreateFile { ref parent } | InlineEditMode::CreateFolder { ref parent } = app.explorer_state.inline_edit {
             if parent == &app.explorer_state.workspace_root && !has_inserted_inline {
-                rows.push(inline_edit_row(app, style.colors, 0, matches!(app.explorer_state.inline_edit, InlineEditMode::CreateFolder { .. })));
+                rows.push(inline_edit_row(app, 0, matches!(app.explorer_state.inline_edit, InlineEditMode::CreateFolder { .. })));
             }
         }
         
@@ -154,7 +154,8 @@ pub fn explorer_panel<'a>(app: &'a App) -> Element<'a, Message> {
     .into()
 }
 
-fn explorer_row<'a>(app: &'a App, row: &'a crate::explorer::state::VisibleRow, style: &'a StyleHelpers, is_compact: bool) -> Element<'a, Message> {
+fn explorer_row(row: crate::explorer::state::VisibleRow, theme: NeoteTheme, is_compact: bool) -> Element<'static, Message> {
+    let style = StyleHelpers::new(theme);
     let indent = row.depth * 12;
     
     // Choose icon based on type and state
@@ -331,7 +332,7 @@ fn explorer_row<'a>(app: &'a App, row: &'a crate::explorer::state::VisibleRow, s
     .into()
 }
 
-fn inline_edit_row<'a>(app: &'a App, _colors: SemanticColors, depth: usize, is_dir: bool) -> Element<'a, Message> {
+fn inline_edit_row(app: &App, depth: usize, is_dir: bool) -> Element<'static, Message> {
     let indent = depth * 12;
     let icon = if is_dir { "📁" } else { "📄" };
     
