@@ -99,8 +99,8 @@ pub fn editor_font_settings_panel(app: &App) -> Element<'_, Message> {
             .style(iced::theme::Text::Color(style.colors.text_secondary)),
         horizontal_space(),
         toggler(
+            None::<String>,
             typography.ligatures_enabled,
-            true,
             Message::LigaturesToggled
         )
         .width(Length::Shrink)
