@@ -324,10 +324,12 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                 if let Some(ref buffer) = app.editor_buffer {
                     let content = buffer.text();
                     let path_clone = path.clone();
+                    let content_clone = content.clone();
                     
                     Command::perform(
                         async move {
-                            match std::fs::write(&path_clone, &content) {
+                            // Use the file-ops crate to save the file
+                            match WorkspaceLoader::save_file(&path_clone, &content_clone) {
                                 Ok(_) => Message::FileSaved(Ok(())),
                                 Err(e) => Message::FileSaved(Err(format!("Failed to save file: {}", e))),
                             }
