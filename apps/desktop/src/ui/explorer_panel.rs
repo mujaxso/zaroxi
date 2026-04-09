@@ -41,10 +41,11 @@ pub fn explorer_panel<'a>(app: &'a App) -> Element<'a, Message> {
                 .on_press(Message::Explorer(ExplorerMessage::CreateFolderRequested))
                 .padding(if is_compact { [2, 4] } else { [3, 6] })
                 .style(iced::theme::Button::Secondary),
-                // Refresh button
+                // Refresh button - use emoji refresh symbol
                 button(
-                    text("⟳").size(if is_compact { 12 } else { 13 })
+                    text("🔄").size(if is_compact { 12 } else { 13 })
                         .style(iced::theme::Text::Color(style.colors.text_secondary))
+                        .font(iced::font::Font::with_name("Noto Color Emoji"))
                 )
                 .on_press(Message::Explorer(ExplorerMessage::Refresh))
                 .padding(if is_compact { [2, 4] } else { [3, 6] })
