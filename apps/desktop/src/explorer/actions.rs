@@ -8,4 +8,17 @@ pub enum ExplorerMessage {
     Refresh,
     SetWorkspaceRoot(PathBuf),
     SetFileTree(Vec<DirectoryEntry>),
+    // New file/folder creation
+    CreateFileRequested,
+    CreateFolderRequested,
+    // Inline editing
+    RenameRequested(PathBuf),
+    DeleteRequested(PathBuf),
+    // Inline edit state changes
+    InlineEditNameChanged(String),
+    InlineEditConfirmed,
+    InlineEditCancelled,
+    // Context menu actions
+    ShowContextMenu(PathBuf),
+    HideContextMenu,
 }

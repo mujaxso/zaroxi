@@ -1,9 +1,10 @@
-use iced::{Element, Length, widget::{button, column, container, row, scrollable, text}};
+use iced::{Element, Length, widget::{button, column, container, row, scrollable, text, text_input, mouse_area}};
 use crate::message::Message;
 use crate::state::App;
 use super::style::StyleHelpers;
 use crate::theme::SemanticColors;
 use crate::explorer::actions::ExplorerMessage;
+use crate::explorer::state::InlineEditMode;
 
 pub fn explorer_panel(app: &App) -> Element<'_, Message> {
     let style = StyleHelpers::new(app.theme);
@@ -13,18 +14,39 @@ pub fn explorer_panel(app: &App) -> Element<'_, Message> {
     // Get visible rows from explorer state
     let visible_rows = app.explorer_state.visible_rows();
     
+    // Header with action buttons
     let header = container(
         row![
             text("EXPLORER")
                 .size(if is_compact { 10 } else { 11 })
                 .style(iced::theme::Text::Color(style.colors.text_muted)),
             iced::widget::horizontal_space(),
-            button(
-                text("⟳").size(if is_compact { 12 } else { 13 })
-            )
-            .on_press(Message::Explorer(ExplorerMessage::Refresh))
-            .padding(if is_compact { [2, 6] } else { [3, 8] })
-            .style(iced::theme::Button::Secondary)
+            // Action buttons
+            row![
+                // New file button
+                button(
+                    text("📄").size(if is_compact { 12 } else { 13 })
+                )
+                .on_press(Message::Explorer(ExplorerMessage::CreateFileRequested))
+                .padding(if is_compact { [2, 4] } else { [3, 6] })
+                .style(iced::theme::Button::Secondary),
+                // New folder button
+                button(
+                    text("📁").size(if is_compact { 12 } else { 13 })
+                )
+                .on_press(Message::Explorer(ExplorerMessage::CreateFolderRequested))
+                .padding(if is_compact { [2, 4] } else { [3, 6] })
+                .style(iced::theme::Button::Secondary),
+                // Refresh button
+                button(
+                    text("⟳").size(if is_compact { 12 } else { 13 })
+                )
+                .on_press(Message::Explorer(ExplorerMessage::Refresh))
+                .padding(if is_compact { [2, 4] } else { [3, 6] })
+                .style(iced::theme::Button::Secondary),
+            ]
+            .spacing(if is_compact { 2 } else { 4 })
+            .align_items(iced::Alignment::Center)
         ]
         .align_items(iced::Alignment::Center)
     )
@@ -51,132 +73,38 @@ pub fn explorer_panel(app: &App) -> Element<'_, Message> {
         .height(Length::Fill)
         .into()
     } else {
-        let rows: Vec<Element<_>> = visible_rows
-            .iter()
-            .map(|row| {
-                let indent = row.depth * 12;
-                
-                // Choose icon based on type and state
-                let icon = if row.is_dir {
-                    if row.is_expanded { "📂" } else { "📁" }
-                } else {
-                    "📄"
-                };
-                
-                // Text color
-                let text_color = if row.is_selected {
-                    style.colors.text_on_accent
-                } else if row.is_dir {
-                    style.colors.accent
-                } else {
-                    style.colors.text_secondary
-                };
-                
-                // Background color
-                let background = if row.is_selected {
-                    style.colors.accent
-                } else {
-                    iced::Color::TRANSPARENT
-                };
-                
-                // Build row content
-                let row_content = if row.is_dir {
-                    let chevron_icon = if row.is_expanded { "▼" } else { "▶" };
-                    row![
-                        // Indentation
-                        iced::widget::Space::with_width(Length::Fixed(indent as f32)),
-                        // Chevron for folders
-                        text(chevron_icon)
-                            .size(9)
-                            .style(iced::theme::Text::Color(style.colors.text_muted)),
-                        iced::widget::Space::with_width(Length::Fixed(4.0)),
-                        // Icon
-                        text(icon)
-                            .size(if is_compact { 12 } else { 13 }),
-                        // Spacing between icon and name
-                        iced::widget::Space::with_width(Length::Fixed(6.0)),
-                        // File/folder name
-                        text(&row.name)
-                            .size(if is_compact { 12 } else { 13 })
-                            .style(iced::theme::Text::Color(text_color)),
-                    ]
-                    .spacing(0)
-                    .align_items(iced::Alignment::Center)
-                } else {
-                    row![
-                        // Indentation
-                        iced::widget::Space::with_width(Length::Fixed(indent as f32)),
-                        // Space for missing chevron (files don't have chevrons)
-                        iced::widget::Space::with_width(Length::Fixed(16.0)),
-                        // Icon
-                        text(icon)
-                            .size(if is_compact { 12 } else { 13 }),
-                        // Spacing between icon and name
-                        iced::widget::Space::with_width(Length::Fixed(6.0)),
-                        // File/folder name
-                        text(&row.name)
-                            .size(if is_compact { 12 } else { 13 })
-                            .style(iced::theme::Text::Color(text_color)),
-                    ]
-                    .spacing(0)
-                    .align_items(iced::Alignment::Center)
-                };
-                
-                // Determine message
-                let message = if row.is_dir {
-                    Message::Explorer(ExplorerMessage::ToggleDirectory(row.path.clone()))
-                } else {
-                    Message::Explorer(ExplorerMessage::SelectFile(row.path.clone()))
-                };
-                
-                // Create a custom button style
-                struct ExplorerRowStyle {
-                    background: iced::Color,
-                    hover_background: iced::Color,
+        let mut rows: Vec<Element<_>> = Vec::new();
+        
+        // Check if we need to insert an inline edit row
+        let mut has_inserted_inline = false;
+        
+        for row in &visible_rows {
+            // If this is the target for inline edit, insert the edit row before it
+            if let InlineEditMode::Rename { ref target } = app.explorer_state.inline_edit {
+                if &row.path == target && !has_inserted_inline {
+                    rows.push(inline_edit_row(app, style.colors, row.depth, row.is_dir));
+                    has_inserted_inline = true;
+                    continue;
                 }
-                
-                impl iced::widget::button::StyleSheet for ExplorerRowStyle {
-                    type Style = iced::Theme;
-                    
-                    fn active(&self, _style: &Self::Style) -> iced::widget::button::Appearance {
-                        iced::widget::button::Appearance {
-                            background: Some(self.background.into()),
-                            border: iced::Border::default(),
-                            text_color: iced::Color::WHITE, // Will be overridden by text style
-                            ..Default::default()
-                        }
-                    }
-                    
-                    fn hovered(&self, _style: &Self::Style) -> iced::widget::button::Appearance {
-                        iced::widget::button::Appearance {
-                            background: Some(self.hover_background.into()),
-                            border: iced::Border::default(),
-                            text_color: iced::Color::WHITE,
-                            ..Default::default()
-                        }
-                    }
+            }
+            
+            rows.push(explorer_row(app, &row, &style, is_compact));
+            
+            // If creating inside this directory, insert the create row after it
+            if let InlineEditMode::CreateFile { ref parent } | InlineEditMode::CreateFolder { ref parent } = app.explorer_state.inline_edit {
+                if &row.path == parent && row.is_dir && row.is_expanded && !has_inserted_inline {
+                    rows.push(inline_edit_row(app, style.colors, row.depth + 1, matches!(app.explorer_state.inline_edit, InlineEditMode::CreateFolder { .. })));
+                    has_inserted_inline = true;
                 }
-                
-                let button_style = ExplorerRowStyle {
-                    background,
-                    hover_background: if row.is_selected {
-                        style.colors.accent
-                    } else {
-                        style.colors.hover_background
-                    },
-                };
-                
-                container(
-                    button(row_content)
-                        .on_press(message)
-                        .padding(if is_compact { [4, 8] } else { [6, 12] })
-                        .width(Length::Fill)
-                        .height(Length::Fixed(if is_compact { 28.0 } else { 32.0 }))
-                        .style(iced::theme::Button::Custom(Box::new(button_style)))
-                )
-                .into()
-            })
-            .collect();
+            }
+        }
+        
+        // If creating at root and not inserted yet
+        if let InlineEditMode::CreateFile { ref parent } | InlineEditMode::CreateFolder { ref parent } = app.explorer_state.inline_edit {
+            if parent == &app.explorer_state.workspace_root && !has_inserted_inline {
+                rows.push(inline_edit_row(app, style.colors, 0, matches!(app.explorer_state.inline_edit, InlineEditMode::CreateFolder { .. })));
+            }
+        }
         
         scrollable(
             column(rows)
@@ -223,5 +151,207 @@ pub fn explorer_panel(app: &App) -> Element<'_, Message> {
     .width(Length::Fill)
     .height(Length::Fill)
     .style(iced::theme::Container::Custom(Box::new(container_style)))
+    .into()
+}
+
+fn explorer_row(app: &App, row: &crate::explorer::state::VisibleRow, style: &StyleHelpers, is_compact: bool) -> Element<'_, Message> {
+    let indent = row.depth * 12;
+    
+    // Choose icon based on type and state
+    let icon = if row.is_dir {
+        if row.is_expanded { "📂" } else { "📁" }
+    } else {
+        "📄"
+    };
+    
+    // Text color
+    let text_color = if row.is_selected {
+        style.colors.text_on_accent
+    } else if row.is_dir {
+        style.colors.accent
+    } else {
+        style.colors.text_secondary
+    };
+    
+    // Background color
+    let background = if row.is_selected {
+        style.colors.accent
+    } else {
+        iced::Color::TRANSPARENT
+    };
+    
+    // Build row content
+    let row_content = if row.is_dir {
+        let chevron_icon = if row.is_expanded { "▼" } else { "▶" };
+        row![
+            // Indentation
+            iced::widget::Space::with_width(Length::Fixed(indent as f32)),
+            // Chevron for folders
+            text(chevron_icon)
+                .size(9)
+                .style(iced::theme::Text::Color(style.colors.text_muted)),
+            iced::widget::Space::with_width(Length::Fixed(4.0)),
+            // Icon
+            text(icon)
+                .size(if is_compact { 12 } else { 13 }),
+            // Spacing between icon and name
+            iced::widget::Space::with_width(Length::Fixed(6.0)),
+            // File/folder name
+            text(&row.name)
+                .size(if is_compact { 12 } else { 13 })
+                .style(iced::theme::Text::Color(text_color)),
+            // Action buttons (shown on hover/selection)
+            iced::widget::horizontal_space(),
+            if row.is_hovered || row.is_selected {
+                row![
+                    // Rename button
+                    button(
+                        text("✏").size(10)
+                    )
+                    .on_press(Message::Explorer(ExplorerMessage::RenameRequested(row.path.clone())))
+                    .padding([2, 4])
+                    .style(iced::theme::Button::Secondary),
+                    // Delete button
+                    button(
+                        text("🗑").size(10)
+                    )
+                    .on_press(Message::Explorer(ExplorerMessage::DeleteRequested(row.path.clone())))
+                    .padding([2, 4])
+                    .style(iced::theme::Button::Secondary),
+                ]
+                .spacing(2)
+                .align_items(iced::Alignment::Center)
+            } else {
+                row![].into()
+            }
+        ]
+        .spacing(0)
+        .align_items(iced::Alignment::Center)
+    } else {
+        row![
+            // Indentation
+            iced::widget::Space::with_width(Length::Fixed(indent as f32)),
+            // Space for missing chevron (files don't have chevrons)
+            iced::widget::Space::with_width(Length::Fixed(16.0)),
+            // Icon
+            text(icon)
+                .size(if is_compact { 12 } else { 13 }),
+            // Spacing between icon and name
+            iced::widget::Space::with_width(Length::Fixed(6.0)),
+            // File/folder name
+            text(&row.name)
+                .size(if is_compact { 12 } else { 13 })
+                .style(iced::theme::Text::Color(text_color)),
+            // Action buttons (shown on hover/selection)
+            iced::widget::horizontal_space(),
+            if row.is_hovered || row.is_selected {
+                row![
+                    // Rename button
+                    button(
+                        text("✏").size(10)
+                    )
+                    .on_press(Message::Explorer(ExplorerMessage::RenameRequested(row.path.clone())))
+                    .padding([2, 4])
+                    .style(iced::theme::Button::Secondary),
+                    // Delete button
+                    button(
+                        text("🗑").size(10)
+                    )
+                    .on_press(Message::Explorer(ExplorerMessage::DeleteRequested(row.path.clone())))
+                    .padding([2, 4])
+                    .style(iced::theme::Button::Secondary),
+                ]
+                .spacing(2)
+                .align_items(iced::Alignment::Center)
+            } else {
+                row![].into()
+            }
+        ]
+        .spacing(0)
+        .align_items(iced::Alignment::Center)
+    };
+    
+    // Determine message for clicking the row
+    let message = if row.is_dir {
+        Message::Explorer(ExplorerMessage::ToggleDirectory(row.path.clone()))
+    } else {
+        Message::Explorer(ExplorerMessage::SelectFile(row.path.clone()))
+    };
+    
+    // Create a custom button style
+    struct ExplorerRowStyle {
+        background: iced::Color,
+        hover_background: iced::Color,
+    }
+    
+    impl iced::widget::button::StyleSheet for ExplorerRowStyle {
+        type Style = iced::Theme;
+        
+        fn active(&self, _style: &Self::Style) -> iced::widget::button::Appearance {
+            iced::widget::button::Appearance {
+                background: Some(self.background.into()),
+                border: iced::Border::default(),
+                text_color: iced::Color::WHITE, // Will be overridden by text style
+                ..Default::default()
+            }
+        }
+        
+        fn hovered(&self, _style: &Self::Style) -> iced::widget::button::Appearance {
+            iced::widget::button::Appearance {
+                background: Some(self.hover_background.into()),
+                border: iced::Border::default(),
+                text_color: iced::Color::WHITE,
+                ..Default::default()
+            }
+        }
+    }
+    
+    let button_style = ExplorerRowStyle {
+        background,
+        hover_background: if row.is_selected {
+            style.colors.accent
+        } else {
+            style.colors.hover_background
+        },
+    };
+    
+    container(
+        mouse_area(
+            button(row_content)
+                .on_press(message)
+                .padding(if is_compact { [4, 8] } else { [6, 12] })
+                .width(Length::Fill)
+                .height(Length::Fixed(if is_compact { 28.0 } else { 32.0 }))
+                .style(iced::theme::Button::Custom(Box::new(button_style)))
+        )
+        .on_enter(Message::ExplorerHoverChanged(Some(row.path.clone())))
+        .on_exit(Message::ExplorerHoverChanged(None))
+    )
+    .into()
+}
+
+fn inline_edit_row(app: &App, colors: SemanticColors, depth: usize, is_dir: bool) -> Element<'_, Message> {
+    let indent = depth * 12;
+    let icon = if is_dir { "📁" } else { "📄" };
+    
+    let input = text_input("Name", &app.explorer_state.inline_edit_name)
+        .on_input(|name| Message::Explorer(ExplorerMessage::InlineEditNameChanged(name)))
+        .on_submit(Message::Explorer(ExplorerMessage::InlineEditConfirmed))
+        .padding(if depth == 0 { [6, 8] } else { [4, 6] })
+        .size(12);
+    
+    container(
+        row![
+            iced::widget::Space::with_width(Length::Fixed(indent as f32)),
+            // Space for chevron
+            iced::widget::Space::with_width(Length::Fixed(16.0)),
+            // Icon
+            text(icon).size(12),
+            iced::widget::Space::with_width(Length::Fixed(6.0)),
+            input,
+        ]
+        .align_items(iced::Alignment::Center)
+    )
+    .padding([4, 8])
     .into()
 }

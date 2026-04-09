@@ -33,4 +33,6 @@ pub enum Message {
     WindowResized(u32, u32),
     // Explorer messages
     Explorer(ExplorerMessage),
+    // New messages for explorer actions
+    ExplorerHoverChanged(Option<std::path::PathBuf>),
 }

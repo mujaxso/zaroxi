@@ -3,6 +3,7 @@ use crate::state::{App, Activity, FileLoadingState, FileMetadata};
 use file_ops::{FileLoader, WorkspaceLoader};
 use iced::Command;
 use crate::explorer::actions::ExplorerMessage;
+use crate::explorer::state::InlineEditMode;
 
 // Helper function to normalize paths for consistent comparison
 fn normalize_path(path: &str) -> String {
@@ -474,7 +475,138 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                 ExplorerMessage::SetFileTree(entries) => {
                     app.explorer_state.set_file_tree(entries);
                 }
+                // New explorer actions
+                ExplorerMessage::CreateFileRequested => {
+                    // Determine parent directory: selected folder, or workspace root
+                    let parent = if let Some(selected) = &app.explorer_state.selected_file {
+                        // If selected is a file, use its parent
+                        if let Some(parent_path) = selected.parent() {
+                            parent_path.to_path_buf()
+                        } else {
+                            app.explorer_state.workspace_root.clone()
+                        }
+                    } else {
+                        app.explorer_state.workspace_root.clone()
+                    };
+                    app.explorer_state.start_create_file(parent);
+                }
+                ExplorerMessage::CreateFolderRequested => {
+                    // Determine parent directory: selected folder, or workspace root
+                    let parent = if let Some(selected) = &app.explorer_state.selected_file {
+                        // If selected is a file, use its parent
+                        if let Some(parent_path) = selected.parent() {
+                            parent_path.to_path_buf()
+                        } else {
+                            app.explorer_state.workspace_root.clone()
+                        }
+                    } else {
+                        app.explorer_state.workspace_root.clone()
+                    };
+                    app.explorer_state.start_create_folder(parent);
+                }
+                ExplorerMessage::RenameRequested(path) => {
+                    app.explorer_state.start_rename(path);
+                }
+                ExplorerMessage::DeleteRequested(path) => {
+                    // For now, just delete immediately (in a real app, we'd ask for confirmation)
+                    let path_clone = path.clone();
+                    return Command::perform(
+                        async move {
+                            match std::fs::remove_file(&path_clone) {
+                                Ok(_) => Message::Explorer(ExplorerMessage::Refresh),
+                                Err(_) => {
+                                    // Try removing as directory
+                                    match std::fs::remove_dir_all(&path_clone) {
+                                        Ok(_) => Message::Explorer(ExplorerMessage::Refresh),
+                                        Err(e) => {
+                                            Message::Explorer(ExplorerMessage::SetFileTree(vec![]))
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        |msg| msg,
+                    );
+                }
+                ExplorerMessage::InlineEditNameChanged(name) => {
+                    app.explorer_state.set_inline_edit_name(name);
+                }
+                ExplorerMessage::InlineEditConfirmed => {
+                    // Handle the inline edit based on current mode
+                    match &app.explorer_state.inline_edit {
+                        InlineEditMode::CreateFile { parent } => {
+                            let name = app.explorer_state.inline_edit_name.clone();
+                            if !name.is_empty() {
+                                let mut full_path = parent.clone();
+                                full_path.push(&name);
+                                let path_clone = full_path.clone();
+                                app.explorer_state.cancel_inline_edit();
+                                return Command::perform(
+                                    async move {
+                                        match std::fs::File::create(&path_clone) {
+                                            Ok(_) => Message::Explorer(ExplorerMessage::Refresh),
+                                            Err(_) => Message::Explorer(ExplorerMessage::Refresh),
+                                        }
+                                    },
+                                    |msg| msg,
+                                );
+                            }
+                        }
+                        InlineEditMode::CreateFolder { parent } => {
+                            let name = app.explorer_state.inline_edit_name.clone();
+                            if !name.is_empty() {
+                                let mut full_path = parent.clone();
+                                full_path.push(&name);
+                                let path_clone = full_path.clone();
+                                app.explorer_state.cancel_inline_edit();
+                                return Command::perform(
+                                    async move {
+                                        match std::fs::create_dir(&path_clone) {
+                                            Ok(_) => Message::Explorer(ExplorerMessage::Refresh),
+                                            Err(_) => Message::Explorer(ExplorerMessage::Refresh),
+                                        }
+                                    },
+                                    |msg| msg,
+                                );
+                            }
+                        }
+                        InlineEditMode::Rename { target } => {
+                            let new_name = app.explorer_state.inline_edit_name.clone();
+                            if !new_name.is_empty() {
+                                let mut new_path = target.parent().unwrap_or(&app.explorer_state.workspace_root).to_path_buf();
+                                new_path.push(&new_name);
+                                let target_clone = target.clone();
+                                let new_path_clone = new_path.clone();
+                                app.explorer_state.cancel_inline_edit();
+                                return Command::perform(
+                                    async move {
+                                        match std::fs::rename(&target_clone, &new_path_clone) {
+                                            Ok(_) => Message::Explorer(ExplorerMessage::Refresh),
+                                            Err(_) => Message::Explorer(ExplorerMessage::Refresh),
+                                        }
+                                    },
+                                    |msg| msg,
+                                );
+                            }
+                        }
+                        InlineEditMode::None => {}
+                    }
+                    app.explorer_state.cancel_inline_edit();
+                }
+                ExplorerMessage::InlineEditCancelled => {
+                    app.explorer_state.cancel_inline_edit();
+                }
+                ExplorerMessage::ShowContextMenu(path) => {
+                    app.explorer_state.set_context_menu(Some(path));
+                }
+                ExplorerMessage::HideContextMenu => {
+                    app.explorer_state.set_context_menu(None);
+                }
             }
+            Command::none()
+        }
+        Message::ExplorerHoverChanged(path) => {
+            app.explorer_state.set_hovered_row(path);
             Command::none()
         }
     }

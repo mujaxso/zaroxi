@@ -15,11 +15,23 @@ fn normalize_path(path: &PathBuf) -> PathBuf {
 }
 
 #[derive(Debug, Clone)]
+pub enum InlineEditMode {
+    None,
+    CreateFile { parent: PathBuf },
+    CreateFolder { parent: PathBuf },
+    Rename { target: PathBuf },
+}
+
+#[derive(Debug, Clone)]
 pub struct ExplorerState {
     pub workspace_root: PathBuf,
     pub file_tree: Vec<ExplorerNode>,
     pub expanded_directories: HashSet<PathBuf>,
     pub selected_file: Option<PathBuf>,
+    pub inline_edit: InlineEditMode,
+    pub inline_edit_name: String,
+    pub hovered_row: Option<PathBuf>,
+    pub show_context_menu: Option<PathBuf>,
 }
 
 impl ExplorerState {
@@ -29,6 +41,10 @@ impl ExplorerState {
             file_tree: Vec::new(),
             expanded_directories: HashSet::new(),
             selected_file: None,
+            inline_edit: InlineEditMode::None,
+            inline_edit_name: String::new(),
+            hovered_row: None,
+            show_context_menu: None,
         }
     }
     
@@ -82,6 +98,58 @@ impl ExplorerState {
         }
     }
     
+    pub fn start_create_file(&mut self, parent: PathBuf) {
+        self.inline_edit = InlineEditMode::CreateFile { parent };
+        self.inline_edit_name = String::new();
+    }
+    
+    pub fn start_create_folder(&mut self, parent: PathBuf) {
+        self.inline_edit = InlineEditMode::CreateFolder { parent };
+        self.inline_edit_name = String::new();
+    }
+    
+    pub fn start_rename(&mut self, target: PathBuf) {
+        self.inline_edit = InlineEditMode::Rename { target };
+        // Set initial name to current name
+        if let Some(node) = self.find_node(&target) {
+            self.inline_edit_name = node.name.clone();
+        } else {
+            self.inline_edit_name = String::new();
+        }
+    }
+    
+    pub fn cancel_inline_edit(&mut self) {
+        self.inline_edit = InlineEditMode::None;
+        self.inline_edit_name.clear();
+    }
+    
+    pub fn set_inline_edit_name(&mut self, name: String) {
+        self.inline_edit_name = name;
+    }
+    
+    pub fn set_hovered_row(&mut self, path: Option<PathBuf>) {
+        self.hovered_row = path;
+    }
+    
+    pub fn set_context_menu(&mut self, path: Option<PathBuf>) {
+        self.show_context_menu = path;
+    }
+    
+    fn find_node(&self, path: &PathBuf) -> Option<&ExplorerNode> {
+        fn find_recursive<'a>(nodes: &'a [ExplorerNode], target: &PathBuf) -> Option<&'a ExplorerNode> {
+            for node in nodes {
+                if &node.path == target {
+                    return Some(node);
+                }
+                if let Some(found) = find_recursive(&node.children, target) {
+                    return Some(found);
+                }
+            }
+            None
+        }
+        find_recursive(&self.file_tree, path)
+    }
+    
     // Get visible rows for rendering
     pub fn visible_rows(&self) -> Vec<VisibleRow> {
         let mut rows = Vec::new();
@@ -92,13 +160,17 @@ impl ExplorerState {
     fn collect_visible_rows(&self, nodes: &[ExplorerNode], depth: usize, rows: &mut Vec<VisibleRow>) {
         for node in nodes {
             let is_expanded = self.is_expanded(&node.path);
+            let is_selected = self.is_selected(&node.path);
+            let is_hovered = self.hovered_row.as_ref().map_or(false, |hovered| hovered == &node.path);
+            
             rows.push(VisibleRow {
                 path: node.path.clone(),
                 name: node.name.clone(),
                 is_dir: node.is_dir,
                 depth,
                 is_expanded,
-                is_selected: self.is_selected(&node.path),
+                is_selected,
+                is_hovered,
             });
             
             if node.is_dir && is_expanded {
@@ -116,4 +188,5 @@ pub struct VisibleRow {
     pub depth: usize,
     pub is_expanded: bool,
     pub is_selected: bool,
+    pub is_hovered: bool,
 }

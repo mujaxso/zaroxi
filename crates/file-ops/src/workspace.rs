@@ -45,4 +45,36 @@ impl WorkspaceLoader {
         
         Ok(entries)
     }
+
+    pub fn create_file(path: &str) -> Result<(), WorkspaceError> {
+        let file_path = Path::new(path);
+        if let Some(parent) = file_path.parent() {
+            if !parent.exists() {
+                fs::create_dir_all(parent)?;
+            }
+        }
+        fs::File::create(file_path)?;
+        Ok(())
+    }
+
+    pub fn create_directory(path: &str) -> Result<(), WorkspaceError> {
+        let dir_path = Path::new(path);
+        fs::create_dir_all(dir_path)?;
+        Ok(())
+    }
+
+    pub fn rename_item(old_path: &str, new_path: &str) -> Result<(), WorkspaceError> {
+        fs::rename(old_path, new_path)?;
+        Ok(())
+    }
+
+    pub fn delete_item(path: &str) -> Result<(), WorkspaceError> {
+        let path_obj = Path::new(path);
+        if path_obj.is_dir() {
+            fs::remove_dir_all(path_obj)?;
+        } else {
+            fs::remove_file(path_obj)?;
+        }
+        Ok(())
+    }
 }
