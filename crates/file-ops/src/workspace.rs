@@ -81,4 +81,15 @@ impl WorkspaceLoader {
         }
         Ok(())
     }
+
+    pub fn save_file(path: &str, content: &str) -> Result<(), WorkspaceError> {
+        let file_path = Path::new(path);
+        if let Some(parent) = file_path.parent() {
+            if !parent.exists() {
+                fs::create_dir_all(parent)?;
+            }
+        }
+        fs::write(file_path, content)?;
+        Ok(())
+    }
 }

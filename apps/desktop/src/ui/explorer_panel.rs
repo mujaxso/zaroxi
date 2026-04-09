@@ -311,7 +311,8 @@ fn explorer_row<'a>(app: &'a App, row: &'a crate::explorer::state::VisibleRow, s
         hover_background: if row.is_selected {
             style.colors.accent
         } else {
-            style.colors.hover_background
+            // Use a subtle hover color
+            style.colors.elevated_panel_background
         },
     };
     
