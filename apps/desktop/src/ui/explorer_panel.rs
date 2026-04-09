@@ -92,34 +92,27 @@ pub fn explorer_panel(app: &App) -> Element<'_, Message> {
                 };
                 
                 // Build row content
-                let mut row_elements = vec![
-                    iced::widget::horizontal_space(Length::Fixed(indent as f32))
-                ];
-                
-                if let Some(chevron) = chevron {
-                    row_elements.push(chevron.into());
-                    row_elements.push(iced::widget::horizontal_space(Length::Fixed(4.0)).into());
-                } else {
-                    row_elements.push(iced::widget::horizontal_space(Length::Fixed(16.0)).into());
-                }
-                
-                row_elements.push(
+                let row_content = row![
+                    // Indentation
+                    iced::widget::Space::with_width(Length::Fixed(indent as f32)),
+                    // Chevron for folders
+                    if let Some(chevron) = chevron {
+                        row![
+                            chevron,
+                            iced::widget::Space::with_width(Length::Fixed(4.0)),
+                        ].spacing(0).into()
+                    } else {
+                        iced::widget::Space::with_width(Length::Fixed(16.0)).into()
+                    },
+                    // Icon
                     text(icon)
-                        .size(if is_compact { 12 } else { 13 })
-                        .into()
-                );
-                row_elements.push(
-                    iced::widget::horizontal_space(Length::Fixed(6.0)).into()
-                );
-                row_elements.push(
+                        .size(if is_compact { 12 } else { 13 }),
+                    // Spacing between icon and name
+                    iced::widget::Space::with_width(Length::Fixed(6.0)),
+                    // File/folder name
                     text(&row.name)
                         .size(if is_compact { 12 } else { 13 })
-                        .style(iced::theme::Text::Color(text_color))
-                        .into()
-                );
-                
-                let row_content = row![
-                    row_elements
+                        .style(iced::theme::Text::Color(text_color)),
                 ]
                 .spacing(0)
                 .align_items(iced::Alignment::Center);
