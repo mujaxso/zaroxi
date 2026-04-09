@@ -1,7 +1,7 @@
 use iced::widget::text_editor;
 use core_types::workspace::DirectoryEntry;
 use editor_buffer::buffer::TextBuffer;
-use crate::state::{Activity, FileMetadata};
+use crate::state::{Activity, FileMetadata, FontFamily};
 use crate::explorer::actions::ExplorerMessage;
 
 #[derive(Debug, Clone)]
@@ -38,4 +38,10 @@ pub enum Message {
     // Font loading messages
     FontLoaded,
     FontLoadFailed,
+    // Font settings messages
+    FontFamilyChanged(FontFamily),
+    FontSizeChanged(f32),
+    LineHeightChanged(f32),
+    LetterSpacingChanged(f32),
+    LigaturesToggled(bool),
 }

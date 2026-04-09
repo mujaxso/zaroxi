@@ -1,5 +1,5 @@
 use crate::message::Message;
-use crate::state::{App, Activity, FileLoadingState, FileMetadata};
+use crate::state::{App, Activity, FileLoadingState, FileMetadata, FontFamily};
 use file_ops::{FileLoader, WorkspaceLoader};
 use iced::Command;
 use crate::explorer::actions::ExplorerMessage;
