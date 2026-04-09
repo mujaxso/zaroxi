@@ -26,45 +26,86 @@ pub fn build_explorer_tree(entries: &[DirectoryEntry]) -> Vec<ExplorerNode> {
         return Vec::new();
     }
     
-    // Create nodes from all entries
-    let mut nodes: Vec<ExplorerNode> = entries.iter()
+    // Convert entries to nodes
+    let mut nodes: Vec<ExplorerNode> = entries
+        .iter()
         .map(|entry| ExplorerNode::new(entry))
         .collect();
     
-    // Build a map from path string to index for quick lookup
+    // Sort nodes: directories first, then files, alphabetically
+    nodes.sort_by(|a, b| {
+        if a.is_dir != b.is_dir {
+            b.is_dir.cmp(&a.is_dir) // Directories first
+        } else {
+            a.name.to_lowercase().cmp(&b.name.to_lowercase())
+        }
+    });
+    
+    // Build a map from path to node index
     let mut path_to_index: HashMap<String, usize> = HashMap::new();
     for (i, node) in nodes.iter().enumerate() {
-        path_to_index.insert(node.path.to_string_lossy().to_string(), i);
+        let mut path_str = node.path.to_string_lossy().to_string();
+        while path_str.ends_with('/') || path_str.ends_with('\\') {
+            path_str.pop();
+        }
+        path_to_index.insert(path_str, i);
     }
     
-    // Group children by parent path
-    let mut children_by_parent: HashMap<String, Vec<usize>> = HashMap::new();
+    // For each node, find its parent and add it as a child
+    // We need to work with indices because we can't have multiple mutable references
+    let mut children_by_parent: HashMap<usize, Vec<usize>> = HashMap::new();
     
-    for (i, node) in nodes.iter().enumerate() {
-        if let Some(parent_path) = node.path.parent() {
-            // Normalize the parent path
+    for i in 0..nodes.len() {
+        let node_path = &nodes[i].path;
+        if let Some(parent_path) = node_path.parent() {
             let mut parent_str = parent_path.to_string_lossy().to_string();
-            // Remove trailing separator if present
             while parent_str.ends_with('/') || parent_str.ends_with('\\') {
                 parent_str.pop();
             }
             
-            // Check if parent exists in our entries
-            if path_to_index.contains_key(&parent_str) {
-                children_by_parent.entry(parent_str)
+            if let Some(&parent_idx) = path_to_index.get(&parent_str) {
+                children_by_parent.entry(parent_idx)
                     .or_insert_with(Vec::new)
                     .push(i);
             }
         }
     }
     
-    // Build the tree structure
-    let mut root_indices = Vec::new();
+    // Now build the tree by creating new nodes with children
+    let mut new_nodes: Vec<ExplorerNode> = Vec::with_capacity(nodes.len());
     
-    for (i, node) in nodes.iter().enumerate() {
-        // Check if this node has a parent in the tree
-        let has_parent = if let Some(parent_path) = node.path.parent() {
-            // Normalize the parent path
+    // First, create all nodes without children
+    for node in &nodes {
+        new_nodes.push(ExplorerNode {
+            path: node.path.clone(),
+            name: node.name.clone(),
+            is_dir: node.is_dir,
+            children: Vec::new(),
+        });
+    }
+    
+    // Then, add children
+    for (parent_idx, child_indices) in &children_by_parent {
+        let mut children = Vec::new();
+        for &child_idx in child_indices {
+            children.push(new_nodes[child_idx].clone());
+        }
+        // Sort children
+        children.sort_by(|a, b| {
+            if a.is_dir != b.is_dir {
+                b.is_dir.cmp(&a.is_dir)
+            } else {
+                a.name.to_lowercase().cmp(&b.name.to_lowercase())
+            }
+        });
+        new_nodes[*parent_idx].children = children;
+    }
+    
+    // Collect root nodes (nodes without parents)
+    let mut root_nodes = Vec::new();
+    for i in 0..new_nodes.len() {
+        let node_path = &new_nodes[i].path;
+        let has_parent = if let Some(parent_path) = node_path.parent() {
             let mut parent_str = parent_path.to_string_lossy().to_string();
             while parent_str.ends_with('/') || parent_str.ends_with('\\') {
                 parent_str.pop();
@@ -75,40 +116,14 @@ pub fn build_explorer_tree(entries: &[DirectoryEntry]) -> Vec<ExplorerNode> {
         };
         
         if !has_parent {
-            root_indices.push(i);
+            root_nodes.push(new_nodes[i].clone());
         }
     }
     
-    // Build subtrees for each root
-    for &root_idx in &root_indices {
-        build_subtree(root_idx, &mut nodes, &children_by_parent);
-    }
-    
-    // After building subtrees, we need to ensure nodes are sorted
-    // Sort root nodes first
-    root_indices.sort_by(|&a, &b| {
-        let node_a = &nodes[a];
-        let node_b = &nodes[b];
-        if node_a.is_dir != node_b.is_dir {
-            // Directories first: true (directory) comes before false (file)
-            // So we want b.is_dir.cmp(&a.is_dir) which puts true before false
-            // But we need to compare booleans, not usize
-            node_b.is_dir.cmp(&node_a.is_dir)
-        } else {
-            node_a.name.to_lowercase().cmp(&node_b.name.to_lowercase())
-        }
-    });
-    
-    // Collect root nodes
-    let mut root_nodes: Vec<ExplorerNode> = root_indices
-        .into_iter()
-        .map(|idx| nodes[idx].clone())
-        .collect();
-    
-    // Sort root nodes: directories first, then files, alphabetically
+    // Sort root nodes
     root_nodes.sort_by(|a, b| {
         if a.is_dir != b.is_dir {
-            b.is_dir.cmp(&a.is_dir) // Directories first
+            b.is_dir.cmp(&a.is_dir)
         } else {
             a.name.to_lowercase().cmp(&b.name.to_lowercase())
         }
@@ -117,43 +132,3 @@ pub fn build_explorer_tree(entries: &[DirectoryEntry]) -> Vec<ExplorerNode> {
     root_nodes
 }
 
-fn build_subtree(
-    index: usize,
-    nodes: &mut [ExplorerNode],
-    children_by_parent: &HashMap<String, Vec<usize>>,
-) {
-    // Normalize the path string
-    let mut path_str = nodes[index].path.to_string_lossy().to_string();
-    while path_str.ends_with('/') || path_str.ends_with('\\') {
-        path_str.pop();
-    }
-    
-    // Also try without normalization for comparison
-    let path_str_raw = nodes[index].path.to_string_lossy().to_string();
-    
-    // Try to get children using normalized path first
-    let child_indices = children_by_parent.get(&path_str)
-        .or_else(|| children_by_parent.get(&path_str_raw));
-    
-    if let Some(child_indices) = child_indices {
-        let mut children = Vec::new();
-        
-        // First, collect all children
-        for &child_idx in child_indices {
-            // Recursively build the child's subtree
-            build_subtree(child_idx, nodes, children_by_parent);
-            children.push(nodes[child_idx].clone());
-        }
-        
-        // Sort children: directories first, then files, alphabetically
-        children.sort_by(|a, b| {
-            if a.is_dir != b.is_dir {
-                b.is_dir.cmp(&a.is_dir)
-            } else {
-                a.name.to_lowercase().cmp(&b.name.to_lowercase())
-            }
-        });
-        
-        nodes[index].children = children;
-    }
-}
