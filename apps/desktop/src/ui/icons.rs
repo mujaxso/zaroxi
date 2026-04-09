@@ -209,15 +209,11 @@ impl Icon {
         Message: 'a,
     {
         let icon_size = size.unwrap_or(typography.font_size);
-        let icon_char = match typography.icon_mode {
-            IconMode::NerdFonts => self.nerd_font_glyph(),
-            IconMode::Unicode => self.unicode_fallback(),
-            IconMode::Disabled => " ",
-        };
-
+        // Always use Unicode fallback for now to debug
+        let icon_char = self.unicode_fallback();
+        // Don't use a specific font, let Iced choose
         text(icon_char)
             .size(icon_size)
-            .font(Self::get_font(typography))
             .style(iced::theme::Text::Color(style.text_secondary()))
             .into()
     }
@@ -233,15 +229,11 @@ impl Icon {
         Message: 'a,
     {
         let icon_size = size.unwrap_or(typography.font_size);
-        let icon_char = match typography.icon_mode {
-            IconMode::NerdFonts => self.nerd_font_glyph(),
-            IconMode::Unicode => self.unicode_fallback(),
-            IconMode::Disabled => " ",
-        };
-
+        // Always use Unicode fallback for now to debug
+        let icon_char = self.unicode_fallback();
+        // Don't use a specific font, let Iced choose
         text(icon_char)
             .size(icon_size)
-            .font(Self::get_font(typography))
             .style(iced::theme::Text::Color(color))
             .into()
     }
