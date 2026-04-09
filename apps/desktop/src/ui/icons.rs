@@ -121,7 +121,7 @@ impl Icon {
     /// Returns the appropriate Unicode code point for Nerd Fonts.
     pub fn nerd_font_glyph(&self) -> &'static str {
         match self {
-            // File system - using nf-set icons which are more reliable
+            // File system - using Font Awesome icons which are widely supported
             Icon::File => "",        // nf-fa-file_o
             Icon::Folder => "",      // nf-fa-folder
             Icon::FolderOpen => "",  // nf-fa-folder_open
@@ -162,7 +162,7 @@ impl Icon {
             
             // AI/Assistant
             Icon::Robot => "ﮧ",       // nf-fa-android
-            Icon::Sparkles => "✨",    // Unicode fallback (no good Nerd Font equivalent)
+            Icon::Sparkles => "✨",    // Unicode fallback
             
             // UI elements
             Icon::Menu => "",        // nf-fa-bars
