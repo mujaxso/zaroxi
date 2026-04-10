@@ -30,6 +30,11 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
             Command::none()
         }
         Message::OpenWorkspace => {
+            // Check if this is being triggered during initialization
+            // We can check if the window has been shown by checking if we have a window size
+            // For now, just log where this is coming from
+            println!("DEBUG: Message::OpenWorkspace received - checking call stack");
+            
             // Use a synchronous file dialog in a separate thread to avoid async issues
             Command::perform(
                 async move {

@@ -22,23 +22,21 @@ fn main() -> iced::Result {
     println!("DEBUG: XDG_SESSION_TYPE = {:?}", std::env::var("XDG_SESSION_TYPE"));
     println!("DEBUG: WINIT_UNIX_BACKEND = {:?}", std::env::var("WINIT_UNIX_BACKEND"));
     
-    // Also try to unset WAYLAND_DISPLAY to force X11
+    // Check if we're on Wayland
     if std::env::var("WAYLAND_DISPLAY").is_ok() {
-        println!("DEBUG: WAYLAND_DISPLAY is set, trying to force X11");
+        println!("DEBUG: WAYLAND_DISPLAY is set - using Wayland backend");
     }
     
-    // Force X11 explicitly
-    unsafe {
-        std::env::set_var("WINIT_UNIX_BACKEND", "x11");
-    }
-    println!("DEBUG: Forced X11 backend");
+    // Don't force any backend - let winit choose
+    // On Wayland, this should work better
+    println!("DEBUG: Not forcing any backend");
     
     // Increase memory limits for large files
     // This might help with scrolling crashes
     let settings = Settings {
         window: iced::window::Settings {
-            size: iced::Size::new(1400.0, 900.0),
-            min_size: Some(iced::Size::new(800.0, 600.0)),
+            size: iced::Size::new(1200.0, 800.0),
+            min_size: Some(iced::Size::new(400.0, 300.0)),
             visible: true,
             position: iced::window::Position::Centered,
             resizable: true,
