@@ -15,15 +15,6 @@ pub struct FileMetadata {
     pub size: u64,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Activity {
-    Explorer,
-    Search,
-    Ai,
-    SourceControl,
-    Settings,
-}
-
 // File loading states
 #[derive(Debug, Clone)]
 pub enum FileLoadingState {
