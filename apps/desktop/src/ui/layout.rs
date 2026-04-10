@@ -185,7 +185,7 @@ fn activity_rail<'a>(active_activity: Activity) -> Element<'a, Message> {
     let activities = [
         (Activity::explorer(), "📁", "Explorer"),
         (Activity::search(), "🔍", "Search"),
-        (Activity::ai_assistant(), "🧠", "AI"),
+        (Activity::ai_assistant(), "🤖", "AI"),
         (Activity::source_control(), "🔄", "Git"),
         (Activity::settings(), "⚙️", "Settings"),
     ];
