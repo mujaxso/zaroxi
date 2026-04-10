@@ -22,8 +22,12 @@ fn main() -> iced::Result {
     println!("DEBUG: XDG_SESSION_TYPE = {:?}", std::env::var("XDG_SESSION_TYPE"));
     println!("DEBUG: WINIT_UNIX_BACKEND = {:?}", std::env::var("WINIT_UNIX_BACKEND"));
     
-    // Force X11 for now to see if it helps with window opening
-    // Wayland might have issues
+    // Also try to unset WAYLAND_DISPLAY to force X11
+    if std::env::var("WAYLAND_DISPLAY").is_ok() {
+        println!("DEBUG: WAYLAND_DISPLAY is set, trying to force X11");
+    }
+    
+    // Force X11 explicitly
     std::env::set_var("WINIT_UNIX_BACKEND", "x11");
     println!("DEBUG: Forced X11 backend");
     
@@ -33,8 +37,10 @@ fn main() -> iced::Result {
         window: iced::window::Settings {
             size: iced::Size::new(1400.0, 900.0),
             min_size: Some(iced::Size::new(800.0, 600.0)),
-            visible: true, // Ensure window is visible
-            position: iced::window::Position::Centered, // Center the window
+            visible: true,
+            position: iced::window::Position::Centered,
+            resizable: true,
+            decorations: true,
             ..Default::default()
         },
         // Enable antialiasing for better text rendering
