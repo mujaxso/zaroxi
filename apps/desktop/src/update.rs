@@ -49,8 +49,9 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                             }
                         }
                         None => {
-                            // User cancelled the dialog
-                            Message::WorkspaceLoaded(Err("No directory selected".to_string()))
+                            // User cancelled the dialog - return a special message
+                            // that doesn't set an error
+                            Message::WorkspaceDialogCancelled
                         }
                     }
                 },
