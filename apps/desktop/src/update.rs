@@ -402,6 +402,8 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
             } else {
                 // Hide AI panel when other activities are selected
                 app.ai_panel_visible = false;
+                // Update last non-AI activity
+                app.last_non_ai_activity = activity;
             }
             Command::none()
         }
