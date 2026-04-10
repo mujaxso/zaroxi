@@ -15,21 +15,8 @@ use app::App;
 use iced::{Application, Settings};
 
 fn main() -> iced::Result {
-    println!("Starting Neote...");
-    
-    // Check environment
-    println!("DEBUG: WAYLAND_DISPLAY = {:?}", std::env::var("WAYLAND_DISPLAY"));
-    println!("DEBUG: XDG_SESSION_TYPE = {:?}", std::env::var("XDG_SESSION_TYPE"));
-    println!("DEBUG: WINIT_UNIX_BACKEND = {:?}", std::env::var("WINIT_UNIX_BACKEND"));
-    
-    // Check if we're on Wayland
-    if std::env::var("WAYLAND_DISPLAY").is_ok() {
-        println!("DEBUG: WAYLAND_DISPLAY is set - using Wayland backend");
-    }
-    
     // Don't force any backend - let winit choose
     // On Wayland, this should work better
-    println!("DEBUG: Not forcing any backend");
     
     // Increase memory limits for large files
     // This might help with scrolling crashes
@@ -51,8 +38,5 @@ fn main() -> iced::Result {
         ..Default::default()
     };
     
-    println!("Running App::run...");
-    let result = App::run(settings);
-    println!("App::run returned: {:?}", result);
-    result
+    App::run(settings)
 }

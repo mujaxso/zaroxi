@@ -16,8 +16,6 @@
           nativeBuildInputs = with pkgs; [
             pkg-config
             cmake
-            clang
-            lld
           ];
 
           buildInputs = with pkgs; [
@@ -27,76 +25,56 @@
             rustfmt
             clippy
 
-            # System libraries
-            # Wayland
-            wayland
+            # Essential system libraries
+            # For windowing (both X11 and Wayland)
             libxkbcommon
-            wayland-protocols
-            # X11 fallback
+            # X11 fallback (important for compatibility)
             libX11
             libXcursor
             libXi
             libXrandr
+            # Wayland (optional, but good to have)
+            wayland
             # Graphics
             libglvnd
-            vulkan-loader
             # Fonts
             fontconfig
             freetype
-            expat
             # Other
             openssl
-            # For file dialogs on Wayland
-            xdg-desktop-portal
-            xdg-desktop-portal-gtk
-            xdg-desktop-portal-wlr
-            # For rfd - GTK backend
-            glib
+            # For file dialogs - minimal GTK dependencies
             gtk3
-            pango
-            atk
-            cairo
-            gdk-pixbuf
-            # DBus for portals
-            dbus
+            glib
+            # xdg-desktop-portal for Wayland file dialogs
+            xdg-desktop-portal
           ];
 
           # Environment variables
           env = {
-            # Don't force any backend - let winit choose the appropriate one
-            # This allows both X11 and Wayland to work
             # Ensure linker can find libraries
             LD_LIBRARY_PATH = with pkgs; lib.makeLibraryPath [
-              # Wayland dependencies
-              wayland
+              # Essential libraries
               libxkbcommon
-              wayland-protocols
-              # X11 fallback dependencies
+              # X11
               libX11
               libXcursor
               libXi
               libXrandr
+              # Wayland
+              wayland
               # Graphics
               libglvnd
-              vulkan-loader
               # Fonts
               fontconfig
               freetype
-              expat
               # GTK for file dialogs
-              glib
               gtk3
-              pango
-              atk
-              cairo
-              gdk-pixbuf
-              # DBus
-              dbus
+              glib
               # Other
               openssl
             ];
             # For Wayland file dialogs
-            XDG_CURRENT_DESKTOP = "sway";  # or "gnome", "kde", etc.
+            # This helps rfd work better on Wayland
             GTK_USE_PORTAL = "1";
           };
 
@@ -121,18 +99,20 @@
           ];
 
           buildInputs = with pkgs; [
+            # Essential libraries
             libxkbcommon
             fontconfig
             freetype
-            expat
             libglvnd
             libX11
             libXcursor
             libXi
             libXrandr
-            vulkan-loader
             wayland
             openssl
+            # For file dialogs
+            gtk3
+            glib
           ];
 
           # Don't force any backend - let winit choose the appropriate one

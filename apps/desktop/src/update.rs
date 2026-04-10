@@ -26,49 +26,33 @@ const VERY_LARGE_FILE_THRESHOLD: u64 = 50 * 1024 * 1024; // 50MB
 pub fn update(app: &mut App, message: Message) -> Command<Message> {
     match message {
         Message::WorkspacePathChanged(path) => {
-            println!("DEBUG: WorkspacePathChanged: {}", path);
             app.workspace_path = path;
             Command::none()
         }
         Message::OpenWorkspace => {
-            println!("DEBUG: Message::OpenWorkspace received");
-            
             // Try using the async version of rfd
             Command::perform(
                 async move {
-                    println!("DEBUG: Opening folder picker (async)...");
-                    
                     // Try to open the dialog
                     let dialog = AsyncFileDialog::new()
                         .set_title("Select Workspace Directory");
                     
                     match dialog.pick_folder().await {
                         Some(handle) => {
-                            println!("DEBUG: Folder selected: {:?}", handle.path());
                             let path = handle.path().to_string_lossy().to_string();
                             // Load the workspace immediately after selection
                             match WorkspaceLoader::list_directory(&path) {
-                                Ok(entries) => {
-                                    println!("DEBUG: Workspace loaded with {} entries", entries.len());
-                                    Message::WorkspaceLoaded(Ok((path, entries)))
-                                },
-                                Err(e) => {
-                                    println!("DEBUG: Failed to load workspace: {}", e);
-                                    Message::WorkspaceLoaded(Err(format!("Failed to open workspace: {}", e)))
-                                },
+                                Ok(entries) => Message::WorkspaceLoaded(Ok((path, entries))),
+                                Err(e) => Message::WorkspaceLoaded(Err(format!("Failed to open workspace: {}", e))),
                             }
                         }
                         None => {
-                            println!("DEBUG: Folder picker returned None - native dialog may not be supported");
                             // Return a special error message suggesting manual entry
                             Message::WorkspaceLoaded(Err("Native folder picker failed. Please enter the path manually.".to_string()))
                         }
                     }
                 },
-                |result| {
-                    println!("DEBUG: Folder picker result: {:?}", result);
-                    result
-                },
+                |result| result,
             )
         }
         Message::WorkspaceLoaded(result) => {
@@ -775,7 +759,6 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
             Command::none()
         }
         Message::SubmitManualWorkspacePath(path) => {
-            println!("DEBUG: SubmitManualWorkspacePath received: {}", path);
             if path.is_empty() {
                 app.status_message = "Please enter a workspace path".to_string();
                 Command::none()
@@ -797,22 +780,12 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                 let path_clone = path.clone();
                 Command::perform(
                     async move {
-                        println!("DEBUG: Loading workspace from manual path: {}", path_clone);
                         match WorkspaceLoader::list_directory(&path_clone) {
-                            Ok(entries) => {
-                                println!("DEBUG: Workspace loaded successfully with {} entries", entries.len());
-                                Message::WorkspaceLoaded(Ok((path_clone, entries)))
-                            },
-                            Err(e) => {
-                                println!("DEBUG: Failed to load workspace: {}", e);
-                                Message::WorkspaceLoaded(Err(format!("Failed to open workspace: {}", e)))
-                            },
+                            Ok(entries) => Message::WorkspaceLoaded(Ok((path_clone, entries))),
+                            Err(e) => Message::WorkspaceLoaded(Err(format!("Failed to open workspace: {}", e))),
                         }
                     },
-                    |result| {
-                        println!("DEBUG: Manual workspace load result: {:?}", result);
-                        result
-                    },
+                    |result| result,
                 )
             }
         }
