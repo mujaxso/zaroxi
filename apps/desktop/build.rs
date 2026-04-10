@@ -27,7 +27,7 @@ fn main() {
     
     let mut jetbrains_found = false;
     let mut firacode_found = false;
-    let mut emoji_found = false;
+    let mut _emoji_found = false;
     let mut symbols_found = false;
     
     for path in &possible_paths {
@@ -39,7 +39,7 @@ fn main() {
                 firacode_found = true;
             }
             if path.contains("NotoColorEmoji") {
-                emoji_found = true;
+                _emoji_found = true;
             }
             if path.contains("SymbolsNerdFont") {
                 symbols_found = true;
