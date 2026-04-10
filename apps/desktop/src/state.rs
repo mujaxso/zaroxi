@@ -74,6 +74,11 @@ pub struct App {
     pub hovered_activity: Option<Activity>,
     // Track the last non-AI activity to return to when hiding AI panel
     pub last_non_ai_activity: Activity,
+    // Track which panels are visible
+    pub explorer_panel_visible: bool,
+    pub search_panel_visible: bool,
+    pub git_panel_visible: bool,
+    pub settings_panel_visible: bool,
 }
 
 impl App {
@@ -103,6 +108,10 @@ impl App {
                 editor_typography: EditorTypographySettings::default(),
                 hovered_activity: None,
                 last_non_ai_activity: Activity::Explorer,
+                explorer_panel_visible: true,
+                search_panel_visible: false,
+                git_panel_visible: false,
+                settings_panel_visible: false,
             },
             iced::Command::none(),
         )

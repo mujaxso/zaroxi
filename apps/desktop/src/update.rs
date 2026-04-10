@@ -396,15 +396,38 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
         }
         Message::ActivitySelected(activity) => {
             app.active_activity = activity;
-            // If the selected activity is AI, ensure the AI panel is visible
-            if activity == Activity::Ai {
-                app.ai_panel_visible = true;
-            } else {
-                // Hide AI panel when other activities are selected
-                app.ai_panel_visible = false;
-                // Update last non-AI activity
+            
+            // Reset all panel visibilities
+            app.explorer_panel_visible = false;
+            app.search_panel_visible = false;
+            app.ai_panel_visible = false;
+            app.git_panel_visible = false;
+            app.settings_panel_visible = false;
+            
+            // Show the panel for the selected activity
+            match activity {
+                Activity::Explorer => {
+                    app.explorer_panel_visible = true;
+                }
+                Activity::Search => {
+                    app.search_panel_visible = true;
+                }
+                Activity::Ai => {
+                    app.ai_panel_visible = true;
+                }
+                Activity::SourceControl => {
+                    app.git_panel_visible = true;
+                }
+                Activity::Settings => {
+                    app.settings_panel_visible = true;
+                }
+            }
+            
+            // Update last non-AI activity if not AI
+            if activity != Activity::Ai {
                 app.last_non_ai_activity = activity;
             }
+            
             Command::none()
         }
         Message::PromptInputChanged(text) => {

@@ -160,8 +160,8 @@ impl Icon {
             Icon::Error => "",       // nf-fa-times_circle
             Icon::Info => "",        // nf-fa-info_circle
             
-            // AI/Assistant
-            Icon::Robot => "ﮧ",       // nf-fa-android (more reliable Nerd Font glyph)
+            // AI/Assistant - try nf-fa-robot
+            Icon::Robot => "",       // nf-fa-robot (Font Awesome robot)
             Icon::Sparkles => "✨",    // Unicode fallback
             
             // UI elements
