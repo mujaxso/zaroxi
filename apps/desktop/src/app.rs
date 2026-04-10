@@ -5,6 +5,7 @@ pub use crate::update::update;
 pub use crate::view::view;
 
 use iced::{Element, Command};
+use crate::state::WorkbenchLayoutState;
 
 impl iced::Application for App {
     type Message = Message;

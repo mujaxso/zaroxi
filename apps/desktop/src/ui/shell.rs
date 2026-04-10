@@ -1,6 +1,6 @@
-use iced::{Element, Length, widget::container};
+use iced::{Element, Length, widget::{container, text}};
 use crate::message::Message;
-use crate::state::{App, LayoutMode, Activity};
+use crate::state::{App, LayoutMode, Activity, PrimarySidebarView, AuxiliaryView};
 use super::{
     activity_bar::activity_bar,
     assistant_panel::assistant_panel,

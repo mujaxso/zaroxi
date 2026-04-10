@@ -181,12 +181,13 @@ fn top_bar<'a>(workspace_path: &'a str, is_dirty: bool) -> Element<'a, Message> 
 }
 
 fn activity_rail<'a>(active_activity: Activity) -> Element<'a, Message> {
+    // Define activities with their corresponding Activity enum values
     let activities = [
-        (Activity::Explorer, "📁", "Explorer"),
-        (Activity::Search, "🔍", "Search"),
-        (Activity::Ai, "🤖", "AI"),
-        (Activity::SourceControl, "🔄", "Git"),
-        (Activity::Settings, "⚙️", "Settings"),
+        (Activity::explorer(), "📁", "Explorer"),
+        (Activity::search(), "🔍", "Search"),
+        (Activity::ai_assistant(), "🤖", "AI"),
+        (Activity::source_control(), "🔄", "Git"),
+        (Activity::settings(), "⚙️", "Settings"),
     ];
 
     let children: Vec<Element<_>> = activities
@@ -199,7 +200,7 @@ fn activity_rail<'a>(active_activity: Activity) -> Element<'a, Message> {
                 iced::theme::Button::Secondary
             };
             // For AI activity, we want to toggle the panel visibility
-            let message = if activity == Activity::Ai {
+            let message = if activity == Activity::ai_assistant() {
                 Message::ToggleAiPanel
             } else {
                 Message::ActivitySelected(activity)
@@ -270,10 +271,14 @@ fn left_panel_with_expanded<'a>(
     workspace_path: &'a str,
 ) -> Element<'a, Message> {
     match active_activity {
-        Activity::Explorer => explorer_panel_with_expanded(file_entries, _expanded_directories, workspace_path),
-        Activity::Search => search_panel(),
-        Activity::SourceControl => terminal_panel(),
-        Activity::Settings => settings_panel(),
+        Activity::Primary(crate::state::PrimarySidebarView::Explorer) => 
+            explorer_panel_with_expanded(file_entries, _expanded_directories, workspace_path),
+        Activity::Primary(crate::state::PrimarySidebarView::Search) => 
+            search_panel(),
+        Activity::Primary(crate::state::PrimarySidebarView::SourceControl) => 
+            terminal_panel(),
+        Activity::Primary(crate::state::PrimarySidebarView::Settings) => 
+            settings_panel(),
         _ => placeholder_panel(&format!("{} panel", format!("{:?}", active_activity))),
     }
 }

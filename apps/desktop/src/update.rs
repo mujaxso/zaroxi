@@ -637,7 +637,7 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
             Command::none()
         }
         Message::ActivityHovered(activity) => {
-            app.hovered_activity = activity;
+            app.workbench_layout.hovered_activity = activity;
             Command::none()
         }
         Message::FontLoaded => {

@@ -1,7 +1,7 @@
 use iced::widget::text_editor;
 use core_types::workspace::DirectoryEntry;
 use editor_buffer::buffer::TextBuffer;
-use crate::state::{Activity, FileMetadata, PrimarySidebarView, AuxiliaryView};
+use crate::state::{Activity, FileMetadata};
 use crate::explorer::actions::ExplorerMessage;
 use crate::settings::editor::FontFamily;
 
