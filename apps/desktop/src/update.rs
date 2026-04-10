@@ -382,7 +382,7 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                 Command::perform(
                     async move {
                         match WorkspaceLoader::list_directory(&path) {
-                            Ok(entries) => Message::WorkspaceLoaded(Ok(entries)),
+                            Ok(entries) => Message::WorkspaceLoaded(Ok((path, entries))),
                             Err(e) => Message::WorkspaceLoaded(Err(format!("Failed to refresh workspace: {}", e))),
                         }
                     },
@@ -496,7 +496,7 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                         return Command::perform(
                             async move {
                                 match WorkspaceLoader::list_directory(&path) {
-                                    Ok(entries) => Message::WorkspaceLoaded(Ok(entries)),
+                                    Ok(entries) => Message::WorkspaceLoaded(Ok((path, entries))),
                                     Err(e) => Message::WorkspaceLoaded(Err(format!("Failed to refresh workspace: {}", e))),
                                 }
                             },

@@ -69,7 +69,7 @@ pub fn top_bar(app: &App) -> Element<'_, Message> {
         }
     }
     
-    let input_style = WorkspaceInputStyle {
+    let _input_style = WorkspaceInputStyle {
         colors: style.colors,
     };
     
