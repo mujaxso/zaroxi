@@ -147,12 +147,21 @@ fn activity_button<'a>(item: &ActivityItem, app: &App, style: &StyleHelpers) -> 
         style.colors.text_muted
     };
     
-    // Create the button content - just the icon
-    let icon = item.icon.render_with_color(
-        &app.editor_typography,
-        icon_color,
-        Some(20), // Icon size
-    );
+    // Special handling for AI icon to ensure it's visible
+    let icon = if matches!(item.icon, Icon::Robot) {
+        // Always use a reliable Unicode character for AI icon
+        // Use a different approach to ensure visibility
+        iced::widget::text("🤖")
+            .size(20)
+            .style(iced::theme::Text::Color(icon_color))
+            .into()
+    } else {
+        item.icon.render_with_color(
+            &app.editor_typography,
+            icon_color,
+            Some(20), // Icon size
+        )
+    };
     
     let button_content = container(icon)
         .width(Length::Fill)
