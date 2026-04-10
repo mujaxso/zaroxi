@@ -28,7 +28,9 @@ fn main() -> iced::Result {
     }
     
     // Force X11 explicitly
-    std::env::set_var("WINIT_UNIX_BACKEND", "x11");
+    unsafe {
+        std::env::set_var("WINIT_UNIX_BACKEND", "x11");
+    }
     println!("DEBUG: Forced X11 backend");
     
     // Increase memory limits for large files

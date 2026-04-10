@@ -35,6 +35,7 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                 async move {
                     use std::sync::mpsc;
                     use std::thread;
+                    use std::time::Duration;
                     
                     println!("DEBUG: Opening folder picker (sync)...");
                     
@@ -43,18 +44,21 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                     
                     // Spawn a thread to open the dialog
                     thread::spawn(move || {
+                        println!("DEBUG: In dialog thread, creating file dialog...");
                         // Use the synchronous version of rfd
                         let dialog = rfd::FileDialog::new()
                             .set_title("Select Workspace Directory");
                         
+                        println!("DEBUG: Calling pick_folder()...");
                         let result = dialog.pick_folder();
+                        println!("DEBUG: pick_folder() returned: {:?}", result);
                         
                         // Send the result back
                         let _ = tx.send(result);
                     });
                     
-                    // Wait for the result
-                    match rx.recv() {
+                    // Wait for the result with a timeout
+                    match rx.recv_timeout(Duration::from_secs(30)) {
                         Ok(Some(folder)) => {
                             println!("DEBUG: Folder selected: {:?}", folder);
                             let path = folder.to_string_lossy().to_string();
@@ -74,8 +78,12 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                             println!("DEBUG: User cancelled the dialog");
                             Message::WorkspaceDialogCancelled
                         }
-                        Err(_) => {
-                            println!("DEBUG: Failed to receive dialog result");
+                        Err(mpsc::RecvTimeoutError::Timeout) => {
+                            println!("DEBUG: Dialog timed out after 30 seconds");
+                            Message::WorkspaceDialogCancelled
+                        }
+                        Err(mpsc::RecvTimeoutError::Disconnected) => {
+                            println!("DEBUG: Dialog thread disconnected unexpectedly");
                             Message::WorkspaceDialogCancelled
                         }
                     }
