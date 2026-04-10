@@ -80,8 +80,15 @@ pub fn top_bar(app: &App) -> Element<'_, Message> {
         if is_compact { "Path..." } else { "Workspace path..." },
         &app.workspace_path,
     )
-    .on_input(Message::WorkspacePathChanged)
-    .on_submit(Message::SubmitManualWorkspacePath(app.workspace_path.clone()))
+    .on_input(|path| {
+        println!("DEBUG: Text input on_input: {}", path);
+        Message::WorkspacePathChanged(path)
+    })
+    .on_submit({
+        let current_path = app.workspace_path.clone();
+        println!("DEBUG: Text input on_submit triggered with path: {}", current_path);
+        Message::SubmitManualWorkspacePath(current_path)
+    })
     .padding(if is_compact { [4, 8] } else { [6, 10] })
     .width(if is_compact { Length::FillPortion(2) } else { Length::FillPortion(3) })
     .style(iced::theme::TextInput::Custom(Box::new(input_style)));

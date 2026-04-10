@@ -49,7 +49,7 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                         }
                         None => {
                             // Return a special error message suggesting manual entry
-                            Message::WorkspaceLoaded(Err("Native folder picker failed. Please enter the path manually.".to_string()))
+                            Message::WorkspaceLoaded(Err("Native folder picker failed or was cancelled.".to_string()))
                         }
                     }
                 },
@@ -764,7 +764,7 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
             Command::none()
         }
         Message::SubmitManualWorkspacePath(path) => {
-            println!("DEBUG: SubmitManualWorkspacePath: {}", path);
+            println!("DEBUG: SubmitManualWorkspacePath handler called with path: {}", path);
             if path.is_empty() {
                 app.status_message = "Please enter a workspace path".to_string();
                 Command::none()
@@ -788,20 +788,20 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                 let path_clone = path.clone();
                 Command::perform(
                     async move {
-                        println!("DEBUG: Loading workspace from: {}", path_clone);
+                        println!("DEBUG: Loading workspace from manual path: {}", path_clone);
                         match WorkspaceLoader::list_directory(&path_clone) {
                             Ok(entries) => {
-                                println!("DEBUG: Loaded {} entries", entries.len());
+                                println!("DEBUG: Manual workspace load successful with {} entries", entries.len());
                                 Message::WorkspaceLoaded(Ok((path_clone, entries)))
                             },
                             Err(e) => {
-                                println!("DEBUG: Failed to load workspace: {}", e);
-                                Message::WorkspaceLoaded(Err(format!("Failed to open workspace: {}", e)))
+                                println!("DEBUG: Manual workspace load failed: {}", e);
+                                Message::WorkspaceLoaded(Err(format!("Manual workspace load failed: {}", e)))
                             },
                         }
                     },
                     |result| {
-                        println!("DEBUG: Workspace load result: {:?}", result);
+                        println!("DEBUG: Manual workspace load result: {:?}", result);
                         result
                     },
                 )
