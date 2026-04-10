@@ -261,9 +261,9 @@ where
 {
     use iced::Length;
     
-    // Use smaller default sizes: default icon size is 12px, button size is 24px
-    let icon_size = size.unwrap_or(12);
-    let button_size_val = button_size.unwrap_or(24.0);
+    // Use even smaller default sizes: default icon size is 10px, button size is 20px
+    let icon_size = size.unwrap_or(10);
+    let button_size_val = button_size.unwrap_or(20.0);
     
     // Create the icon element
     let icon_element = icon.render(typography, style, Some(icon_size));

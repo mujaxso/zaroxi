@@ -30,8 +30,8 @@ pub fn explorer_panel<'a>(app: &'a App) -> Element<'a, Message> {
                     &app.editor_typography,
                     &style,
                     Some(Message::Explorer(ExplorerMessage::CreateFileRequested)),
-                    Some(12), // Smaller icon size
-                    Some(24.0), // Smaller button size
+                    Some(10), // Even smaller icon size
+                    Some(20.0), // Even smaller button size
                 )
                 .style(iced::theme::Button::Secondary),
                 // New folder button
@@ -40,8 +40,8 @@ pub fn explorer_panel<'a>(app: &'a App) -> Element<'a, Message> {
                     &app.editor_typography,
                     &style,
                     Some(Message::Explorer(ExplorerMessage::CreateFolderRequested)),
-                    Some(12), // Smaller icon size
-                    Some(24.0), // Smaller button size
+                    Some(10), // Even smaller icon size
+                    Some(20.0), // Even smaller button size
                 )
                 .style(iced::theme::Button::Secondary),
                 // Refresh button
@@ -50,8 +50,8 @@ pub fn explorer_panel<'a>(app: &'a App) -> Element<'a, Message> {
                     &app.editor_typography,
                     &style,
                     Some(Message::Explorer(ExplorerMessage::Refresh)),
-                    Some(12), // Smaller icon size
-                    Some(24.0), // Smaller button size
+                    Some(10), // Even smaller icon size
+                    Some(20.0), // Even smaller button size
                 )
                 .style(iced::theme::Button::Secondary),
             ]
@@ -222,8 +222,8 @@ fn explorer_row(row: crate::explorer::state::VisibleRow, app: &App, is_compact: 
                         &app.editor_typography,
                         &style,
                         Some(Message::Explorer(ExplorerMessage::RenameRequested(row.path.clone()))),
-                        Some(10), // Smaller icon size
-                        Some(22.0), // Smaller button size
+                        Some(8), // Even smaller icon size
+                        Some(18.0), // Even smaller button size
                     )
                     .style(iced::theme::Button::Secondary),
                     // Delete button - using centered icon button
@@ -232,8 +232,8 @@ fn explorer_row(row: crate::explorer::state::VisibleRow, app: &App, is_compact: 
                         &app.editor_typography,
                         &style,
                         Some(Message::Explorer(ExplorerMessage::DeleteRequested(row.path.clone()))),
-                        Some(10), // Smaller icon size
-                        Some(22.0), // Smaller button size
+                        Some(8), // Even smaller icon size
+                        Some(18.0), // Even smaller button size
                     )
                     .style(iced::theme::Button::Secondary),
                 ]
@@ -269,8 +269,8 @@ fn explorer_row(row: crate::explorer::state::VisibleRow, app: &App, is_compact: 
                         &app.editor_typography,
                         &style,
                         Some(Message::Explorer(ExplorerMessage::RenameRequested(row.path.clone()))),
-                        Some(10), // Smaller icon size
-                        Some(22.0), // Smaller button size
+                        Some(8), // Even smaller icon size
+                        Some(18.0), // Even smaller button size
                     )
                     .style(iced::theme::Button::Secondary),
                     // Delete button - using centered icon button
@@ -279,8 +279,8 @@ fn explorer_row(row: crate::explorer::state::VisibleRow, app: &App, is_compact: 
                         &app.editor_typography,
                         &style,
                         Some(Message::Explorer(ExplorerMessage::DeleteRequested(row.path.clone()))),
-                        Some(10), // Smaller icon size
-                        Some(22.0), // Smaller button size
+                        Some(8), // Even smaller icon size
+                        Some(18.0), // Even smaller button size
                     )
                     .style(iced::theme::Button::Secondary),
                 ]
