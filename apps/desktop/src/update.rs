@@ -755,5 +755,11 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
             }
             Command::none()
         }
+        Message::WorkspaceDialogCancelled => {
+            // User cancelled the folder picker - just update status message
+            app.status_message = "Workspace selection cancelled".to_string();
+            // Don't set an error message
+            Command::none()
+        }
     }
 }

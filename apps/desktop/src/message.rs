@@ -60,4 +60,6 @@ pub enum Message {
     SaveTypographySettings,
     // Load typography settings
     TypographySettingsLoaded(Result<crate::settings::editor::EditorTypographySettings, String>),
+    // Workspace dialog was cancelled
+    WorkspaceDialogCancelled,
 }
