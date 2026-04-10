@@ -185,16 +185,7 @@ impl Icon {
     {
         let icon_size = size.unwrap_or(typography.font_size);
         
-        // For the Robot icon, always use a reliable approach
-        if matches!(self, Icon::Robot) {
-            // Use a system font that definitely supports emoji
-            return text("🤖")
-                .size(icon_size)
-                .style(iced::theme::Text::Color(style.text_secondary()))
-                .into();
-        }
-        
-        // For other icons, use the normal logic
+        // For all icons, use the normal logic
         let (icon_char, font_name) = match typography.icon_mode {
             IconMode::NerdFonts => (self.nerd_font_glyph(), typography.font_family.to_family_string()),
             IconMode::Unicode => (self.unicode_fallback(), typography.font_family.to_family_string()),
@@ -222,16 +213,7 @@ impl Icon {
     {
         let icon_size = size.unwrap_or(typography.font_size);
         
-        // For the Robot icon, always use a reliable approach
-        if matches!(self, Icon::Robot) {
-            // Use a system font that definitely supports emoji
-            return text("🤖")
-                .size(icon_size)
-                .style(iced::theme::Text::Color(color))
-                .into();
-        }
-        
-        // For other icons, use the normal logic
+        // For all icons, use the normal logic
         let (icon_char, font_name) = match typography.icon_mode {
             IconMode::NerdFonts => (self.nerd_font_glyph(), typography.font_family.to_family_string()),
             IconMode::Unicode => (self.unicode_fallback(), typography.font_family.to_family_string()),
