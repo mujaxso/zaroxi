@@ -107,7 +107,7 @@ impl Icon {
             Icon::Info => "ℹ",
             
             // AI/Assistant
-            Icon::Robot => "🚀",       // Rocket for AI
+            Icon::Robot => "🤖",
             Icon::Sparkles => "✨",
             
             // UI elements
@@ -161,7 +161,7 @@ impl Icon {
             Icon::Info => "",        // nf-fa-info_circle
             
             // AI/Assistant
-            Icon::Robot => "",       // nf-oct-rocket (more likely available)
+            Icon::Robot => "🤖",       // Use Unicode robot emoji directly
             Icon::Sparkles => "✨",    // Unicode fallback
             
             // UI elements
@@ -171,21 +171,6 @@ impl Icon {
         }
     }
 
-    /// Get the appropriate font for icon rendering.
-    fn get_font(typography: &EditorTypographySettings) -> iced::Font {
-        // For icons, we need to use a font that contains the icon glyphs
-        // The icon font stack is defined in EditorTypographySettings
-        let icon_stack = typography.icon_font_stack();
-        
-        // Try each font in the stack in order
-        for font_name in icon_stack.iter() {
-            // Return the font - Iced will handle fallback if glyph not found
-            return iced::Font::with_name(font_name);
-        }
-        
-        // Final fallback to default font
-        iced::Font::with_name(typography.font_family.to_family_string())
-    }
 
     /// Render this icon as a text element with appropriate styling.
     pub fn render<'a, Message>(
@@ -204,8 +189,8 @@ impl Icon {
             IconMode::Disabled => " ",
         };
         
-        // Use the appropriate font for icon rendering
-        let font = Self::get_font(typography);
+        // Use the default font family which should be a Nerd Font
+        let font = iced::Font::with_name(typography.font_family.to_family_string());
         
         text(icon_char)
             .size(icon_size)
@@ -231,8 +216,8 @@ impl Icon {
             IconMode::Disabled => " ",
         };
         
-        // Use the appropriate font for icon rendering
-        let font = Self::get_font(typography);
+        // Use the default font family which should be a Nerd Font
+        let font = iced::Font::with_name(typography.font_family.to_family_string());
         
         text(icon_char)
             .size(icon_size)
