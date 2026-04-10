@@ -29,17 +29,30 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
             Command::none()
         }
         Message::OpenWorkspace => {
-            if app.workspace_path.is_empty() {
-                app.status_message = "Please enter a workspace path".to_string();
-                return Command::none();
-            }
-            
-            let path = app.workspace_path.clone();
+            // Open a native file dialog to select a directory
             Command::perform(
                 async move {
-                    match WorkspaceLoader::list_directory(&path) {
-                        Ok(entries) => Message::WorkspaceLoaded(Ok(entries)),
-                        Err(e) => Message::WorkspaceLoaded(Err(format!("Failed to open workspace: {}", e))),
+                    use rfd::AsyncFileDialog;
+                    
+                    // Open a directory picker
+                    let handle = AsyncFileDialog::new()
+                        .set_title("Select Workspace Directory")
+                        .pick_folder()
+                        .await;
+                    
+                    match handle {
+                        Some(folder) => {
+                            let path = folder.path().to_string_lossy().to_string();
+                            // Load the workspace immediately after selection
+                            match WorkspaceLoader::list_directory(&path) {
+                                Ok(entries) => Message::WorkspaceLoaded(Ok(entries)),
+                                Err(e) => Message::WorkspaceLoaded(Err(format!("Failed to open workspace: {}", e))),
+                            }
+                        }
+                        None => {
+                            // User cancelled the dialog
+                            Message::WorkspaceLoaded(Err("No directory selected".to_string()))
+                        }
                     }
                 },
                 |result| result,

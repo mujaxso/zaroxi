@@ -63,16 +63,24 @@ pub fn build_explorer_tree(entries: &[DirectoryEntry]) -> Vec<ExplorerNode> {
     }
     
     // Third pass: build the tree by adding children to their parents
+    // We need to collect child nodes first, then add them to parents
+    let mut child_nodes_by_parent: HashMap<String, Vec<ExplorerNode>> = HashMap::new();
+    
+    // First, remove all child nodes from path_to_node
     for (parent_path, child_paths) in parent_to_children {
+        let mut children = Vec::new();
+        for child_path in child_paths {
+            if let Some(child_node) = path_to_node.remove(&child_path) {
+                children.push(child_node);
+            }
+        }
+        child_nodes_by_parent.insert(parent_path, children);
+    }
+    
+    // Now, add children to their parents
+    for (parent_path, mut children) in child_nodes_by_parent {
         if let Some(parent_node) = path_to_node.get_mut(&parent_path) {
             // Sort children: directories first, then files, alphabetically
-            let mut children = Vec::new();
-            for child_path in child_paths {
-                if let Some(child_node) = path_to_node.remove(&child_path) {
-                    children.push(child_node);
-                }
-            }
-            
             children.sort_by(|a, b| {
                 if a.is_dir != b.is_dir {
                     b.is_dir.cmp(&a.is_dir)
