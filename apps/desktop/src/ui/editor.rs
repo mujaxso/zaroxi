@@ -1,6 +1,6 @@
 use iced::{
     widget::{container, text_editor},
-    Element, Length, Font,
+    Element, Length, Font, Color,
 };
 
 use crate::app::Message;

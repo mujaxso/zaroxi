@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 use workspace_model::state::WorkspaceState;
 use core_types::workspace::DirectoryEntry;
-use editor_core::{EditorState, Document};
+use editor_core::EditorState;
 use iced::widget::text_editor;
 use iced;
 

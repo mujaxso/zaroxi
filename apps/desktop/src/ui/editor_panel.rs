@@ -1,4 +1,4 @@
-use iced::{Element, Length, widget::{column, container, row, text}};
+use iced::{Element, Length, Color, widget::{column, container, row, text}};
 use crate::message::Message;
 use crate::state::App;
 use super::style::StyleHelpers;
