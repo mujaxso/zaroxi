@@ -1,7 +1,6 @@
 use iced::{Element, Length, Color, widget::{container, text}};
 use crate::message::Message;
 use crate::state::{App, LayoutMode, PrimarySidebarView, AuxiliaryView};
-use crate::theme::NeoteTheme;
 use super::{
     activity_bar::activity_bar,
     assistant_panel::assistant_panel,
@@ -142,7 +141,7 @@ pub fn shell(app: &App) -> Element<'_, Message> {
     let main_content = main_content_row
         .height(Length::Fill)
         .spacing(0)  // No spacing between panels
-        .align_items(iced::Alignment::Stretch);  // Make all panels stretch to fill height
+        .align_items(iced::Alignment::Fill);  // Make all panels stretch to fill height
     
     let status_bar = container(status_bar(app))
         .width(Length::Fill)
