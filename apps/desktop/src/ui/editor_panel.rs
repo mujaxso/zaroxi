@@ -1,4 +1,4 @@
-use iced::{Element, Length, Color, widget::{column, container, row, text, horizontal_rule}};
+use iced::{Element, Length, Color, widget::{column, container, row, text, horizontal_rule, Space}};
 use crate::message::Message;
 use crate::state::App;
 use super::style::StyleHelpers;
@@ -140,13 +140,13 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
     // Add separator only when a file is opened
     if app.active_file_path.is_some() {
         // Add a very subtle separator line between header and editor content
-        // Use a thinner, more subtle line
-        let separator = container(iced::widget::horizontal_rule(1))
-            .height(Length::Fixed(0.5))  // Thinner line
+        // Use a custom container for precise control
+        let separator = container(iced::widget::Space::with_height(Length::Fixed(0.5)))
             .width(Length::Fill)
+            .height(Length::Fixed(0.5))
             .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
                 container::Appearance {
-                    background: Some(style.colors.divider.into()),  // Use divider color which is more subtle
+                    background: Some(style.colors.divider.into()),  // Use divider color
                     border: iced::Border {
                         color: Color::TRANSPARENT,
                         width: 0.0,
