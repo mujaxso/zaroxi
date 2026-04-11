@@ -13,11 +13,11 @@ use super::{
 
 /// Main shell that composes all UI components - Premium compact layout
 pub fn shell(app: &App) -> Element<'_, Message> {
-    // Get panel widths based on layout mode - editor gets significantly more space
+    // Get panel widths based on layout mode - make explorer and assistant larger
     let (explorer_width, assistant_width) = match app.layout_mode {
-        LayoutMode::Wide => (200.0, 240.0),      // Make sidebars narrower, editor wider
-        LayoutMode::Medium => (160.0, 200.0),    // Further reduce sidebars
-        LayoutMode::Narrow => (120.0, 160.0),    // Minimal sidebars
+        LayoutMode::Wide => (280.0, 320.0),      // Make sidebars larger
+        LayoutMode::Medium => (240.0, 280.0),    // Keep them substantial
+        LayoutMode::Narrow => (200.0, 240.0),    // Still reasonable
     };
     
     // Build panels with responsive sizing
@@ -67,13 +67,26 @@ pub fn shell(app: &App) -> Element<'_, Message> {
         None
     };
     
-    // Editor panel or Settings panel - make it fill naturally without extra containers
+    // Editor panel or Settings panel - make it fill naturally
     let main_editor_area = if is_settings_mode {
         // When in settings mode, show settings in the main editor area
         editor_font_settings_panel(app)
     } else {
-        // Normal editor panel - directly use the panel without extra container
-        editor_panel(app)
+        // Normal editor panel - wrap in a container that fills
+        container(editor_panel(app))
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .style(iced::theme::Container::Custom(Box::new(|_theme: &iced::Theme| {
+                container::Appearance {
+                    background: None,
+                    border: iced::Border {
+                        color: Color::TRANSPARENT,
+                        width: 0.0,
+                        radius: 0.0.into(),
+                    },
+                    ..Default::default()
+                }
+            })))
     };
     
     // Auxiliary sidebar (AI Assistant)
@@ -104,11 +117,7 @@ pub fn shell(app: &App) -> Element<'_, Message> {
     }
     
     // Editor area should expand to fill remaining space
-    main_content_row = main_content_row.push(
-        container(main_editor_area)
-            .width(Length::Fill)
-            .height(Length::Fill)
-    );
+    main_content_row = main_content_row.push(main_editor_area);
     
     // Only show auxiliary sidebar if not in settings mode
     if !is_settings_mode {
