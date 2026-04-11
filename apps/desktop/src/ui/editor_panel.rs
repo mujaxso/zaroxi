@@ -135,35 +135,43 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
     
     // Create an editor panel with a border to match other panels
     // The panel should have a visible border like the explorer and assistant panels
+    let mut column_children = vec![header.into()];
+    
+    // Add separator only when a file is opened
+    if app.active_file_path.is_some() {
+        // Add a very subtle separator line between header and editor content
+        // Use a thinner, more subtle line
+        let separator = container(iced::widget::horizontal_rule(1))
+            .height(Length::Fixed(0.5))  // Thinner line
+            .width(Length::Fill)
+            .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
+                container::Appearance {
+                    background: Some(style.colors.divider.into()),  // Use divider color which is more subtle
+                    border: iced::Border {
+                        color: Color::TRANSPARENT,
+                        width: 0.0,
+                        radius: 0.0.into(),
+                    },
+                    ..Default::default()
+                }
+            })));
+        column_children.push(separator.into());
+    }
+    
+    // Add editor content
+    column_children.push(
+        container(editor_content)
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .clip(true) // Ensure content doesn't overflow
+            .into()
+    );
+    
     container(
-        column![
-            header,
-            // Add a subtle separator line between header and editor content
-            // Use a container with a fixed height to ensure visibility
-            container(iced::widget::horizontal_rule(1))
-                .height(Length::Fixed(1.0))
-                .width(Length::Fill)
-                .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
-                    container::Appearance {
-                        background: Some(style.colors.text_faint.into()),
-                        border: iced::Border {
-                            color: Color::TRANSPARENT,
-                            width: 0.0,
-                            radius: 0.0.into(),
-                        },
-                        ..Default::default()
-                    }
-                }))),
-            // Editor content should fill all remaining space
-            // The text editor handles its own scrolling, so we don't need extra containers
-            container(editor_content)
-                .width(Length::Fill)
-                .height(Length::Fill)
-                .clip(true) // Ensure content doesn't overflow
-        ]
-        .width(Length::Fill)
-        .height(Length::Fill)
-        .spacing(0)  // No spacing between header, separator, and editor
+        iced::widget::Column::with_children(column_children)
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .spacing(0)  // No spacing between header, separator, and editor
     )
     .width(Length::Fill)
     .height(Length::Fill)
