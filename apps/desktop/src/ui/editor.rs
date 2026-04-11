@@ -6,6 +6,26 @@ use iced::{
 use crate::app::Message;
 use crate::settings::editor::EditorTypographySettings;
 
+// Custom style sheet for text editor
+struct EditorStyleSheet {
+    background_color: Color,
+}
+
+impl iced::widget::text_editor::StyleSheet for EditorStyleSheet {
+    type Style = iced::Theme;
+
+    fn appearance(&self, _style: &Self::Style) -> iced::widget::text_editor::Appearance {
+        iced::widget::text_editor::Appearance {
+            background: self.background_color.into(),
+            border: iced::Border {
+                color: Color::TRANSPARENT,
+                width: 0.0,
+                radius: 0.0.into(),
+            },
+        }
+    }
+}
+
 pub fn editor<'a>(
     text_editor_content: &'a iced::widget::text_editor::Content,
     typography: &EditorTypographySettings,
@@ -16,24 +36,16 @@ pub fn editor<'a>(
     let font_family = typography.font_family.to_family_string();
     let font = Font::with_name(font_family);
     
-    // Create a text editor with its own built-in scrolling
-    // The text_editor widget handles scrolling internally, so we should NOT wrap it
-    // in an outer scrollable container to avoid conflicts that cause crashes
-    // Create a custom style for the text editor
-    let editor_style = iced::widget::text_editor::Appearance {
-        background: background_color.into(),
-        border: iced::Border {
-            color: Color::TRANSPARENT,
-            width: 0.0,
-            radius: 0.0.into(),
-        },
+    // Create a custom style sheet
+    let style_sheet = EditorStyleSheet {
+        background_color,
     };
     
     let editor = text_editor::TextEditor::new(text_editor_content)
         .on_action(Message::EditorContentChanged)
         .font(font)
         .height(Length::Fill)
-        .style(iced::theme::TextEditor::Custom(Box::new(move || editor_style)));
+        .style(iced::theme::TextEditor::Custom(Box::new(style_sheet)));
     
     // Place the editor in a container with NO padding
     // The text_editor widget will handle its own scrolling
