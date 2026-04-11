@@ -1,5 +1,2 @@
-//! This module delegates to domain-specific update modules in the `update` directory.
-//! Each domain (workspace, explorer, editor, etc.) handles its own messages.
-
-
-pub use update::update;
+// Re-export the update function from the update module
+pub use crate::update::update;
