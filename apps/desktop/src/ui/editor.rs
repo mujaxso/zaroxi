@@ -84,15 +84,24 @@ pub fn editor<'a>(
         .font(font)
         .style(iced::theme::TextEditor::Custom(Box::new(style_sheet)));
     
-    // Place the editor in a container with NO padding
-    // The text_editor widget will handle its own scrolling
-    // Ensure the editor is properly constrained and clipped
-    // The container sets the width to Fill, which constrains the text editor
-    container(editor)
+    // Wrap the editor in a scrollable container to enable horizontal scrolling
+    // This allows long lines to be viewed by scrolling horizontally
+    // The editor should expand to fit its content width, not be constrained by the viewport
+    let scrollable_editor = iced::widget::scrollable(
+        container(editor)
+            .width(Length::Shrink)  // Allow the editor to expand beyond viewport
+            .height(Length::Fill)
+    )
+    .horizontal_scroll(iced::widget::scrollable::Properties::new())
+    .width(Length::Fill)
+    .height(Length::Fill);
+    
+    // Place the scrollable editor in a container with NO padding
+    // The container should not clip content, as scrolling handles overflow
+    container(scrollable_editor)
         .padding(0) // No padding
         .width(Length::Fill)
         .height(Length::Fill)
-        .clip(true) // Clip text to prevent overflow
         .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
             container::Appearance {
                 background: Some(background_color.into()),

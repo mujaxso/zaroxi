@@ -135,7 +135,6 @@ pub fn shell(app: &App) -> Element<'_, Message> {
         container(main_editor_area)
             .width(Length::Fill)
             .height(Length::Fill)
-            .clip(true) // Ensure editor content doesn't overflow
             .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
                 container::Appearance {
                     background: Some(style.colors.editor_background.into()),

@@ -183,7 +183,7 @@ pub fn explorer_panel<'a>(app: &'a App) -> Element<'a, Message> {
     
     impl iced::widget::container::StyleSheet for ExplorerPanelContainerStyle {
         type Style = iced::Theme;
-        
+    
         fn appearance(&self, _style: &Self::Style) -> iced::widget::container::Appearance {
             container::Appearance {
                 background: Some(self.colors.panel_background.into()),

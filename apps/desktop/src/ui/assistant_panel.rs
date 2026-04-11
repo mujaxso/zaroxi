@@ -279,7 +279,7 @@ pub fn assistant_panel(app: &App) -> Element<'_, Message> {
     
     impl iced::widget::container::StyleSheet for AssistantPanelContainerStyle {
         type Style = iced::Theme;
-        
+    
         fn appearance(&self, _style: &Self::Style) -> iced::widget::container::Appearance {
             container::Appearance {
                 background: Some(self.colors.panel_background.into()),
