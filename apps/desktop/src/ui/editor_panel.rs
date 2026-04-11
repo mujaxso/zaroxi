@@ -12,33 +12,33 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
         let file_name = active_path.split('/').last().unwrap_or(active_path);
         container(
             row![
-                Icon::File.render(&app.editor_typography, &style, Some(11)),
+                Icon::File.render(&app.editor_typography, &style, Some(9)),
                 text(file_name)
-                    .size(10)
+                    .size(9)
                     .style(iced::theme::Text::Color(style.colors.text_primary)),
                 iced::widget::horizontal_space(),
                 if app.is_dirty {
                     Icon::Warning.render_with_color(
                         &app.editor_typography,
                         style.colors.warning,
-                        Some(9),
+                        Some(7),
                     )
                 } else {
                     Icon::Success.render_with_color(
                         &app.editor_typography,
                         style.colors.success,
-                        Some(9),
+                        Some(7),
                     )
                 }
             ]
-            .spacing(2)  // Reduced spacing
+            .spacing(1)  // Even less spacing
             .align_items(iced::Alignment::Center)
         )
-        .padding([1, 4])  // Minimal padding
+        .padding([0, 4])  // No vertical padding
         .width(Length::Fill)
         .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
             container::Appearance {
-                background: Some(style.colors.editor_background.into()),  // Match editor background
+                background: None,  // No background to blend with editor
                 border: iced::Border {
                     color: Color::TRANSPARENT,
                     width: 0.0,
@@ -50,19 +50,19 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
     } else {
         container(
             row![
-                Icon::File.render(&app.editor_typography, &style, Some(11)),
+                Icon::File.render(&app.editor_typography, &style, Some(9)),
                 text("No file selected")
-                    .size(10)
+                    .size(9)
                     .style(iced::theme::Text::Color(style.colors.text_muted)),
             ]
-            .spacing(2)  // Reduced spacing
+            .spacing(1)  // Even less spacing
             .align_items(iced::Alignment::Center)
         )
-        .padding([1, 4])  // Minimal padding
+        .padding([0, 4])  // No vertical padding
         .width(Length::Fill)
         .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
             container::Appearance {
-                background: Some(style.colors.editor_background.into()),  // Match editor background
+                background: None,  // No background to blend with editor
                 border: iced::Border {
                     color: Color::TRANSPARENT,
                     width: 0.0,
