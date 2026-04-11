@@ -11,13 +11,6 @@ pub mod workbench;
 pub mod assistant;
 pub mod dialog;
 
-pub use workspace::*;
-pub use explorer::*;
-pub use editor::*;
-pub use settings::*;
-pub use workbench::*;
-pub use assistant::*;
-pub use dialog::*;
 
 use crate::message::Message;
 use crate::state::App;

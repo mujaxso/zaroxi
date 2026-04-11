@@ -18,7 +18,7 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
             // Convert to ExplorerMessage
             handle_explorer_message(app, ExplorerMessage::ToggleDirectory(std::path::PathBuf::from(path)))
         }
-        Message::KeyPressed(key, modifiers) => {
+        Message::KeyPressed(key, _modifiers) => {
             // Handle Escape key for canceling inline editing
             if let iced::keyboard::Key::Named(iced::keyboard::key::Named::Escape) = key {
                 if !matches!(app.explorer_state.inline_edit, InlineEditMode::None) {

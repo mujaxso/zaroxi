@@ -59,7 +59,7 @@ impl iced::Application for App {
             let _ = std::fs::create_dir_all(assets_font_dir);
         }
         
-        for (file, name) in &font_files {
+        for (file, _name) in &font_files {
             // Try multiple locations
             let possible_paths = [
                 format!("{}/{}", assets_font_dir, file),

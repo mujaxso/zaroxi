@@ -2,7 +2,6 @@ use crate::message::Message;
 use file_ops::WorkspaceLoader;
 use iced::Command;
 use rfd::AsyncFileDialog;
-use tokio::time;
 
 // Try synchronous dialog as fallback
 async fn try_sync_dialog() -> Result<String, String> {

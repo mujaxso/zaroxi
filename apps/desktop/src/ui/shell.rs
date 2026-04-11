@@ -1,4 +1,4 @@
-use iced::{Element, Length, widget::{container, text}};
+use iced::{Element, Length, Color, widget::{container, text}};
 use crate::message::Message;
 use crate::state::{App, LayoutMode, PrimarySidebarView, AuxiliaryView};
 use super::{
@@ -68,7 +68,7 @@ pub fn shell(app: &App) -> Element<'_, Message> {
     };
     
     // Editor panel or Settings panel - make it fill naturally
-    let main_editor_area = if is_settings_mode {
+    let main_editor_area: Element<_> = if is_settings_mode {
         // When in settings mode, show settings in the main editor area
         editor_font_settings_panel(app)
     } else {
@@ -87,6 +87,7 @@ pub fn shell(app: &App) -> Element<'_, Message> {
                     ..Default::default()
                 }
             })))
+            .into()
     };
     
     // Auxiliary sidebar (AI Assistant)

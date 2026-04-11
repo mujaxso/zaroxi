@@ -84,7 +84,7 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
             app.editor_state = Some(editor_state);
             Command::none()
         }
-        Message::KeyPressed(key, modifiers) => {
+        Message::KeyPressed(key, _modifiers) => {
             // Handle arrow keys for cursor movement
             match key {
                 iced::keyboard::Key::Named(iced::keyboard::key::Named::ArrowLeft) => {
