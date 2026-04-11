@@ -18,15 +18,7 @@ pub fn assistant_panel(app: &App) -> Element<'_, Message> {
         fn active(&self, _style: &Self::Style) -> iced::widget::scrollable::Appearance {
             iced::widget::scrollable::Appearance {
                 container: iced::widget::container::Appearance::default(),
-                vertical_scrollbar: iced::widget::scrollable::Scrollbar {
-                    background: None,
-                    border: iced::Border::default(),
-                    scroller: iced::widget::scrollable::Scroller {
-                        color: self.colors.border,
-                        border: iced::Border::default(),
-                    },
-                },
-                horizontal_scrollbar: iced::widget::scrollable::Scrollbar {
+                scrollbar: iced::widget::scrollable::Scrollbar {
                     background: None,
                     border: iced::Border::default(),
                     scroller: iced::widget::scrollable::Scroller {
@@ -51,15 +43,7 @@ pub fn assistant_panel(app: &App) -> Element<'_, Message> {
             
             iced::widget::scrollable::Appearance {
                 container: iced::widget::container::Appearance::default(),
-                vertical_scrollbar: iced::widget::scrollable::Scrollbar {
-                    background: None,
-                    border: iced::Border::default(),
-                    scroller: iced::widget::scrollable::Scroller {
-                        color: scroller_color,
-                        border: iced::Border::default(),
-                    },
-                },
-                horizontal_scrollbar: iced::widget::scrollable::Scrollbar {
+                scrollbar: iced::widget::scrollable::Scrollbar {
                     background: None,
                     border: iced::Border::default(),
                     scroller: iced::widget::scrollable::Scroller {
