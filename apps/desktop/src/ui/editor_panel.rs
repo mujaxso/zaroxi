@@ -107,13 +107,44 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
     // Create a clean, borderless editor area that fills available space
     // The editor should directly fill the area without extra containers
     // Use a column that expands to fill its container
-    column![
-        header,
-        // Editor content should fill all remaining space
-        editor_content
-    ]
+    // Ensure proper clipping to prevent text overflow
+    container(
+        column![
+            header,
+            // Editor content should fill all remaining space with proper clipping
+            container(editor_content)
+                .width(Length::Fill)
+                .height(Length::Fill)
+                .clip(true)  // Clip content to prevent overflow
+                .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
+                    container::Appearance {
+                        background: None,
+                        border: iced::Border {
+                            color: Color::TRANSPARENT,
+                            width: 0.0,
+                            radius: 0.0.into(),
+                        },
+                        ..Default::default()
+                    }
+                })))
+        ]
+        .width(Length::Fill)
+        .height(Length::Fill)
+        .spacing(0)  // No spacing between header and editor
+    )
     .width(Length::Fill)
     .height(Length::Fill)
-    .spacing(0)  // No spacing between header and editor
+    .clip(true)  // Ensure outer container also clips
+    .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
+        container::Appearance {
+            background: None,
+            border: iced::Border {
+                color: Color::TRANSPARENT,
+                width: 0.0,
+                radius: 0.0.into(),
+            },
+            ..Default::default()
+        }
+    })))
     .into()
 }

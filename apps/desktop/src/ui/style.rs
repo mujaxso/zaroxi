@@ -82,6 +82,19 @@ impl StyleHelpers {
         }
     }
     
+    /// Editor content container style - ensures no borders and proper clipping
+    pub fn editor_content_container(&self) -> container::Appearance {
+        container::Appearance {
+            background: Some(self.colors.editor_background.into()),
+            border: iced::Border {
+                color: Color::TRANSPARENT,
+                width: 0.0,
+                radius: 0.0.into(),
+            },
+            ..Default::default()
+        }
+    }
+    
     /// Input container style
     pub fn input_container(&self) -> container::Appearance {
         common::containers::input(&self.colors)

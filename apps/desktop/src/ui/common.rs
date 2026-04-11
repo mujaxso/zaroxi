@@ -186,6 +186,19 @@ pub mod containers {
         }
     }
     
+    /// Editor content container style - ensures no borders and proper clipping
+    pub fn editor_content(colors: &SemanticColors) -> container::Appearance {
+        container::Appearance {
+            background: Some(colors.editor_background.into()),
+            border: iced::Border {
+                color: Color::TRANSPARENT,
+                width: 0.0,
+                radius: 0.0.into(),
+            },
+            ..Default::default()
+        }
+    }
+    
     /// Input container style - Text inputs, search
     pub fn input(colors: &SemanticColors) -> container::Appearance {
         container::Appearance {

@@ -25,10 +25,12 @@ pub fn editor<'a>(
     
     // Place the editor in a container with NO padding
     // The text_editor widget will handle its own scrolling
+    // Ensure the editor is properly constrained and clipped
     container(editor)
         .padding(0) // No padding
         .width(Length::Fill)
         .height(Length::Fill)
+        .clip(true) // Clip text to prevent overflow
         .style(iced::theme::Container::Custom(Box::new(|_theme: &iced::Theme| {
             container::Appearance {
                 background: None, // Let parent handle background
