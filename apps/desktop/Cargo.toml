@@ -17,4 +17,4 @@ iced = { version = "0.12", features = ["tokio", "multi-window"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
 dirs = "5.0"
-rfd = { workspace = true }
+rfd = { workspace = true, features = ["gtk3", "portal"] }
