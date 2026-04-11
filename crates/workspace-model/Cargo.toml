@@ -8,4 +8,4 @@ license.workspace = true
 serde = { workspace = true }
 uuid = { workspace = true }
 core-types = { path = "../core-types" }
-editor-buffer = { path = "../editor-buffer" }
+editor-core = { path = "../editor-core" }

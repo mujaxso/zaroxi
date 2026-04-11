@@ -10,7 +10,6 @@ tracing = { workspace = true }
 anyhow = { workspace = true }
 core-types = { path = "../../crates/core-types" }
 workspace-model = { path = "../../crates/workspace-model" }
-editor-buffer = { path = "../../crates/editor-buffer" }
 editor-core = { path = "../../crates/editor-core" }
 file-ops = { path = "../../crates/file-ops" }
 uuid = { workspace = true }
