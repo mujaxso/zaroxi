@@ -24,33 +24,21 @@ fn normalize_path(path: &str) -> String {
 async fn try_sync_dialog() -> Result<String, String> {
     use rfd::FileDialog;
     
-    eprintln!("[DIAG] try_sync_dialog: Starting synchronous dialog");
-    
     // Run in a blocking task to avoid freezing the UI
     match tokio::task::spawn_blocking(|| {
-        eprintln!("[DIAG] try_sync_dialog: Inside blocking task");
         let dialog = FileDialog::new()
             .set_title("Select Workspace Directory - Neote");
         
-        eprintln!("[DIAG] try_sync_dialog: Showing dialog");
-        let start = std::time::Instant::now();
-        let result = dialog.pick_folder();
-        let elapsed = start.elapsed();
-        eprintln!("[DIAG] try_sync_dialog: Dialog returned after {:?}: {:?}", elapsed, result);
-        
-        result
+        dialog.pick_folder()
     }).await {
         Ok(Some(path)) => {
             let path_str = path.to_string_lossy().to_string();
-            eprintln!("[DIAG] try_sync_dialog: Success with path: {}", path_str);
             Ok(path_str)
         }
         Ok(None) => {
-            eprintln!("[DIAG] try_sync_dialog: User cancelled");
             Err("User cancelled".to_string())
         }
         Err(e) => {
-            eprintln!("[DIAG] try_sync_dialog: Task failed: {}", e);
             Err(format!("Task failed: {}", e))
         }
     }
@@ -67,111 +55,56 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
             Command::none()
         }
         Message::OpenWorkspace => {
-            // Immediate UI feedback
-            eprintln!("[DIAG] OpenWorkspace: Button clicked, starting async task");
-            
             Command::perform(
                 async move {
-                    eprintln!("[DIAG] OpenWorkspace: Async task started");
-                    
-                    // Give a small delay to let UI update before showing dialog
-                    // This can help with focus issues on some platforms
-                    time::sleep(std::time::Duration::from_millis(100)).await;
-                    
-                    eprintln!("[DIAG] OpenWorkspace: Creating AsyncFileDialog");
+                    // Try the async dialog first
                     let dialog = AsyncFileDialog::new()
                         .set_title("Select Workspace Directory - Neote");
                     
-                    eprintln!("[DIAG] OpenWorkspace: Calling pick_folder().await");
-                    let start_time = std::time::Instant::now();
-                    let result = dialog.pick_folder().await;
-                    let elapsed = start_time.elapsed();
-                    eprintln!("[DIAG] OpenWorkspace: pick_folder() returned after {:?}: {:?}", elapsed, result);
-                    
-                    match result {
+                    match dialog.pick_folder().await {
                         Some(handle) => {
                             let path = handle.path().to_string_lossy().to_string();
-                            eprintln!("[DIAG] OpenWorkspace: User selected folder: {}", path);
-                            
-                            eprintln!("[DIAG] OpenWorkspace: Loading workspace with WorkspaceLoader");
                             match WorkspaceLoader::list_directory(&path) {
-                                Ok(entries) => {
-                                    eprintln!("[DIAG] OpenWorkspace: Successfully loaded {} entries", entries.len());
-                                    Message::WorkspaceLoaded(Ok((path, entries)))
-                                }
-                                Err(e) => {
-                                    eprintln!("[DIAG] OpenWorkspace: WorkspaceLoader error: {}", e);
-                                    Message::WorkspaceLoaded(Err(format!("Failed to open workspace: {}", e)))
-                                }
+                                Ok(entries) => Message::WorkspaceLoaded(Ok((path, entries))),
+                                Err(e) => Message::WorkspaceLoaded(Err(format!("Failed to open workspace: {}", e))),
                             }
                         }
                         None => {
-                            eprintln!("[DIAG] OpenWorkspace: Dialog returned None (cancelled or failed)");
-                            
-                            // Check if it was likely a backend failure (too fast) vs user cancellation
-                            if elapsed < std::time::Duration::from_millis(500) {
-                                eprintln!("[DIAG] OpenWorkspace: Dialog returned very quickly ({:?}), likely backend failure", elapsed);
-                                // Try synchronous dialog as fallback
-                                eprintln!("[DIAG] OpenWorkspace: Trying synchronous dialog fallback");
-                                match try_sync_dialog().await {
-                                    Ok(path) => {
-                                        eprintln!("[DIAG] OpenWorkspace: Sync dialog succeeded with path: {}", path);
-                                        match WorkspaceLoader::list_directory(&path) {
-                                            Ok(entries) => {
-                                                eprintln!("[DIAG] OpenWorkspace: Successfully loaded {} entries", entries.len());
-                                                Message::WorkspaceLoaded(Ok((path, entries)))
-                                            }
-                                            Err(e) => {
-                                                eprintln!("[DIAG] OpenWorkspace: WorkspaceLoader error: {}", e);
-                                                Message::WorkspaceLoaded(Err(format!("Failed to open workspace: {}", e)))
-                                            }
-                                        }
-                                    }
-                                    Err(e) => {
-                                        eprintln!("[DIAG] OpenWorkspace: Sync dialog also failed: {}", e);
-                                        // Check if we're in a Nix environment
-                                        let nix_env = std::env::var("NIX_PROFILES").is_ok() 
-                                            || std::env::var("IN_NIX_SHELL").is_ok()
-                                            || std::path::Path::new("/nix/store").exists();
-                                        
-                                        let error_msg = if nix_env {
-                                            format!(
-                                                "Folder picker failed to open. This is common in Nix environments.\n\
-                                                \n\
-                                                Possible solutions:\n\
-                                                1. Ensure xdg-desktop-portal is running: systemctl --user status xdg-desktop-portal\n\
-                                                2. Use manual workspace entry below\n\
-                                                3. Try running outside nix-shell with: nix develop --command cargo run\n\
-                                                \n\
-                                                Error: {}",
-                                                e
-                                            )
-                                        } else {
-                                            format!(
-                                                "Folder picker failed to open. This may be due to:\n\
-                                                1. Missing xdg-desktop-portal service (for Wayland)\n\
-                                                2. Dialog opened behind main window\n\
-                                                3. Platform compatibility issue\n\n\
-                                                Try: Install and start xdg-desktop-portal, or use manual workspace path entry.\n\
-                                                \n\
-                                                Error: {}",
-                                                e
-                                            )
-                                        };
-                                        Message::WorkspaceLoaded(Err(error_msg))
+                            // If async dialog fails, try synchronous dialog as fallback
+                            match try_sync_dialog().await {
+                                Ok(path) => {
+                                    match WorkspaceLoader::list_directory(&path) {
+                                        Ok(entries) => Message::WorkspaceLoaded(Ok((path, entries))),
+                                        Err(e) => Message::WorkspaceLoaded(Err(format!("Failed to open workspace: {}", e))),
                                     }
                                 }
-                            } else {
-                                eprintln!("[DIAG] OpenWorkspace: Likely user cancellation (took {:?})", elapsed);
-                                Message::WorkspaceDialogCancelled
+                                Err(_) => {
+                                    // Check if we're in a Nix environment
+                                    let nix_env = std::env::var("NIX_PROFILES").is_ok() 
+                                        || std::env::var("IN_NIX_SHELL").is_ok()
+                                        || std::path::Path::new("/nix/store").exists();
+                                    
+                                    let error_msg = if nix_env {
+                                        "Folder picker failed to open. This is common in Nix environments.\n\
+                                        \n\
+                                        Possible solutions:\n\
+                                        1. Ensure xdg-desktop-portal is running: systemctl --user status xdg-desktop-portal\n\
+                                        2. Use manual workspace entry below\n\
+                                        3. Try running outside nix-shell with: nix develop --command cargo run"
+                                    } else {
+                                        "Folder picker failed to open. This may be due to:\n\
+                                        1. Missing xdg-desktop-portal service (for Wayland)\n\
+                                        2. Dialog opened behind main window\n\
+                                        3. Platform compatibility issue\n\n\
+                                        Try: Install and start xdg-desktop-portal, or use manual workspace path entry."
+                                    };
+                                    Message::WorkspaceLoaded(Err(error_msg.to_string()))
+                                }
                             }
                         }
                     }
                 },
-                |result| {
-                    eprintln!("[DIAG] OpenWorkspace: Command::perform callback with result");
-                    result
-                },
+                |result| result,
             )
         }
         Message::WorkspaceLoaded(result) => {
