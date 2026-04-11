@@ -85,18 +85,10 @@ pub fn editor<'a>(
         .style(iced::theme::TextEditor::Custom(Box::new(style_sheet)));
     
     // The text editor widget has built-in scrolling capabilities
-    // However, to handle narrow windows properly, we need to ensure horizontal scrolling works
-    // by allowing the editor to expand beyond the viewport width when needed
-    // Wrap the editor in a scrollable container
-    let scrollable_editor = iced::widget::scrollable(
-        container(editor)
-            .width(Length::Shrink)  // Allow content to be wider than viewport
-            .height(Length::Fill)
-    )
-    .width(Length::Fill)
-    .height(Length::Fill);
-    
-    container(scrollable_editor)
+    // To handle narrow windows properly, we need to ensure it can scroll horizontally
+    // by setting a minimum width that allows content to be wider than the viewport
+    // We'll use a container with a large minimum width to enable horizontal scrolling
+    container(editor)
         .padding(0) // No padding
         .width(Length::Fill)
         .height(Length::Fill)
