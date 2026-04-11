@@ -1,4 +1,4 @@
-use iced::{Element, Length, Color, widget::{column, container, row, text, rule}};
+use iced::{Element, Length, Color, widget::{column, container, row, text}};
 use crate::message::Message;
 use crate::state::App;
 use super::style::StyleHelpers;
@@ -141,7 +141,7 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
             // Add a subtle separator line between header and editor content
             // Use a horizontal rule with the border color
             iced::widget::horizontal_rule(1)
-                .style(iced::theme::Rule::Custom(Box::new(move || {
+                .style(iced::theme::Rule::Custom(Box::new(move |_theme| {
                     iced::widget::rule::Appearance {
                         color: style.colors.border,
                         width: 1,
