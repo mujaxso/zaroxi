@@ -30,5 +30,5 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros", "process", "sy
 tracing = "0.1"
 uuid = { version = "1", features = ["v4", "serde"] }
 thiserror = "2"
-rfd = { version = "0.14", default-features = false }
+rfd = { version = "0.14", default-features = false, features = ["tokio", "xdg-portal"] }
 
