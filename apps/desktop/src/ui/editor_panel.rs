@@ -140,15 +140,27 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
             header,
             // Add a subtle separator line between header and editor content
             // Use a horizontal rule with the border color
-            iced::widget::horizontal_rule(1)
-                .style(iced::theme::Rule::Custom(Box::new(move |_theme| {
-                    iced::widget::rule::Appearance {
-                        color: style.colors.border,
-                        width: 1,
-                        radius: 0.0.into(),
-                        fill_mode: iced::widget::rule::FillMode::Full,
+            {
+                struct SeparatorStyle {
+                    color: Color,
+                }
+                impl iced::widget::rule::StyleSheet for SeparatorStyle {
+                    type Style = iced::Theme;
+                    
+                    fn appearance(&self, _style: &Self::Style) -> iced::widget::rule::Appearance {
+                        iced::widget::rule::Appearance {
+                            color: self.color,
+                            width: 1,
+                            radius: 0.0.into(),
+                            fill_mode: iced::widget::rule::FillMode::Full,
+                        }
                     }
-                }))),
+                }
+                iced::widget::horizontal_rule(1)
+                    .style(iced::theme::Rule::Custom(Box::new(SeparatorStyle {
+                        color: style.colors.border,
+                    })))
+            },
             // Editor content should fill all remaining space
             // The text editor handles its own scrolling, so we don't need extra containers
             container(editor_content)
