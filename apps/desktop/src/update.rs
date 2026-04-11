@@ -95,7 +95,21 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                                     let wayland = std::env::var("WAYLAND_DISPLAY").is_ok()
                                         || std::env::var("XDG_SESSION_TYPE").unwrap_or_default() == "wayland";
                                     
-                                    let error_msg = if nix_env && wayland {
+                                    // Check if we're in a Hyprland environment
+                                    let hyprland = std::env::var("HYPRLAND_INSTANCE_SIGNATURE").is_ok()
+                                        || std::env::var("XDG_CURRENT_DESKTOP").unwrap_or_default().to_lowercase().contains("hyprland");
+                                    
+                                    let error_msg = if hyprland && wayland {
+                                        "Folder picker failed to open in Hyprland (Wayland).\n\
+                                        \n\
+                                        Common solutions for Hyprland:\n\
+                                        1. Install and configure xdg-desktop-portal-hyprland:\n\
+                                           - nix: nix-shell -p xdg-desktop-portal-hyprland\n\
+                                           - other: Check your package manager\n\
+                                        2. Ensure it's running: systemctl --user status xdg-desktop-portal-hyprland\n\
+                                        3. Try running with X11: WINIT_UNIX_BACKEND=x11 cargo run --bin desktop\n\
+                                        4. Use manual workspace entry below"
+                                    } else if nix_env && wayland {
                                         "Folder picker failed to open. This is common in Nix+Wayland environments.\n\
                                         \n\
                                         Possible solutions:\n\

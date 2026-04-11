@@ -19,13 +19,8 @@ fn main() -> iced::Result {
     let wayland_display = std::env::var("WAYLAND_DISPLAY").is_ok();
     let xdg_session_type = std::env::var("XDG_SESSION_TYPE").unwrap_or_default();
     
-    println!("WAYLAND_DISPLAY: {:?}", std::env::var("WAYLAND_DISPLAY").ok());
-    println!("XDG_SESSION_TYPE: {}", xdg_session_type);
-    
     // If we're on Wayland and having file picker issues, suggest using X11
-    if wayland_display || xdg_session_type == "wayland" {
-        println!("Note: If file picker doesn't work, try running with: WINIT_UNIX_BACKEND=x11 cargo run --bin desktop");
-    }
+    // Note: This is handled in the UI with better error messages
     
     let settings = Settings {
         window: iced::window::Settings {
