@@ -129,15 +129,14 @@ pub fn shell(app: &App) -> Element<'_, Message> {
     }
     
     // Editor area should expand to fill remaining space without any gaps
-    // Make sure the editor fills all available space with proper clipping
-    // The editor panel will handle its own border to be consistent
+    // The editor panel will handle its own border and background
     main_content_row = main_content_row.push(
         container(main_editor_area)
             .width(Length::Fill)
             .height(Length::Fill)
             .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
                 container::Appearance {
-                    background: Some(style.colors.editor_background.into()),
+                    background: None,
                     border: iced::Border {
                         color: Color::TRANSPARENT,
                         width: 0.0,
