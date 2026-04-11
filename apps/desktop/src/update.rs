@@ -132,10 +132,10 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                                         // Provide helpful error message
                                         Message::WorkspaceLoaded(Err(
                                             "Folder picker failed to open. This may be due to:\n\
-                                            1. Missing GTK3 backend on Linux\n\
+                                            1. Missing xdg-desktop-portal service (for Wayland)\n\
                                             2. Dialog opened behind main window\n\
                                             3. Platform compatibility issue\n\n\
-                                            Try: Install gtk3, or use manual workspace path entry.".to_string()
+                                            Try: Install and start xdg-desktop-portal, or use manual workspace path entry.".to_string()
                                         ))
                                     }
                                 }
