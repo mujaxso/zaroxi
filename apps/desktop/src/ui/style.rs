@@ -152,6 +152,24 @@ impl StyleHelpers {
             icon_color: self.colors.text_muted,
         }
     }
+    
+    /// Text editor style
+    pub fn text_editor(&self) -> iced::widget::text_editor::Appearance {
+        iced::widget::text_editor::Appearance {
+            background: self.colors.editor_background.into(),
+            border: iced::Border {
+                color: Color::TRANSPARENT,
+                width: 0.0,
+                radius: 0.0.into(),
+            },
+            cursor: iced::widget::text_editor::Cursor::default(),
+            selection: iced::widget::text_editor::Selection::default(),
+            placeholder: iced::widget::text_editor::Placeholder::default(),
+            line_numbers: iced::widget::text_editor::LineNumbers::default(),
+            scrollbar: iced::widget::text_editor::Scrollbar::default(),
+            handle: iced::widget::text_editor::Handle::default(),
+        }
+    }
 }
 
 // Text colors
