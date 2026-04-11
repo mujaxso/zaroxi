@@ -13,11 +13,11 @@ use super::{
 
 /// Main shell that composes all UI components - Premium compact layout
 pub fn shell(app: &App) -> Element<'_, Message> {
-    // Get panel widths based on layout mode - editor gets more space
+    // Get panel widths based on layout mode - editor gets significantly more space
     let (explorer_width, assistant_width) = match app.layout_mode {
-        LayoutMode::Wide => (220.0, 260.0),      // Reduced from 260,300
-        LayoutMode::Medium => (180.0, 220.0),    // Reduced from 220,240
-        LayoutMode::Narrow => (140.0, 180.0),    // Reduced from 180,200
+        LayoutMode::Wide => (200.0, 240.0),      // Make sidebars narrower, editor wider
+        LayoutMode::Medium => (160.0, 200.0),    // Further reduce sidebars
+        LayoutMode::Narrow => (120.0, 160.0),    // Minimal sidebars
     };
     
     // Build panels with responsive sizing
@@ -67,17 +67,13 @@ pub fn shell(app: &App) -> Element<'_, Message> {
         None
     };
     
-    // Editor panel or Settings panel
+    // Editor panel or Settings panel - make it fill naturally without extra containers
     let main_editor_area = if is_settings_mode {
         // When in settings mode, show settings in the main editor area
-        container(editor_font_settings_panel(app))
-            .width(Length::Fill)
-            .height(Length::Fill)
+        editor_font_settings_panel(app)
     } else {
-        // Normal editor panel
-        container(editor_panel(app))
-            .width(Length::Fill)
-            .height(Length::Fill)
+        // Normal editor panel - directly use the panel without extra container
+        editor_panel(app)
     };
     
     // Auxiliary sidebar (AI Assistant)
@@ -95,7 +91,7 @@ pub fn shell(app: &App) -> Element<'_, Message> {
         None
     };
     
-    // Build the main content row
+    // Build the main content row with proper spacing
     let mut main_content_row = iced::widget::row![
         activity_bar,
     ];
@@ -107,7 +103,12 @@ pub fn shell(app: &App) -> Element<'_, Message> {
         }
     }
     
-    main_content_row = main_content_row.push(main_editor_area);
+    // Editor area should expand to fill remaining space
+    main_content_row = main_content_row.push(
+        container(main_editor_area)
+            .width(Length::Fill)
+            .height(Length::Fill)
+    );
     
     // Only show auxiliary sidebar if not in settings mode
     if !is_settings_mode {

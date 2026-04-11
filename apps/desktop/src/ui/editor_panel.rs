@@ -34,8 +34,19 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
             .spacing(4)
             .align_items(iced::Alignment::Center)
         )
-        .padding([6, 10])  // Reduced padding
+        .padding([4, 12])  // More compact padding
         .width(Length::Fill)
+        .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
+            container::Appearance {
+                background: Some(style.colors.panel_background.into()),
+                border: iced::Border {
+                    color: style.colors.border,
+                    width: 0.0,
+                    radius: 0.0.into(),
+                },
+                ..Default::default()
+            }
+        })))
     } else {
         container(
             row![
@@ -47,8 +58,19 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
             .spacing(4)
             .align_items(iced::Alignment::Center)
         )
-        .padding([6, 10])  // Reduced padding
+        .padding([4, 12])  // More compact padding
         .width(Length::Fill)
+        .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
+            container::Appearance {
+                background: Some(style.colors.panel_background.into()),
+                border: iced::Border {
+                    color: style.colors.border,
+                    width: 0.0,
+                    radius: 0.0.into(),
+                },
+                ..Default::default()
+            }
+        })))
     };
     
     let editor_content = if let Some(_) = &app.active_file_path {
@@ -82,37 +104,31 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
         .into()
     };
     
-    container(
-        column![
-            header,
-            container(editor_content)
-                .width(Length::Fill)
-                .height(Length::Fill)
-                .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
-                    container::Appearance {
-                        background: Some(style.colors.editor_background.into()),
-                        border: iced::Border {
-                            color: style.colors.border,
-                            width: 0.0,  // Remove border for cleaner look
-                            radius: 0.0.into(),
-                        },
-                        ..Default::default()
-                    }
-                }))),
-        ]
-    )
+    // Create a clean, borderless editor area that fills available space
+    // Use a column that expands to fill its container
+    let content = column![
+        header,
+        // Editor content should fill all remaining space
+        // No extra container needed here - let the editor fill naturally
+        editor_content
+    ]
     .width(Length::Fill)
-    .height(Length::Fill)
-    .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
-        container::Appearance {
-            background: Some(style.colors.editor_background.into()),  // Use editor background for outer container too
-            border: iced::Border {
-                color: style.colors.border,
-                width: 0.0,  // Remove outer border
-                radius: 0.0.into(),
-            },
-            ..Default::default()
-        }
-    })))
-    .into()
+    .height(Length::Fill);
+
+    // Wrap in a container to ensure proper background
+    container(content)
+        .width(Length::Fill)
+        .height(Length::Fill)
+        .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
+            container::Appearance {
+                background: Some(style.colors.editor_background.into()),
+                border: iced::Border {
+                    color: Color::TRANSPARENT,
+                    width: 0.0,
+                    radius: 0.0.into(),
+                },
+                ..Default::default()
+            }
+        })))
+        .into()
 }

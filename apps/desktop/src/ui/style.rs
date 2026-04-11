@@ -68,6 +68,19 @@ impl StyleHelpers {
             ..Default::default()
         }
     }
+
+    /// Editor viewport style - for the actual code area
+    pub fn editor_viewport(&self) -> container::Appearance {
+        container::Appearance {
+            background: Some(self.colors.editor_background.into()),
+            border: iced::Border {
+                color: Color::TRANSPARENT,
+                width: 0.0,
+                radius: 0.0.into(),
+            },
+            ..Default::default()
+        }
+    }
     
     /// Input container style
     pub fn input_container(&self) -> container::Appearance {
