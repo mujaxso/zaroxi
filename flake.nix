@@ -55,6 +55,8 @@
           env = {
             # Force X11 backend to avoid Wayland issues
             WINIT_UNIX_BACKEND = "x11";
+            # Set GDK backend to x11 for GTK3
+            GDK_BACKEND = "x11";
             # Ensure linker can find libraries
             LD_LIBRARY_PATH = with pkgs; lib.makeLibraryPath [
               libxkbcommon
@@ -123,6 +125,8 @@
 
           # Force X11 backend
           WINIT_UNIX_BACKEND = "x11";
+          # Set GDK backend to x11 for GTK3
+          GDK_BACKEND = "x11";
         };
       }
     );

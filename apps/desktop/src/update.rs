@@ -4,7 +4,7 @@ use file_ops::{FileLoader, WorkspaceLoader};
 use iced::Command;
 use crate::explorer::actions::ExplorerMessage;
 use crate::explorer::state::InlineEditMode;
-use rfd::AsyncFileDialog;
+use rfd::{AsyncFileDialog, FileDialog};
 use tokio::time;
 
 // Helper function to normalize paths for consistent comparison
@@ -18,6 +18,42 @@ fn normalize_path(path: &str) -> String {
         normalized.pop();
     }
     normalized
+}
+
+// Try synchronous dialog as fallback
+async fn try_sync_dialog() -> Result<String, String> {
+    use rfd::FileDialog;
+    
+    eprintln!("[DIAG] try_sync_dialog: Starting synchronous dialog");
+    
+    // Run in a blocking task to avoid freezing the UI
+    match tokio::task::spawn_blocking(|| {
+        eprintln!("[DIAG] try_sync_dialog: Inside blocking task");
+        let dialog = FileDialog::new()
+            .set_title("Select Workspace Directory - Neote");
+        
+        eprintln!("[DIAG] try_sync_dialog: Showing dialog");
+        let start = std::time::Instant::now();
+        let result = dialog.pick_folder();
+        let elapsed = start.elapsed();
+        eprintln!("[DIAG] try_sync_dialog: Dialog returned after {:?}: {:?}", elapsed, result);
+        
+        result
+    }).await {
+        Ok(Some(path)) => {
+            let path_str = path.to_string_lossy().to_string();
+            eprintln!("[DIAG] try_sync_dialog: Success with path: {}", path_str);
+            Ok(path_str)
+        }
+        Ok(None) => {
+            eprintln!("[DIAG] try_sync_dialog: User cancelled");
+            Err("User cancelled".to_string())
+        }
+        Err(e) => {
+            eprintln!("[DIAG] try_sync_dialog: Task failed: {}", e);
+            Err(format!("Task failed: {}", e))
+        }
+    }
 }
 
 // File size thresholds
@@ -75,14 +111,34 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                             // Check if it was likely a backend failure (too fast) vs user cancellation
                             if elapsed < std::time::Duration::from_millis(500) {
                                 eprintln!("[DIAG] OpenWorkspace: Dialog returned very quickly ({:?}), likely backend failure", elapsed);
-                                // Provide helpful error message
-                                Message::WorkspaceLoaded(Err(
-                                    "Folder picker failed to open. This may be due to:\n\
-                                    1. Missing portal/GTK backend on Linux\n\
-                                    2. Dialog opened behind main window\n\
-                                    3. Platform compatibility issue\n\n\
-                                    Try: Install xdg-desktop-portal and gtk3, or use manual workspace path entry.".to_string()
-                                ))
+                                // Try synchronous dialog as fallback
+                                eprintln!("[DIAG] OpenWorkspace: Trying synchronous dialog fallback");
+                                match try_sync_dialog().await {
+                                    Ok(path) => {
+                                        eprintln!("[DIAG] OpenWorkspace: Sync dialog succeeded with path: {}", path);
+                                        match WorkspaceLoader::list_directory(&path) {
+                                            Ok(entries) => {
+                                                eprintln!("[DIAG] OpenWorkspace: Successfully loaded {} entries", entries.len());
+                                                Message::WorkspaceLoaded(Ok((path, entries)))
+                                            }
+                                            Err(e) => {
+                                                eprintln!("[DIAG] OpenWorkspace: WorkspaceLoader error: {}", e);
+                                                Message::WorkspaceLoaded(Err(format!("Failed to open workspace: {}", e)))
+                                            }
+                                        }
+                                    }
+                                    Err(e) => {
+                                        eprintln!("[DIAG] OpenWorkspace: Sync dialog also failed: {}", e);
+                                        // Provide helpful error message
+                                        Message::WorkspaceLoaded(Err(
+                                            "Folder picker failed to open. This may be due to:\n\
+                                            1. Missing GTK3 backend on Linux\n\
+                                            2. Dialog opened behind main window\n\
+                                            3. Platform compatibility issue\n\n\
+                                            Try: Install gtk3, or use manual workspace path entry.".to_string()
+                                        ))
+                                    }
+                                }
                             } else {
                                 eprintln!("[DIAG] OpenWorkspace: Likely user cancellation (took {:?})", elapsed);
                                 Message::WorkspaceDialogCancelled
