@@ -133,7 +133,7 @@ impl SemanticColors {
             shell_background: Color::from_rgb(0.106, 0.114, 0.153),    // #1B1D27
             panel_background: Color::from_rgb(0.118, 0.129, 0.188),    // #1E2130
             elevated_panel_background: Color::from_rgb(0.137, 0.149, 0.216), // #232637
-            editor_background: Color::from_rgb(0.110, 0.118, 0.153),   // #1C1F27 - slightly lighter for better visibility
+            editor_background: Color::from_rgb(0.125, 0.133, 0.169),   // #20242B - slightly lighter than shell for distinction
             input_background: Color::from_rgb(0.078, 0.090, 0.133),    // #141722
             status_bar_background: Color::from_rgb(0.106, 0.114, 0.153), // #1B1D27
             
@@ -175,7 +175,7 @@ impl SemanticColors {
             shell_background: Color::from_rgb(0.98, 0.98, 0.98),
             panel_background: Color::from_rgb(1.0, 1.0, 1.0),
             elevated_panel_background: Color::from_rgb(1.0, 1.0, 1.0),
-            editor_background: Color::from_rgb(0.98, 0.98, 0.98),
+            editor_background: Color::from_rgb(1.0, 1.0, 1.0),  // Pure white for better contrast in light mode
             input_background: Color::from_rgb(0.95, 0.95, 0.95),
             status_bar_background: Color::from_rgb(0.94, 0.94, 0.94),
             

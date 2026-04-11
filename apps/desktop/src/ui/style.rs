@@ -61,8 +61,8 @@ impl StyleHelpers {
         container::Appearance {
             background: Some(self.colors.editor_background.into()),
             border: iced::Border {
-                color: Color::TRANSPARENT,
-                width: 0.0,
+                color: self.colors.border,
+                width: 1.0,
                 radius: 0.0.into(),
             },
             ..Default::default()

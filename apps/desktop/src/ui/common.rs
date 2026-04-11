@@ -178,8 +178,8 @@ pub mod containers {
         container::Appearance {
             background: Some(colors.editor_background.into()),
             border: iced::Border {
-                color: Color::TRANSPARENT,
-                width: 0.0,
+                color: colors.border,
+                width: 1.0,
                 radius: 0.0.into(),
             },
             ..Default::default()
