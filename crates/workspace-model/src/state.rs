@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use uuid::Uuid;
 
 use core_types::workspace::{BufferId, DirectoryEntry};
-use editor_buffer::buffer::TextBuffer;
+use editor_core::Document;
 
 #[derive(Debug)]
 pub struct WorkspaceState {
@@ -19,7 +19,7 @@ pub struct WorkspaceState {
 pub struct OpenBuffer {
     pub buffer_id: BufferId,
     pub path: PathBuf,
-    pub buffer: TextBuffer,
+    pub document: Document,
 }
 
 impl WorkspaceState {
@@ -54,12 +54,12 @@ impl WorkspaceState {
         }
 
         let buffer_id = BufferId(Uuid::new_v4());
-        let buffer = TextBuffer::new(content);
+        let document = Document::from_text(&content);
         
         let open_buffer = OpenBuffer {
             buffer_id,
             path: path.clone(),
-            buffer,
+            document,
         };
         
         self.open_buffers.insert(buffer_id, open_buffer);
@@ -78,16 +78,16 @@ impl WorkspaceState {
         }
     }
 
-    pub fn active_buffer(&self) -> Option<&TextBuffer> {
+    pub fn active_buffer(&self) -> Option<&Document> {
         self.active_buffer_id
             .and_then(|id| self.open_buffers.get(&id))
-            .map(|open_buffer| &open_buffer.buffer)
+            .map(|open_buffer| &open_buffer.document)
     }
 
-    pub fn active_buffer_mut(&mut self) -> Option<&mut TextBuffer> {
+    pub fn active_buffer_mut(&mut self) -> Option<&mut Document> {
         self.active_buffer_id
             .and_then(move |id| self.open_buffers.get_mut(&id))
-            .map(|open_buffer| &mut open_buffer.buffer)
+            .map(|open_buffer| &mut open_buffer.document)
     }
 
     pub fn active_buffer_path(&self) -> Option<PathBuf> {
@@ -99,8 +99,8 @@ impl WorkspaceState {
     pub fn save_active_buffer(&mut self) -> Option<(PathBuf, String)> {
         if let Some(buffer_id) = self.active_buffer_id {
             if let Some(open_buffer) = self.open_buffers.get_mut(&buffer_id) {
-                open_buffer.buffer.mark_saved();
-                let content = open_buffer.buffer.to_string();
+                open_buffer.document.mark_saved();
+                let content = open_buffer.document.text();
                 let path = open_buffer.path.clone();
                 return Some((path, content));
             }

@@ -38,7 +38,7 @@ pub fn ide_layout<'a>(
     prompt_input: &'a str,
     _expanded_directories: &'a std::collections::HashSet<String>,
     text_editor: &'a iced::widget::text_editor::Content,
-    editor_buffer: Option<&'a editor_buffer::buffer::TextBuffer>,
+    editor_document: Option<&'a editor_core::Document>,
     is_file_too_large_for_editor: bool,
     file_loading_state: &'a FileLoadingState,
     theme: NeoteTheme,
@@ -74,7 +74,7 @@ pub fn ide_layout<'a>(
             .height(Length::Fill),
         vertical_rule(1),
         // Editor area - takes most space
-        container(editor_panel(active_file_path, text_editor, is_dirty, editor_buffer, is_file_too_large_for_editor, file_loading_state, editor_typography))
+        container(editor_panel(active_file_path, text_editor, is_dirty, editor_document, is_file_too_large_for_editor, file_loading_state, editor_typography))
             .width(Length::FillPortion(5))
             .height(Length::Fill),
         // AI panel (conditionally visible) - flexible width
@@ -425,7 +425,7 @@ fn editor_panel<'a>(
     active_file_path: Option<&'a String>,
     text_editor: &'a iced::widget::text_editor::Content,
     is_dirty: bool,
-    editor_buffer: Option<&'a editor_buffer::buffer::TextBuffer>,
+    editor_document: Option<&'a editor_core::Document>,
     is_file_too_large_for_editor: bool,
     file_loading_state: &'a FileLoadingState,
     editor_typography: &'a EditorTypographySettings,
@@ -444,8 +444,8 @@ fn editor_panel<'a>(
         status_elements.push(horizontal_space().into());
         
         // Large file warning
-        if let Some(buffer) = editor_buffer {
-            if buffer.is_very_large() {
+        if let Some(document) = editor_document {
+            if document.is_very_large() {
                 status_elements.push(
                     text("⚠ Very Large (Limited Editing)")
                         .size(12)
@@ -453,7 +453,7 @@ fn editor_panel<'a>(
                         .into()
                 );
                 status_elements.push(horizontal_space().width(Length::Fixed(10.0)).into());
-            } else if buffer.is_large() {
+            } else if document.is_large() {
                 status_elements.push(
                     text("⚠ Large (Performance may be affected)")
                         .size(12)
@@ -621,16 +621,16 @@ fn editor_panel<'a>(
             if active_file_path.is_some() {
                 if is_file_too_large_for_editor {
                     // Show read-only text view for very large files
-                    let content = if let Some(buffer) = editor_buffer {
-                        if buffer.is_very_large() {
+                    let content = if let Some(document) = editor_document {
+                        if document.is_very_large() {
                             // For very large files, show only first 100KB
                             // Use safe slicing with bounds checking
-                            let len = buffer.len_chars();
+                            let len = document.len_chars();
                             let end = 100_000.min(len);
-                            buffer.slice_char_range(0, end).unwrap_or_else(|_| String::new())
+                            document.slice(0, end).unwrap_or_else(|_| String::new())
                         } else {
                             // For large but not very large files, limit to 500KB
-                            let text = buffer.text();
+                            let text = document.text();
                             if text.len() > 500_000 {
                                 text[..500_000].to_string()
                             } else {
@@ -640,13 +640,13 @@ fn editor_panel<'a>(
                     } else {
                         String::new()
                     };
-                    let warning = if let Some(buffer) = editor_buffer {
-                        if buffer.is_very_large() {
+                    let warning = if let Some(document) = editor_document {
+                        if document.is_very_large() {
                             format!("\n\n--- File truncated ({} MB total, showing first 100KB) ---", 
-                                   buffer.len_chars() / 1_000_000)
-                        } else if buffer.is_large() {
+                                   document.len_chars() / 1_000_000)
+                        } else if document.is_large() {
                             format!("\n\n--- File truncated ({} MB total, showing first 500KB) ---",
-                                   buffer.len_chars() / 1_000_000)
+                                   document.len_chars() / 1_000_000)
                         } else {
                             String::new()
                         }
