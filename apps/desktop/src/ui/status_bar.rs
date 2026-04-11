@@ -80,11 +80,11 @@ pub fn status_bar(app: &App) -> Element<'_, Message> {
     
     container(
         row![
-            container(left_status).padding([0, 8]),
+            container(left_status).padding([0, 6]),
             iced::widget::horizontal_space(),
             container(center_status),
             iced::widget::horizontal_space(),
-            container(right_status).padding([0, 8]),
+            container(right_status).padding([0, 6]),
         ]
         .align_items(iced::Alignment::Center)
         .width(Length::Fill)
