@@ -162,18 +162,18 @@ pub fn assistant_panel(app: &App) -> Element<'_, Message> {
             column![
                 button(if is_compact { "Explain" } else { "Explain this file" })
                     .on_press(Message::PromptInputChanged("Explain the current file".to_string()))
-                    .padding(if is_compact { [7, 9] } else { [9, 11] })
+                    .padding(if is_compact { [8, 12] } else { [10, 14] })
                     .width(Length::Fill)
                     .style(iced::theme::Button::Secondary),
                 button(if is_compact { "Refactor" } else { "Refactor selection" })
                     .on_press(Message::PromptInputChanged("Refactor the selected code".to_string()))
-                    .padding(if is_compact { [6, 8] } else { [8, 10] })
+                    .padding(if is_compact { [8, 12] } else { [10, 14] })
                     .width(Length::Fill)
                     .style(iced::theme::Button::Secondary),
                 if !is_compact {
                     let btn: Element<_> = button("Find bugs")
                         .on_press(Message::PromptInputChanged("Find potential bugs in this code".to_string()))
-                        .padding([8, 10])
+                        .padding([10, 14])
                         .width(Length::Fill)
                         .style(iced::theme::Button::Secondary)
                         .into();
@@ -183,9 +183,9 @@ pub fn assistant_panel(app: &App) -> Element<'_, Message> {
                     space
                 },
             ]
-            .spacing(if is_compact { 2 } else { 4 }),
+            .spacing(if is_compact { 4 } else { 6 }),
         ]
-        .spacing(if is_compact { 4 } else { 8 })
+        .spacing(if is_compact { 6 } else { 8 })
         .padding(if is_compact { [8, 12] } else { [12, 16] })
     );
     
@@ -257,7 +257,7 @@ pub fn assistant_panel(app: &App) -> Element<'_, Message> {
         column![
             text_input(if is_compact { "Ask..." } else { "Ask Neote AI..." }, &app.prompt_input)
                 .on_input(Message::PromptInputChanged)
-                .padding(if is_compact { [9, 11] } else { [12, 14] })
+                .padding(if is_compact { [10, 14] } else { [14, 18] })
                 .width(Length::Fill)
                 .style(iced::theme::TextInput::Custom(Box::new(input_style))),
             row![
@@ -306,7 +306,7 @@ pub fn assistant_panel(app: &App) -> Element<'_, Message> {
                     quick_actions,
                 ]
                 .spacing(if is_compact { 8 } else { 16 })
-                .padding(if is_compact { [0, 12] } else { [0, 20] })
+                .padding(if is_compact { [0, 16] } else { [0, 24] })
             )
             .height(Length::Fill)
             .style(iced::theme::Scrollable::Custom(Box::new(AssistantScrollableStyle {
@@ -314,8 +314,8 @@ pub fn assistant_panel(app: &App) -> Element<'_, Message> {
             })))
             .scrollable_properties(
                 iced::widget::scrollable::Properties::new()
-                    .scroller_width(6)
-                    .scrollbar_margin(2)
+                    .scroller_width(8)
+                    .scrollbar_margin(4)
             ),
             input_area,
         ]
