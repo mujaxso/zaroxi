@@ -1,4 +1,4 @@
-use iced::{Element, Length, Color, widget::{column, container, row, text}};
+use iced::{Element, Length, Color, widget::{column, container, row, text, horizontal_rule}};
 use crate::message::Message;
 use crate::state::App;
 use super::style::StyleHelpers;
@@ -139,28 +139,21 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
         column![
             header,
             // Add a subtle separator line between header and editor content
-            // Use a horizontal rule with the border color
-            {
-                struct SeparatorStyle {
-                    color: Color,
-                }
-                impl iced::widget::rule::StyleSheet for SeparatorStyle {
-                    type Style = iced::Theme;
-                    
-                    fn appearance(&self, _style: &Self::Style) -> iced::widget::rule::Appearance {
-                        iced::widget::rule::Appearance {
-                            color: self.color,
-                            width: 1,
+            // Use a container with a fixed height to ensure visibility
+            container(iced::widget::horizontal_rule(1))
+                .height(Length::Fixed(1.0))
+                .width(Length::Fill)
+                .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
+                    container::Appearance {
+                        background: Some(style.colors.text_faint.into()),
+                        border: iced::Border {
+                            color: Color::TRANSPARENT,
+                            width: 0.0,
                             radius: 0.0.into(),
-                            fill_mode: iced::widget::rule::FillMode::Full,
-                        }
+                        },
+                        ..Default::default()
                     }
-                }
-                iced::widget::horizontal_rule(1)
-                    .style(iced::theme::Rule::Custom(Box::new(SeparatorStyle {
-                        color: style.colors.border,
-                    })))
-            },
+                }))),
             // Editor content should fill all remaining space
             // The text editor handles its own scrolling, so we don't need extra containers
             container(editor_content)
