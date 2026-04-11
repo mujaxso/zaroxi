@@ -1,7 +1,6 @@
 //! Text document model with rope-based storage.
 
 use ropey::Rope;
-use std::sync::Arc;
 
 /// A text document with efficient editing operations.
 #[derive(Debug, Clone)]
@@ -93,6 +92,11 @@ impl Document {
         let line_start = self.rope.line_to_char(line);
         let col = char_idx - line_start;
         Some((line, col))
+    }
+
+    /// Get the character index for the start of a line.
+    pub fn line_to_char(&self, line: usize) -> usize {
+        self.rope.line_to_char(line)
     }
 
     /// Insert text at a character position.

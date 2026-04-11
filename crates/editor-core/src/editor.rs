@@ -94,7 +94,7 @@ impl EditorState {
         self.document.insert(cursor_pos, text)?;
         
         // Move cursor forward by the length of inserted text
-        self.cursor.move_by(CursorMovement::Right(text.len()));
+        self.cursor.move_by(CursorMovement::Right(text.len()), &self.document);
         Ok(())
     }
 
@@ -103,7 +103,7 @@ impl EditorState {
         let cursor_pos = self.cursor.position();
         if cursor_pos > 0 {
             self.document.delete(cursor_pos - 1, cursor_pos)?;
-            self.cursor.move_by(CursorMovement::Left(1));
+            self.cursor.move_by(CursorMovement::Left(1), &self.document);
         }
         Ok(())
     }
