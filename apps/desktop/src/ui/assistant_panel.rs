@@ -83,7 +83,7 @@ pub fn assistant_panel(app: &App) -> Element<'_, Message> {
         ]
         .align_items(iced::Alignment::Center)
     )
-    .padding(if is_compact { [7, 12] } else { [9, 16] })
+    .padding(if is_compact { [8, 16] } else { [10, 20] })
     .width(Length::Fill);
     
     struct WelcomeCardStyle {
@@ -125,7 +125,7 @@ pub fn assistant_panel(app: &App) -> Element<'_, Message> {
                     .style(iced::theme::Text::Color(style.colors.text_secondary)),
             ]
             .spacing(8)
-            .padding([16, 20])
+            .padding([16, 24])
         )
         .style(iced::theme::Container::Custom(Box::new(welcome_card_style)))
         .into()
@@ -142,7 +142,7 @@ pub fn assistant_panel(app: &App) -> Element<'_, Message> {
                 .align_items(iced::Alignment::Center),
             ]
             .spacing(4)
-            .padding([12, 16])
+            .padding([12, 20])
         )
         .style(iced::theme::Container::Custom(Box::new(welcome_card_style)))
         .into()
@@ -257,7 +257,7 @@ pub fn assistant_panel(app: &App) -> Element<'_, Message> {
         column![
             text_input(if is_compact { "Ask..." } else { "Ask Neote AI..." }, &app.prompt_input)
                 .on_input(Message::PromptInputChanged)
-                .padding(if is_compact { [10, 14] } else { [14, 18] })
+                .padding(if is_compact { [10, 16] } else { [14, 20] })
                 .width(Length::Fill)
                 .style(iced::theme::TextInput::Custom(Box::new(input_style))),
             row![
@@ -306,7 +306,7 @@ pub fn assistant_panel(app: &App) -> Element<'_, Message> {
                     quick_actions,
                 ]
                 .spacing(if is_compact { 8 } else { 16 })
-                .padding(if is_compact { [0, 16] } else { [0, 24] })
+                .padding(if is_compact { [0, 16, 0, 16] } else { [0, 24, 0, 24] })
             )
             .height(Length::Fill)
             .style(iced::theme::Scrollable::Custom(Box::new(AssistantScrollableStyle {
@@ -314,8 +314,8 @@ pub fn assistant_panel(app: &App) -> Element<'_, Message> {
             })))
             .scrollable_properties(
                 iced::widget::scrollable::Properties::new()
-                    .scroller_width(8)
-                    .scrollbar_margin(4)
+                    .scroller_width(10)
+                    .scrollbar_margin(2)
             ),
             input_area,
         ]
