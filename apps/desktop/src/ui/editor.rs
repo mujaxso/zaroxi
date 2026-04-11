@@ -93,7 +93,11 @@ pub fn editor<'a>(
             .height(Length::Fill)
     )
     .width(Length::Fill)
-    .height(Length::Fill);
+    .height(Length::Fill)
+    .scrollable_properties(
+        iced::widget::scrollable::Properties::new()
+            .horizontal_scroll(iced::widget::scrollable::HorizontalScroll::Enabled)
+    );
     
     // Place the scrollable editor in a container with NO padding
     // The container should not clip content, as scrolling handles overflow
