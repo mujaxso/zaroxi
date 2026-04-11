@@ -55,6 +55,8 @@
             atk
             gdk-pixbuf
             xdg-desktop-portal
+            # Hyprland-specific portal implementation
+            xdg-desktop-portal-hyprland
             gsettings-desktop-schemas  # For GTK3 settings
           ];
 
@@ -94,12 +96,22 @@
               gdk-pixbuf
               # D-Bus may still be needed
               dbus
+              # Hyprland portal
+              xdg-desktop-portal-hyprland
             ];
           };
 
           shellHook = ''
             echo "Neote development environment"
             echo "Run: cargo run --bin desktop"
+            echo ""
+            echo "Note: For file picker in Hyprland, ensure xdg-desktop-portal-hyprland is running:"
+            echo "  systemctl --user status xdg-desktop-portal-hyprland"
+            echo "If not running, start it with:"
+            echo "  systemctl --user start xdg-desktop-portal-hyprland"
+            echo ""
+            echo "Also ensure xdg-desktop-portal is running:"
+            echo "  systemctl --user status xdg-desktop-portal"
           '';
         };
 
@@ -141,6 +153,8 @@
             gsettings-desktop-schemas  # For GTK3 settings
             # D-Bus may still be needed
             dbus
+            # Hyprland portal
+            xdg-desktop-portal-hyprland
           ];
 
           # Force X11 backend
