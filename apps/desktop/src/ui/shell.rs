@@ -147,7 +147,6 @@ pub fn shell(app: &App) -> Element<'_, Message> {
         .height(Length::Fill)
         .spacing(0)  // No spacing between panels
         .padding(0)  // No padding in the row
-        .clip(true); // Ensure content doesn't overflow between panels
     
     let status_bar = container(status_bar(app))
         .width(Length::Fill)
