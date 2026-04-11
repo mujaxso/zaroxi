@@ -74,7 +74,7 @@ pub fn ide_layout<'a>(
             .height(Length::Fill),
         vertical_rule(1),
         // Editor area - takes most space
-        container(editor_panel(active_file_path, text_editor, is_dirty, editor_document, is_file_too_large_for_editor, file_loading_state, editor_typography))
+        container(editor_panel(active_file_path, text_editor, is_dirty, editor_document, is_file_too_large_for_editor, file_loading_state, editor_typography, theme))
             .width(Length::FillPortion(5))
             .height(Length::Fill),
         // AI panel (conditionally visible) - flexible width
@@ -433,7 +433,9 @@ fn editor_panel<'a>(
     is_file_too_large_for_editor: bool,
     file_loading_state: &'a FileLoadingState,
     editor_typography: &'a EditorTypographySettings,
+    theme: NeoteTheme,
 ) -> Element<'a, Message> {
+    let style = StyleHelpers::new(theme);
     let header = if let Some(path) = active_file_path {
         let mut status_elements = Vec::new();
         
@@ -441,7 +443,7 @@ fn editor_panel<'a>(
         status_elements.push(
             text(path)
                 .size(14)
-                .style(iced::theme::Text::Color(iced::Color::from_rgb8(200, 200, 200)))
+                .style(iced::theme::Text::Color(style.colors.text_primary))
                 .into()
         );
         
@@ -453,7 +455,7 @@ fn editor_panel<'a>(
                 status_elements.push(
                     text("⚠ Very Large (Limited Editing)")
                         .size(12)
-                        .style(iced::theme::Text::Color(iced::Color::from_rgb8(255, 100, 100)))
+                        .style(iced::theme::Text::Color(style.colors.error))
                         .into()
                 );
                 status_elements.push(horizontal_space().width(Length::Fixed(10.0)).into());
@@ -461,7 +463,7 @@ fn editor_panel<'a>(
                 status_elements.push(
                     text("⚠ Large (Performance may be affected)")
                         .size(12)
-                        .style(iced::theme::Text::Color(iced::Color::from_rgb8(255, 200, 0)))
+                        .style(iced::theme::Text::Color(style.colors.warning))
                         .into()
                 );
                 status_elements.push(horizontal_space().width(Length::Fixed(10.0)).into());
@@ -482,9 +484,9 @@ fn editor_panel<'a>(
         // Dirty status (only show if not read-only)
         if !is_file_too_large_for_editor {
             let status_text = if is_dirty {
-                text("● Unsaved").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(255, 165, 0)))
+                text("● Unsaved").size(12).style(iced::theme::Text::Color(style.colors.warning))
             } else {
-                text("✓ Saved").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(0, 200, 0)))
+                text("✓ Saved").size(12).style(iced::theme::Text::Color(style.colors.success))
             };
             status_elements.push(status_text.into());
         }
@@ -494,7 +496,7 @@ fn editor_panel<'a>(
             .align_items(Alignment::Center)
     } else {
         row![
-            text("No file selected").size(14).style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150))),
+            text("No file selected").size(14).style(iced::theme::Text::Color(style.colors.text_muted)),
             horizontal_space(),
         ]
         .padding([12, 16])
@@ -670,13 +672,15 @@ fn editor_panel<'a>(
                     .height(Length::Fill)
                     .into()
                 } else {
-                    super::editor::editor(text_editor, editor_typography)
+                    // Get the editor background color from the theme
+                    let style = StyleHelpers::new(theme);
+                    super::editor::editor(text_editor, editor_typography, style.colors.editor_background)
                 }
             } else {
                 container(
                     column![
-                        text("Neote").size(32).style(iced::theme::Text::Color(iced::Color::from_rgb8(100, 150, 255))),
-                        text("AI‑first IDE").size(16).style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 200))),
+                        text("Neote").size(32).style(iced::theme::Text::Color(style.colors.accent)),
+                        text("AI‑first IDE").size(16).style(iced::theme::Text::Color(style.colors.text_secondary)),
                         container(iced::widget::horizontal_rule(1)).width(150),
                         column![
                             button("Open a file from the explorer").style(iced::theme::Button::Secondary),
