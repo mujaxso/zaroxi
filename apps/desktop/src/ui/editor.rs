@@ -14,9 +14,47 @@ struct EditorStyleSheet {
 impl iced::widget::text_editor::StyleSheet for EditorStyleSheet {
     type Style = iced::Theme;
 
-    fn appearance(&self, _style: &Self::Style) -> iced::widget::text_editor::Appearance {
+    fn active(&self, _style: &Self::Style) -> iced::widget::text_editor::Appearance {
         iced::widget::text_editor::Appearance {
             background: self.background_color.into(),
+            border: iced::Border {
+                color: Color::TRANSPARENT,
+                width: 0.0,
+                radius: 0.0.into(),
+            },
+        }
+    }
+
+    fn focused(&self, _style: &Self::Style) -> iced::widget::text_editor::Appearance {
+        iced::widget::text_editor::Appearance {
+            background: self.background_color.into(),
+            border: iced::Border {
+                color: Color::TRANSPARENT,
+                width: 0.0,
+                radius: 0.0.into(),
+            },
+        }
+    }
+
+    fn placeholder_color(&self, _style: &Self::Style) -> Color {
+        Color::from_rgb(0.5, 0.5, 0.5)
+    }
+
+    fn value_color(&self, _style: &Self::Style) -> Color {
+        Color::WHITE
+    }
+
+    fn disabled_color(&self, _style: &Self::Style) -> Color {
+        Color::from_rgb(0.7, 0.7, 0.7)
+    }
+
+    fn selection_color(&self, _style: &Self::Style) -> Color {
+        Color::from_rgba(0.5, 0.5, 1.0, 0.3)
+    }
+
+    fn disabled(&self, _style: &Self::Style) -> iced::widget::text_editor::Appearance {
+        iced::widget::text_editor::Appearance {
+            background: Color::from_rgb(0.3, 0.3, 0.3).into(),
             border: iced::Border {
                 color: Color::TRANSPARENT,
                 width: 0.0,
