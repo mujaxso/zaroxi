@@ -38,8 +38,9 @@ impl LanguageId {
             LanguageId::Rust => {
                 #[cfg(feature = "rust")]
                 {
-                    // LANGUAGE is a function pointer, so we need to call it
-                    Some(unsafe { tree_sitter_rust::LANGUAGE })
+                    // LANGUAGE is a function pointer that returns a Language
+                    // We need to call it to get the Language
+                    Some(unsafe { tree_sitter_rust::LANGUAGE() })
                 }
                 #[cfg(not(feature = "rust"))]
                 {
