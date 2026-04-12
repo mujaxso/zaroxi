@@ -27,7 +27,7 @@ pub fn syntax_highlighted_view(
         }
     }
     // Add an extra sentinel for the line after the last newline.
-    line_starts.push(byte_pos + 1); // ensures a line after last char
+    line_starts.push(byte_pos); // ensures a line after last char
 
     // For each line, build a Row of colored Text segments.
     let line_count = line_starts.len() - 1;

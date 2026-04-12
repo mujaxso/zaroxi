@@ -207,19 +207,19 @@ impl StyleHelpers {
     /// Map a syntax highlight token to a semantic color.
     pub fn highlight_color(&self, highlight: Highlight) -> iced::Color {
         match highlight {
-            Highlight::Comment => self.colors.text_muted,
-            Highlight::String => self.colors.success,
-            Highlight::Keyword => self.colors.accent,
-            Highlight::Function => Color::from_rgb(0.0, 0.6, 1.0),
-            Highlight::Variable => self.colors.text_primary,
-            Highlight::Type => Color::from_rgb(0.7, 0.4, 1.0),
-            Highlight::Constant => Color::from_rgb(1.0, 0.6, 0.0),
-            Highlight::Attribute => Color::from_rgb(0.0, 0.8, 0.8),
-            Highlight::Operator => self.colors.text_secondary,
-            Highlight::Number => Color::from_rgb(1.0, 0.6, 0.0),
-            Highlight::Property => Color::from_rgb(0.2, 0.8, 0.4),
-            Highlight::Namespace => Color::from_rgb(0.7, 0.4, 1.0),
-            Highlight::Plain => self.colors.text_primary,
+            Highlight::Comment => Color::from_rgb(0.5, 0.5, 0.5),       // grey
+            Highlight::String => Color::from_rgb(0.0, 1.0, 0.0),        // bright green
+            Highlight::Keyword => Color::from_rgb(1.0, 0.0, 0.0),       // red
+            Highlight::Function => Color::from_rgb(0.0, 0.5, 1.0),      // blue
+            Highlight::Variable => Color::from_rgb(1.0, 1.0, 1.0),      // white
+            Highlight::Type => Color::from_rgb(0.8, 0.0, 0.8),          // purple
+            Highlight::Constant => Color::from_rgb(1.0, 0.5, 0.0),      // orange
+            Highlight::Attribute => Color::from_rgb(0.0, 1.0, 1.0),     // cyan
+            Highlight::Operator => Color::from_rgb(1.0, 1.0, 0.0),      // yellow
+            Highlight::Number => Color::from_rgb(1.0, 0.6, 0.2),        // orange
+            Highlight::Property => Color::from_rgb(0.0, 1.0, 0.5),      // teal
+            Highlight::Namespace => Color::from_rgb(0.6, 0.2, 1.0),     // violet
+            Highlight::Plain => Color::from_rgb(0.9, 0.9, 0.9),         // light grey
         }
     }
 }
