@@ -29,6 +29,7 @@ pub enum Highlight {
     Operator,
     Number,
     Property,
+    Namespace,
     Plain,
 }
 
@@ -40,7 +41,7 @@ pub fn highlight(
 ) -> Result<Vec<HighlightSpan>, SyntaxError> {
     match language {
         LanguageId::Rust => highlight_with_query(language, source, tree),
-        LanguageId::Toml => highlight_with_query(language, source, tree),
+        LanguageId::Toml => Ok(Vec::new()), // No highlighting for TOML yet
         LanguageId::PlainText => Ok(Vec::new()),
     }
 }
@@ -67,7 +68,7 @@ fn highlight_with_query(
             let node = capture.node;
             let start = node.start_byte();
             let end = node.end_byte();
-            let capture_name = query.capture_names()[capture.index as usize].as_str();
+            let capture_name = &query.capture_names()[capture.index as usize];
             let highlight = map_capture_name(capture_name);
             spans.push(HighlightSpan {
                 start,
@@ -95,6 +96,8 @@ fn map_capture_name(name: &str) -> Highlight {
         "operator" => Highlight::Operator,
         "number" => Highlight::Number,
         "property" => Highlight::Property,
+        "namespace" => Highlight::Namespace,
+        "function.call" => Highlight::Function,
         _ => Highlight::Plain,
     }
 }
@@ -105,7 +108,7 @@ fn get_query_for_language(language: LanguageId) -> Result<&'static str, SyntaxEr
             #[cfg(feature = "rust")]
             {
                 Ok(include_str!(
-                    "../../../runtime/treesitter/languages/rust/queries/highlights.scm"
+                    "../../../../runtime/treesitter/languages/rust/queries/highlights.scm"
                 ))
             }
             #[cfg(not(feature = "rust"))]
@@ -113,18 +116,9 @@ fn get_query_for_language(language: LanguageId) -> Result<&'static str, SyntaxEr
                 "rust feature not enabled".to_string(),
             ))
         }
-        LanguageId::Toml => {
-            #[cfg(feature = "toml")]
-            {
-                Ok(include_str!(
-                    "../../../runtime/treesitter/languages/toml/queries/highlights.scm"
-                ))
-            }
-            #[cfg(not(feature = "toml"))]
-            Err(SyntaxError::LanguageNotSupported(
-                "toml feature not enabled".to_string(),
-            ))
-        }
+        LanguageId::Toml => Err(SyntaxError::LanguageNotSupported(
+            "toml support not compiled".to_string(),
+        )),
         LanguageId::PlainText => Err(SyntaxError::LanguageNotSupported(
             "plaintext has no syntax queries".to_string(),
         )),

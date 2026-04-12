@@ -40,13 +40,14 @@ impl SyntaxManager {
                 .parse(text, None)
                 .ok_or_else(|| SyntaxError::ParseError)?
         } else {
-            return Err(SyntaxError::LanguageNotSupported(language.as_str().to_string()));
+            // Unsupported language, store without a tree (no syntax highlighting)
+            None
         };
 
         let doc = SyntaxDocument {
             text: text.to_string(),
             language,
-            tree: Some(tree),
+            tree,
         };
         self.documents.insert(doc_id.to_string(), doc);
         Ok(())
@@ -73,8 +74,10 @@ impl SyntaxManager {
             .documents
             .get(doc_id)
             .ok_or(SyntaxError::DocumentNotFound)?;
-        let tree = doc.tree.as_ref().ok_or(SyntaxError::NoSyntaxTree)?;
-        highlight(doc.language, &doc.text, tree)
+        match &doc.tree {
+            Some(tree) => highlight(doc.language, &doc.text, tree),
+            None => Ok(Vec::new()),
+        }
     }
 }
 

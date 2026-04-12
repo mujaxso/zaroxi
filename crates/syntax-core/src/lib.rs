@@ -7,15 +7,10 @@
 //! - Extensible: easy to add new languages and features
 //! - Performant: minimal overhead for large files and frequent edits
 
-pub mod document;
 pub mod error;
 pub mod highlight;
 pub mod language;
 pub mod manager;
-pub mod parser;
-pub mod snapshot;
-pub mod runtime;
-pub mod metadata;
 
 // Re-export main types for convenience
 pub use error::SyntaxError;
