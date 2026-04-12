@@ -1,7 +1,8 @@
 use iced::{
     widget::{container, text_editor},
-    Element, Length, Font, Color,
+    Element, Length, Font, Color, Theme,
 };
+use iced_core::text::highlighter::Format;
 use std::ops::Range;
 
 use crate::app::Message;
@@ -176,8 +177,8 @@ pub fn editor<'a>(
         let base_editor = create_base_editor(text_editor_content, font, custom_style);
         let editor = base_editor.highlight::<SyntaxHighlighter>(
             cache,
-            |color: &Color, _font: &Font| {
-                iced_core::text::highlighter::Format {
+            |color: &Color, _theme: &Theme| -> Format<Font> {
+                Format {
                     color: Some(*color),
                     font: None,
                 }
