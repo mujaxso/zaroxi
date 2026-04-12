@@ -40,7 +40,7 @@ impl LanguageId {
     pub fn tree_sitter_language(&self) -> Option<tree_sitter::Language> {
         match self {
             #[cfg(feature = "rust")]
-            LanguageId::Rust => Some(tree_sitter_rust::LANGUAGE),
+            LanguageId::Rust => Some(tree_sitter_rust::LANGUAGE()),
             #[cfg(not(feature = "rust"))]
             LanguageId::Rust => None,
             LanguageId::Toml => None, // TOML support not currently compiled
