@@ -57,6 +57,8 @@ impl iced_core::text::highlighter::Highlighter for SyntaxHighlighter {
                     
                     if byte_start < byte_end && byte_end <= line.len() {
                         ranges.push((byte_start..byte_end, *color));
+                        eprintln!("DEBUG: highlight_line: line {}: adding range [{}, {}) with color {:?}", 
+                                 line_index, byte_start, byte_end, color);
                     } else {
                         eprintln!("DEBUG: highlight_line: line {}: char_range {:?} -> byte [{}, {}] but line length is {}", 
                                  line_index, char_range, byte_start, byte_end, line.len());
@@ -68,6 +70,7 @@ impl iced_core::text::highlighter::Highlighter for SyntaxHighlighter {
         }
         // The iterator must be sorted by position ascending.
         ranges.sort_by_key(|(range, _)| range.start);
+        eprintln!("DEBUG: highlight_line: line {} returning {} ranges", line_index, ranges.len());
         ranges.into_iter()
     }
 }
@@ -125,7 +128,9 @@ impl iced::widget::text_editor::StyleSheet for TransparentStyle {
     }
 
     fn value_color(&self, _style: &Self::Style) -> Color {
-        Color::WHITE
+        // Use a distinct color to test if syntax highlighting is working
+        // If syntax highlighting works, strings should be green, other text should be red
+        Color::from_rgb(1.0, 0.0, 0.0) // Red
     }
 
     fn disabled_color(&self, _style: &Self::Style) -> Color {
