@@ -6,7 +6,7 @@ license = "MIT"
 
 [dependencies]
 tree-sitter = "0.22"
-tree-sitter-rust = { version = "0.22", optional = true }
+tree-sitter-rust = { version = "0.24.2", optional = true }
 ropey = "1.6"
 thiserror = "2"
 parking_lot = "0.12"

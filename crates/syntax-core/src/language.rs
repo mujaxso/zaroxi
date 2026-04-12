@@ -5,10 +5,7 @@ use std::path::Path;
 use tree_sitter::{Language as TsLanguage, Parser};
 
 use crate::highlight::HighlightConfiguration;
-
-// Import tree-sitter-rust when the rust feature is enabled
-#[cfg(feature = "rust")]
-use tree_sitter_rust;
+use crate::SyntaxError;
 
 /// Supported language identifiers
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -42,13 +39,8 @@ impl LanguageId {
             LanguageId::Rust => {
                 #[cfg(feature = "rust")]
                 {
-                    // Use the tree-sitter-rust crate's LANGUAGE constant
-                    // It's a LanguageFn which wraps a C function pointer
-                    use tree_sitter::Language as TsLanguage;
-                    // Get the raw function pointer and call it
-                    let func = unsafe { tree_sitter_rust::LANGUAGE.into_raw() };
-                    let raw = func();
-                    Some(unsafe { TsLanguage::from_raw(raw) })
+                    // In tree-sitter-rust 0.24.2, we can use the language() function
+                    Some(tree_sitter_rust::language())
                 }
                 #[cfg(not(feature = "rust"))]
                 {
@@ -69,6 +61,15 @@ impl LanguageId {
             LanguageId::Rust => include_str!("../queries/rust/highlights.scm"),
             LanguageId::Toml => "",
             LanguageId::PlainText => "",
+        }
+    }
+
+    /// Get human-readable name for this language
+    pub fn name(&self) -> &'static str {
+        match self {
+            LanguageId::Rust => "Rust",
+            LanguageId::Toml => "TOML",
+            LanguageId::PlainText => "Plain Text",
         }
     }
 }
@@ -131,6 +132,16 @@ impl LanguageRegistry {
         let lang_id = LanguageId::from_path(path);
         let config = self.get_config(lang_id);
         (lang_id, config)
+    }
+
+    /// Check if a language is supported (has a grammar and queries)
+    pub fn is_supported(&self, lang_id: LanguageId) -> bool {
+        self.languages.contains_key(&lang_id)
+    }
+
+    /// Get all supported language IDs
+    pub fn supported_languages(&self) -> Vec<LanguageId> {
+        self.languages.keys().copied().collect()
     }
 }
 

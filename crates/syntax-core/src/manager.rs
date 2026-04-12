@@ -79,6 +79,8 @@ impl SyntaxManager {
         if let Some(doc) = self.documents.get_mut(doc_id) {
             doc.edit(start_byte, old_end_byte, new_text)?;
             doc.reparse_if_needed()?;
+        } else {
+            return Err(SyntaxError::DocumentNotFound);
         }
         
         Ok(())
@@ -104,6 +106,13 @@ impl SyntaxManager {
     /// Get the language for a document
     pub fn document_language(&self, doc_id: &str) -> Option<LanguageId> {
         self.documents.get(doc_id).map(|d| d.language())
+    }
+
+    /// Check if a document has syntax support
+    pub fn has_syntax_support(&self, doc_id: &str) -> bool {
+        self.documents.get(doc_id)
+            .map(|doc| self.registry.is_supported(doc.language()))
+            .unwrap_or(false)
     }
 }
 
