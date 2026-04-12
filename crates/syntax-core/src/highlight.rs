@@ -41,7 +41,10 @@ pub fn highlight(
 ) -> Result<Vec<HighlightSpan>, SyntaxError> {
     match language {
         LanguageId::Rust => highlight_with_query(language, source, tree),
-        LanguageId::Toml => Ok(Vec::new()), // No highlighting for TOML yet
+        #[cfg(feature = "toml")]
+        LanguageId::Toml => highlight_with_query(language, source, tree),
+        #[cfg(not(feature = "toml"))]
+        LanguageId::Toml => Ok(Vec::new()),
         LanguageId::PlainText => Ok(Vec::new()),
     }
 }
@@ -116,9 +119,18 @@ fn get_query_for_language(language: LanguageId) -> Result<&'static str, SyntaxEr
                 "rust feature not enabled".to_string(),
             ))
         }
-        LanguageId::Toml => Err(SyntaxError::LanguageNotSupported(
-            "toml support not compiled".to_string(),
-        )),
+        LanguageId::Toml => {
+            #[cfg(feature = "toml")]
+            {
+                Ok(include_str!(
+                    "../../../runtime/treesitter/languages/toml/queries/highlights.scm"
+                ))
+            }
+            #[cfg(not(feature = "toml"))]
+            Err(SyntaxError::LanguageNotSupported(
+                "toml support not compiled".to_string(),
+            ))
+        }
         LanguageId::PlainText => Err(SyntaxError::LanguageNotSupported(
             "plaintext has no syntax queries".to_string(),
         )),

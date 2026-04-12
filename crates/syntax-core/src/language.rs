@@ -43,7 +43,10 @@ impl LanguageId {
             LanguageId::Rust => Some(tree_sitter_rust::language()),
             #[cfg(not(feature = "rust"))]
             LanguageId::Rust => None,
-            LanguageId::Toml => None, // TOML support not currently compiled
+            #[cfg(feature = "toml")]
+            LanguageId::Toml => Some(tree_sitter_toml::language()),
+            #[cfg(not(feature = "toml"))]
+            LanguageId::Toml => None,
             LanguageId::PlainText => None,
         }
     }
