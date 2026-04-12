@@ -269,10 +269,10 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
             .clip(true) // Ensure content doesn't overflow
             .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
                 container::Appearance {
-                    background: Some(iced::Color::from_rgb(0.1, 0.1, 0.1).into()), // Dark background
+                    background: Some(style.colors.editor_background.into()),
                     border: iced::Border {
-                        color: iced::Color::from_rgb(1.0, 0.0, 0.0),
-                        width: 2.0,
+                        color: iced::Color::from_rgb(1.0, 0.0, 0.0), // Red border
+                        width: 3.0, // Thicker border
                         radius: 0.0.into(),
                     },
                     ..Default::default()
