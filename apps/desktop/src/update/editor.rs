@@ -35,12 +35,27 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                                 Ok(()) => {
                                     // Successfully updated syntax
                                     app.status_message = format!("Syntax highlighting active for {}", doc_id);
+                                    // Try to retrieve highlight spans to prove it works
+                                    match syntax_manager.highlight_spans(&doc_id) {
+                                        Ok(spans) => {
+                                            app.syntax_highlight_span_count = spans.len();
+                                            app.status_message = format!(
+                                                "{} highlights for {}",
+                                                spans.len(),
+                                                doc_id
+                                            );
+                                        }
+                                        Err(_) => {
+                                            app.syntax_highlight_span_count = 0;
+                                        }
+                                    }
                                 }
                                 Err(e) => {
                                     // Don't show error for unsupported languages
                                     if !matches!(e, syntax_core::SyntaxError::LanguageNotSupported(_)) {
                                         app.status_message = format!("Syntax update failed: {}", e);
                                     }
+                                    app.syntax_highlight_span_count = 0;
                                 }
                             }
                         }

@@ -17,6 +17,24 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
                     .size(11)
                     .style(iced::theme::Text::Color(style.colors.text_secondary)),
                 iced::widget::horizontal_space(),
+                // Show syntax highlight indicator
+                container(
+                    text(format!("{} spans", app.syntax_highlight_span_count))
+                        .size(9)
+                        .style(iced::theme::Text::Color(style.colors.accent)),
+                )
+                .padding([2, 4])
+                .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
+                    container::Appearance {
+                        background: Some(style.colors.elevated_panel_background.into()),
+                        border: iced::Border {
+                            color: style.colors.border,
+                            width: 1.0,
+                            radius: 2.0.into(),
+                        },
+                        ..Default::default()
+                    }
+                }))),
                 if app.is_dirty {
                     Icon::Warning.render_with_color(
                         &app.editor_typography,

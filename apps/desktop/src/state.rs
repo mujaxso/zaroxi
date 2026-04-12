@@ -190,6 +190,8 @@ pub struct App {
     pub editor_typography: EditorTypographySettings,
     // Syntax manager for Tree-sitter integration
     pub syntax_manager: Arc<Mutex<syntax_core::SyntaxManager>>,
+    // Diagnostic: number of highlight spans produced for the active document
+    pub syntax_highlight_span_count: usize,
 }
 
 impl App {
@@ -246,6 +248,7 @@ impl App {
                 layout_mode: LayoutMode::Wide,
                 editor_typography: EditorTypographySettings::default(),
                 syntax_manager: Arc::new(Mutex::new(syntax_core::SyntaxManager::new())),
+                syntax_highlight_span_count: 0,
             },
             iced::Command::none(),
         )
