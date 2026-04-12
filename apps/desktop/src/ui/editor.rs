@@ -202,10 +202,7 @@ pub fn editor<'a>(
             },
         );
         
-        // Use a key to force re-creation when cache changes
-        let cache_key = format!("editor-with-highlight-{}", cache.len());
         container(editor)
-            .key(cache_key)
             .padding(0)
             .width(Length::Fill)
             .height(Length::Fill)
