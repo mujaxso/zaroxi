@@ -40,7 +40,12 @@ impl LanguageId {
     pub fn tree_sitter_language(&self) -> Option<tree_sitter::Language> {
         match self {
             #[cfg(feature = "rust")]
-            LanguageId::Rust => Some(unsafe { tree_sitter_rust::LANGUAGE() }),
+            LanguageId::Rust => {
+                // The tree‑sitter‑rust crate exposes LANGUAGE as a LanguageFn,
+                // which is a newtype wrapper around an unsafe extern "C" fn.
+                // Access the inner function via the public .0 field.
+                Some(unsafe { tree_sitter_rust::LANGUAGE.0() })
+            }
             #[cfg(not(feature = "rust"))]
             LanguageId::Rust => None,
             LanguageId::Toml => None, // TOML support not currently compiled
