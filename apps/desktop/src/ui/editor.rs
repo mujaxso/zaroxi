@@ -3,7 +3,7 @@ use iced::{
     Element, Length, Font, Color,
 };
 use std::ops::Range;
-use iced_core::text::highlighter::{Highlighter, Format};
+use iced_core::text::highlighter::Highlighter;
 
 use crate::app::Message;
 use crate::settings::editor::EditorTypographySettings;
@@ -54,6 +54,15 @@ impl iced_core::text::highlighter::Highlighter for SyntaxHighlighter {
         // The iterator must be sorted by position ascending.
         ranges.sort_by_key(|(range, _)| range.start);
         ranges.into_iter()
+    }
+}
+
+impl Default for SyntaxHighlighter {
+    fn default() -> Self {
+        Self {
+            line_cache: Vec::new(),
+            current_line: 0,
+        }
     }
 }
 
@@ -143,13 +152,31 @@ pub fn editor<'a>(
     let editor = if use_syntax_highlighting {
         let cache = line_cache.unwrap();
         eprintln!("DEBUG: Using syntax highlighting with {} lines of cache", cache.len());
-        // Use the syntax highlighter
-        let highlighter = SyntaxHighlighter::new(&cache);
+        // Use the syntax highlighter with the highlight() method
         text_editor::TextEditor::new(text_editor_content)
             .on_action(Message::EditorContentChanged)
             .font(font)
             .style(custom_style)
-            .highlighter(highlighter)
+            .highlight::<SyntaxHighlighter>(
+                cache,
+                |color: &Color, _font: &Font| {
+                    iced_core::text::highlighter::Format {
+                        color: Some(*color),
+                        background: None,
+                        font: None,
+                        size: None,
+                        line_height: None,
+                        horizontal_alignment: None,
+                        vertical_alignment: None,
+                        underline: None,
+                        strikethrough: None,
+                        font_features: None,
+                        font_variation_settings: None,
+                        shadow: None,
+                        shaping: None,
+                    }
+                },
+            )
     } else {
         eprintln!("DEBUG: No syntax highlighting");
         // No syntax highlighting

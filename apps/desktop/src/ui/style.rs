@@ -208,18 +208,18 @@ impl StyleHelpers {
     pub fn highlight_color(&self, highlight: Highlight) -> iced::Color {
         match highlight {
             Highlight::Comment => Color::from_rgb(0.5, 0.5, 0.5),       // grey
-            Highlight::String => Color::from_rgb(0.0, 1.0, 0.0),        // bright green
-            Highlight::Keyword => Color::from_rgb(1.0, 0.0, 0.0),       // red
-            Highlight::Function => Color::from_rgb(0.0, 0.5, 1.0),      // blue
-            Highlight::Variable => Color::from_rgb(1.0, 1.0, 1.0),      // white
-            Highlight::Type => Color::from_rgb(0.8, 0.0, 0.8),          // purple
-            Highlight::Constant => Color::from_rgb(1.0, 0.5, 0.0),      // orange
-            Highlight::Attribute => Color::from_rgb(0.0, 1.0, 1.0),     // cyan
-            Highlight::Operator => Color::from_rgb(1.0, 1.0, 0.0),      // yellow
-            Highlight::Number => Color::from_rgb(1.0, 0.6, 0.2),        // orange
-            Highlight::Property => Color::from_rgb(0.0, 1.0, 0.5),      // teal
-            Highlight::Namespace => Color::from_rgb(0.6, 0.2, 1.0),     // violet
-            Highlight::Plain => Color::from_rgb(0.9, 0.9, 0.9),         // light grey
+            Highlight::String => Color::from_rgb(0.0, 0.8, 0.0),        // green
+            Highlight::Keyword => Color::from_rgb(0.9, 0.2, 0.2),       // red
+            Highlight::Function => Color::from_rgb(0.0, 0.6, 0.9),      // blue
+            Highlight::Variable => self.colors.text_primary,            // Use theme primary text
+            Highlight::Type => Color::from_rgb(0.7, 0.0, 0.8),          // purple
+            Highlight::Constant => Color::from_rgb(0.9, 0.5, 0.0),      // orange
+            Highlight::Attribute => Color::from_rgb(0.0, 0.8, 0.8),     // cyan
+            Highlight::Operator => Color::from_rgb(0.9, 0.9, 0.0),      // yellow
+            Highlight::Number => Color::from_rgb(0.9, 0.6, 0.2),        // orange
+            Highlight::Property => Color::from_rgb(0.0, 0.8, 0.5),      // teal
+            Highlight::Namespace => Color::from_rgb(0.6, 0.2, 0.9),     // violet
+            Highlight::Plain => self.colors.text_primary,               // Use theme primary text
         }
     }
 }
