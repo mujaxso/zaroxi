@@ -1,4 +1,5 @@
-use iced::{Element, Length, Color, widget::{column, container, row, text, horizontal_rule, Space}};
+use iced::{Element, Length, Color, widget::{column, container, row, text, horizontal_rule, Space, text::Span}};
+use syntax_core::Highlight;
 use crate::message::Message;
 use crate::state::App;
 use super::style::StyleHelpers;
@@ -176,6 +177,29 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
         column_children.push(separator.into());
     }
     
+    // Add syntax preview if we have highlight spans
+    if !app.syntax_highlight_spans.is_empty() {
+        // Show a small colored preview (first 500 chars)
+        let preview = syntax_preview(&app.syntax_highlight_spans, &app.text_editor.text(), &style);
+        column_children.push(
+            container(preview)
+                .padding(8)
+                .width(Length::Fill)
+                .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
+                    container::Appearance {
+                        background: Some(style.colors.elevated_panel_background.into()),
+                        border: iced::Border {
+                            color: style.colors.border,
+                            width: 1.0,
+                            radius: 4.0.into(),
+                        },
+                        ..Default::default()
+                    }
+                })))
+                .into()
+        );
+    }
+    
     // Add editor content
     column_children.push(
         container(editor_content)
@@ -205,5 +229,84 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
             ..Default::default()
         }
     })))
+    .into()
+}
+
+/// Create a colored preview of the first part of the document using highlight spans.
+fn syntax_preview<'a>(
+    spans: &'a [syntax_core::HighlightSpan],
+    source: &'a str,
+    style: &'a StyleHelpers,
+) -> Element<'a, Message> {
+    // Take the first 500 characters (or less)
+    const PREVIEW_LEN: usize = 500;
+    let preview_source = if source.len() > PREVIEW_LEN {
+        &source[..PREVIEW_LEN]
+    } else {
+        source
+    };
+    
+    // Map Highlight to color using theme
+    let highlight_to_color = |hl: Highlight| -> Color {
+        match hl {
+            Highlight::Comment => style.colors.text_muted,
+            Highlight::String => Color::from_rgb(0.8, 0.6, 0.2), // orange-ish
+            Highlight::Keyword => style.colors.accent,
+            Highlight::Function => Color::from_rgb(0.2, 0.8, 0.8), // cyan
+            Highlight::Variable => style.colors.text_primary,
+            Highlight::Type => Color::from_rgb(0.4, 0.8, 0.4), // green
+            Highlight::Constant => Color::from_rgb(0.8, 0.4, 0.8), // magenta
+            Highlight::Attribute => Color::from_rgb(0.8, 0.8, 0.2), // yellow
+            Highlight::Operator => style.colors.text_secondary,
+            Highlight::Number => Color::from_rgb(0.8, 0.5, 0.2), // orange
+            Highlight::Property => Color::from_rgb(0.6, 0.6, 1.0), // light blue
+            Highlight::Namespace => Color::from_rgb(0.6, 0.4, 0.8), // purple
+            Highlight::Plain => style.colors.text_primary,
+        }
+    };
+    
+    // We'll create a simple line of colored spans.
+    // For simplicity, just show the first few spans.
+    let mut spans_iter = spans.iter().filter(|s| s.start < PREVIEW_LEN).peekable();
+    let mut position = 0;
+    let mut text_spans: Vec<Span<'a>> = Vec::new();
+    
+    while let Some(span) = spans_iter.next() {
+        // Add plain text before this span
+        if span.start > position {
+            text_spans.push(Span::new(&preview_source[position..span.start]));
+        }
+        // Add highlighted span
+        let end = span.end.min(PREVIEW_LEN);
+        if end > span.start {
+            let colored_text = &preview_source[span.start..end];
+            text_spans.push(
+                Span::new(colored_text)
+                    .color(highlight_to_color(span.highlight))
+            );
+        }
+        position = end;
+        if position >= PREVIEW_LEN {
+            break;
+        }
+    }
+    // Add remaining plain text
+    if position < preview_source.len() {
+        text_spans.push(Span::new(&preview_source[position..]));
+    }
+    
+    // Build the text widget
+    let mut final_text = text::Text::new("");
+    for sp in text_spans {
+        final_text = final_text.push(sp);
+    }
+    
+    container(
+        column![
+            text("Syntax Preview").size(10).color(style.colors.text_muted),
+            text(final_text).size(12).font(iced::Font::MONOSPACE),
+        ]
+        .spacing(4)
+    )
     .into()
 }

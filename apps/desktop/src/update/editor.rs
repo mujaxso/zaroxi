@@ -39,6 +39,7 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                                     match syntax_manager.highlight_spans(&doc_id) {
                                         Ok(spans) => {
                                             app.syntax_highlight_span_count = spans.len();
+                                            app.syntax_highlight_spans = spans.clone();
                                             app.status_message = format!(
                                                 "{} highlights for {}",
                                                 spans.len(),
@@ -47,7 +48,7 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                                         }
                                         Err(_) => {
                                             app.syntax_highlight_span_count = 0;
-                                        }
+                                            app.syntax_highlight_spans.clear();
                                     }
                                 }
                                 Err(e) => {
@@ -56,6 +57,7 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                                         app.status_message = format!("Syntax update failed: {}", e);
                                     }
                                     app.syntax_highlight_span_count = 0;
+                                    app.syntax_highlight_spans.clear();
                                 }
                             }
                         }

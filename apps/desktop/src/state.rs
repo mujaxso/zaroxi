@@ -192,6 +192,8 @@ pub struct App {
     pub syntax_manager: Arc<Mutex<syntax_core::SyntaxManager>>,
     // Diagnostic: number of highlight spans produced for the active document
     pub syntax_highlight_span_count: usize,
+    // Actual highlight spans for the active document (for UI rendering)
+    pub syntax_highlight_spans: Vec<syntax_core::HighlightSpan>,
 }
 
 impl App {
@@ -235,6 +237,7 @@ impl App {
                 editor_typography: EditorTypographySettings::default(),
                 syntax_manager: Arc::new(Mutex::new(syntax_core::SyntaxManager::new())),
                 syntax_highlight_span_count: 0,
+                syntax_highlight_spans: Vec::new(),
             },
             iced::Command::none(),
         )
