@@ -1,0 +1,6 @@
+id = "toml"
+name = "TOML"
+extensions = ["toml"]
+filenames = ["Cargo.toml", "rust-toolchain.toml"]
+grammar = { library = "libtree-sitter-toml.so", symbol = "tree_sitter_toml" }
+queries = { path = "queries" }

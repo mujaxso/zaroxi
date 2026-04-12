@@ -34,6 +34,7 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                             match syntax_manager.update_document(&doc_id, &current_text, Path::new(path)) {
                                 Ok(()) => {
                                     // Successfully updated syntax
+                                    app.status_message = format!("Syntax highlighting active for {}", doc_id);
                                 }
                                 Err(e) => {
                                     // Don't show error for unsupported languages

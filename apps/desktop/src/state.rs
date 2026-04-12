@@ -1,4 +1,5 @@
 use std::sync::{Arc, Mutex};
+use std::env;
 use workspace_model::state::WorkspaceState;
 use core_types::workspace::DirectoryEntry;
 use editor_core::EditorState;
@@ -192,6 +193,19 @@ pub struct App {
 
 impl App {
     pub fn new() -> (Self, iced::Command<crate::message::Message>) {
+        // Ensure NEOTE_RUNTIME is set to find Tree‑sitter resources
+        if env::var("NEOTE_RUNTIME").is_err() {
+            // Try to locate runtime relative to the executable
+            if let Ok(exe_path) = env::current_exe() {
+                if let Some(exe_dir) = exe_path.parent() {
+                    let runtime_candidate = exe_dir.join("../runtime/treesitter");
+                    if runtime_candidate.exists() {
+                        env::set_var("NEOTE_RUNTIME", runtime_candidate.to_string_lossy().to_string());
+                    }
+                }
+            }
+        }
+
         (
             App {
                 workspace_path: String::new(),

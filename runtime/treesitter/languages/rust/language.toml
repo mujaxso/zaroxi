@@ -1,0 +1,6 @@
+id = "rust"
+name = "Rust"
+extensions = ["rs"]
+filenames = ["Cargo.toml"]
+grammar = { library = "libtree-sitter-rust.so", symbol = "tree_sitter_rust" }
+queries = { path = "queries" }
