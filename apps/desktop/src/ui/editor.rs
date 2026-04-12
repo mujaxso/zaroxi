@@ -157,30 +157,6 @@ pub fn editor<'a>(
     // Check if we should use syntax highlighting
     let use_syntax_highlighting = line_cache.as_ref().map_or(false, |cache| !cache.is_empty());
     
-    // Helper function to create a container with the editor
-    fn create_container<'b>(
-        editor: iced::widget::TextEditor<'b, impl iced_core::text::highlighter::Highlighter, Message, iced::Theme>,
-        background_color: Color,
-    ) -> Element<'b, Message> {
-        container(editor)
-            .padding(0)
-            .width(Length::Fill)
-            .height(Length::Fill)
-            .clip(true)
-            .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
-                container::Appearance {
-                    background: Some(background_color.into()),
-                    border: iced::Border {
-                        color: Color::TRANSPARENT,
-                        width: 0.0,
-                        radius: 0.0.into(),
-                    },
-                    ..Default::default()
-                }
-            })))
-            .into()
-    }
-    
     if use_syntax_highlighting {
         let cache = line_cache.unwrap();
         eprintln!("DEBUG: Using syntax highlighting with {} lines of cache", cache.len());
@@ -199,7 +175,23 @@ pub fn editor<'a>(
                 },
             );
         
-        create_container(editor, background_color)
+        container(editor)
+            .padding(0)
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .clip(true)
+            .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
+                container::Appearance {
+                    background: Some(background_color.into()),
+                    border: iced::Border {
+                        color: Color::TRANSPARENT,
+                        width: 0.0,
+                        radius: 0.0.into(),
+                    },
+                    ..Default::default()
+                }
+            })))
+            .into()
     } else {
         eprintln!("DEBUG: No syntax highlighting");
         // Create editor without syntax highlighting
@@ -208,6 +200,22 @@ pub fn editor<'a>(
             .font(font)
             .style(custom_style);
         
-        create_container(editor, background_color)
+        container(editor)
+            .padding(0)
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .clip(true)
+            .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
+                container::Appearance {
+                    background: Some(background_color.into()),
+                    border: iced::Border {
+                        color: Color::TRANSPARENT,
+                        width: 0.0,
+                        radius: 0.0.into(),
+                    },
+                    ..Default::default()
+                }
+            })))
+            .into()
     }
 }
