@@ -31,6 +31,7 @@ impl iced_core::text::highlighter::Highlighter for SyntaxHighlighter {
     }
 
     fn change_line(&mut self, line: usize) {
+        eprintln!("DEBUG: SyntaxHighlighter::change_line: {}", line);
         self.current_line = line;
     }
 
@@ -56,9 +57,14 @@ impl iced_core::text::highlighter::Highlighter for SyntaxHighlighter {
                     
                     if byte_start < byte_end && byte_end <= line.len() {
                         ranges.push((byte_start..byte_end, *color));
+                    } else {
+                        eprintln!("DEBUG: highlight_line: line {}: char_range {:?} -> byte [{}, {}] but line length is {}", 
+                                 line_index, char_range, byte_start, byte_end, line.len());
                     }
                 }
             }
+        } else {
+            eprintln!("DEBUG: highlight_line: line {} has no highlights", line_index);
         }
         // The iterator must be sorted by position ascending.
         ranges.sort_by_key(|(range, _)| range.start);
