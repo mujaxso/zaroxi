@@ -46,7 +46,7 @@ impl SyntaxManager {
                 SyntaxError::ParserError("Parser has no language set".to_string())
             })?;
             let mut new_parser = tree_sitter::Parser::new();
-            new_parser.set_language(lang)
+            new_parser.set_language(&lang)
                 .map_err(|e| SyntaxError::ParserError(e.to_string()))?;
             Some(Arc::new(Mutex::new(new_parser)))
         };
