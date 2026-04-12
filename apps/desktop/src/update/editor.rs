@@ -199,6 +199,18 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                 let mut syntax_manager = app.syntax_manager.lock().unwrap();
                 if let Err(e) = syntax_manager.update_document(&doc_id, &editor_state.text(), Path::new(path)) {
                     app.status_message = format!("Syntax init failed: {}", e);
+                } else {
+                    // Retrieve highlight spans for UI
+                    match syntax_manager.highlight_spans(&doc_id) {
+                        Ok(spans) => {
+                            app.syntax_highlight_span_count = spans.len();
+                            app.syntax_highlight_spans = spans.clone();
+                        }
+                        Err(_) => {
+                            app.syntax_highlight_span_count = 0;
+                            app.syntax_highlight_spans.clear();
+                        }
+                    }
                 }
             }
             
