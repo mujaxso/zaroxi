@@ -131,9 +131,7 @@ pub fn shell(app: &App) -> Element<'_, Message> {
     // Editor area should expand to fill remaining space without any gaps
     // The editor panel will handle its own border and background
     main_content_row = main_content_row.push(
-        container(main_editor_area)
-            .width(Length::Fill)
-            .height(Length::Fill)
+        main_editor_area
     );
     
     // Only show auxiliary sidebar if not in settings mode
