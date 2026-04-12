@@ -128,9 +128,8 @@ impl iced::widget::text_editor::StyleSheet for TransparentStyle {
     }
 
     fn value_color(&self, _style: &Self::Style) -> Color {
-        // Use a distinct color to test if syntax highlighting is working
-        // If syntax highlighting works, strings should be green, other text should be red
-        Color::from_rgb(1.0, 0.0, 0.0) // Red
+        // Use a bright color to test if text is rendering
+        Color::from_rgb(1.0, 1.0, 1.0) // White
     }
 
     fn disabled_color(&self, _style: &Self::Style) -> Color {
@@ -168,14 +167,9 @@ pub fn editor<'a>(
     
     // Check if we should use syntax highlighting
     // We have syntax highlighting if any line in the cache has highlights
-    let use_syntax_highlighting = line_cache.as_ref().map_or(false, |cache| {
-        cache.iter().any(|line| !line.is_empty())
-    });
-    eprintln!("DEBUG: use_syntax_highlighting = {}, line_cache.is_some() = {}, line_cache.map_or(0, |c| c.len()) = {}, total_highlights = {}", 
-              use_syntax_highlighting, 
-              line_cache.is_some(),
-              line_cache.as_ref().map_or(0, |c| c.len()),
-              line_cache.as_ref().map_or(0, |c| c.iter().map(|line| line.len()).sum::<usize>()));
+    // Temporarily disable syntax highlighting to test editor rendering
+    let use_syntax_highlighting = false;
+    eprintln!("DEBUG: use_syntax_highlighting = {} (FORCED FALSE FOR TESTING)", use_syntax_highlighting);
     
     // Create a base editor with explicit theme type
     fn create_base_editor<'b>(
