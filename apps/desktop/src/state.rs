@@ -252,7 +252,7 @@ impl App {
             iced::keyboard::on_key_press(|key, modifiers| {
                 Some(Message::KeyPressed(key, modifiers))
             }),
-            iced::event::listen().filter_map(|event| {
+            iced::event::listen_with(|event, _status| {
                 match event {
                     iced::Event::Window(_id, iced::window::Event::Resized { width, height }) => {
                         Some(Message::WindowResized(width, height))
