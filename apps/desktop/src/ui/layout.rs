@@ -66,6 +66,11 @@ pub fn ide_layout<'a>(
             .into()
     };
 
+    // Debug print
+    eprintln!("DEBUG: layout: syntax_highlight_cache.is_some() = {}, .map_or(0, |c| c.len()) = {}", 
+             syntax_highlight_cache.is_some(),
+             syntax_highlight_cache.as_ref().map_or(0, |c| c.len()));
+
     let main_content = row![
         // Activity rail
         activity_rail,
@@ -76,9 +81,6 @@ pub fn ide_layout<'a>(
             .height(Length::Fill),
         vertical_rule(1),
         // Editor area - takes most space
-        eprintln!("DEBUG: layout: syntax_highlight_cache.is_some() = {}, .map_or(0, |c| c.len()) = {}", 
-                 syntax_highlight_cache.is_some(),
-                 syntax_highlight_cache.as_ref().map_or(0, |c| c.len()));
         container(editor_panel(active_file_path, text_editor, is_dirty, editor_document, is_file_too_large_for_editor, file_loading_state, editor_typography, theme, syntax_highlight_cache))
             .width(Length::FillPortion(5))
             .height(Length::Fill),
