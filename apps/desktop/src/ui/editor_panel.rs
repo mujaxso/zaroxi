@@ -1,5 +1,5 @@
-use iced::{Element, Length, Color, Font, Renderer, widget::{column, container, row, Row, text, Text, scrollable}};
-use syntax_core::{Highlight, HighlightSpan};
+use iced::{Element, Length, Color, widget::{column, container, row, text}};
+use syntax_core::Highlight;
 use crate::message::Message;
 use crate::state::App;
 use super::style::StyleHelpers;
@@ -127,7 +127,7 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
                 &app.text_editor,
                 &app.editor_typography,
                 style.colors.editor_background,
-                Some(&app.syntax_highlight_cache),
+                Some(app.syntax_highlight_cache.clone()),
             )
         }
     } else {

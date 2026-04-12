@@ -674,7 +674,7 @@ fn editor_panel<'a>(
                 } else {
                     // Get the editor background color from the theme
                     let style = StyleHelpers::new(theme);
-                    super::editor::editor(text_editor, editor_typography, style.colors.editor_background)
+                    super::editor::editor(text_editor, editor_typography, style.colors.editor_background, None)
                 }
             } else {
                 container(

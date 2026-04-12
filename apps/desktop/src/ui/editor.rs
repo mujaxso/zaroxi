@@ -3,22 +3,57 @@ use iced::{
     Element, Length, Font, Color,
 };
 use std::ops::Range;
+use iced_core::text::highlighter::Highlighter;
 
 use crate::app::Message;
 use crate::settings::editor::EditorTypographySettings;
 
 /// Highlighter that uses the per‑line cache built from `syntax‑core`.
-struct SyntaxHighlighter<'a> {
-    line_cache: &'a [Vec<(Range<usize>, Color)>],
+struct SyntaxHighlighter {
+    line_cache: Vec<Vec<(Range<usize>, Color)>>,
+    current_line: usize,
 }
 
-impl<'a> text_editor::Highlighter for SyntaxHighlighter<'a> {
-    fn highlight_line(
-        &self,
-        line: usize,
-        _text: &str,
-    ) -> Vec<(Range<usize>, Color)> {
-        self.line_cache.get(line).cloned().unwrap_or_default()
+impl iced_core::text::highlighter::Highlighter for SyntaxHighlighter {
+    type Settings = Vec<Vec<(Range<usize>, Color)>>;
+    type Highlight = Color;
+    type Iterator<'a> = std::vec::IntoIter<(usize, Self::Highlight)>;
+
+    fn new(settings: &Self::Settings) -> Self {
+        Self {
+            line_cache: settings.clone(),
+            current_line: 0,
+        }
+    }
+
+    fn update(&mut self, settings: &Self::Settings) {
+        self.line_cache = settings.clone();
+    }
+
+    fn change_line(&mut self, line: usize) {
+        self.current_line = line;
+    }
+
+    fn current_line(&self) -> usize {
+        self.current_line
+    }
+
+    fn highlight_line(&mut self, line: &str) -> Self::Iterator<'_> {
+        let line_index = self.current_line;
+        let mut highlights = Vec::new();
+        if let Some(line_highlights) = self.line_cache.get(line_index) {
+            for (range, color) in line_highlights {
+                // Ensure range is within line bytes length.
+                let end = range.end.min(line.len());
+                let start = range.start.min(end);
+                if start < end {
+                    highlights.push((start, *color));
+                }
+            }
+        }
+        // The iterator must be sorted by position ascending.
+        highlights.sort_by_key(|(pos, _)| *pos);
+        highlights.into_iter()
     }
 }
 
@@ -84,7 +119,7 @@ pub fn editor<'a>(
     text_editor_content: &'a iced::widget::text_editor::Content,
     typography: &EditorTypographySettings,
     background_color: Color,
-    line_cache: Option<&'a [Vec<(Range<usize>, Color)>]>,
+    line_cache: Option<Vec<Vec<(Range<usize>, Color)>>>,
 ) -> Element<'a, Message> {
     // Create font based on selected font family
     // Note: Iced's font support is limited, so we use the first font in the fallback stack
@@ -103,8 +138,11 @@ pub fn editor<'a>(
 
     // Apply syntax highlighting if a line cache is provided
     if let Some(cache) = line_cache {
-        let highlighter = SyntaxHighlighter { line_cache: cache };
-        editor = editor.highlight(highlighter);
+        let highlighter = SyntaxHighlighter {
+            line_cache: Vec::new(),
+            current_line: 0,
+        };
+        editor = editor.highlight(highlighter, &cache);
     }
     
     // The text editor widget has built-in scrolling capabilities

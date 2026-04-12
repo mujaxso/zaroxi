@@ -14,7 +14,6 @@ fn build_line_cache(
     spans: &[syntax_core::HighlightSpan],
     theme: crate::theme::NeoteTheme,
 ) -> Vec<Vec<(Range<usize>, iced::Color)>> {
-    use iced::Color;
     let style = StyleHelpers::new(theme);
 
     // line start positions (character offsets)
@@ -46,7 +45,7 @@ fn build_line_cache(
             Err(i) => i.saturating_sub(1),
         };
         let mut remaining_start = char_start;
-        let mut remaining_end = char_end;
+        let remaining_end = char_end;
         let mut current_line = line_idx;
         while remaining_start < remaining_end && current_line < line_count {
             let line_start = line_starts[current_line];
