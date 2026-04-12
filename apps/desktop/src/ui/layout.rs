@@ -5,6 +5,7 @@ use iced::{
     },
     Alignment, Color, Element, Length,
 };
+use std::ops::Range;
 
 use crate::state::{Activity, FileLoadingState};
 use crate::message::Message;
@@ -43,6 +44,7 @@ pub fn ide_layout<'a>(
     file_loading_state: &'a FileLoadingState,
     theme: NeoteTheme,
     editor_typography: &'a EditorTypographySettings,
+    syntax_highlight_cache: Option<Vec<Vec<(Range<usize>, Color)>>>,
 ) -> Element<'a, Message> {
     let style = StyleHelpers::new(theme);
     
@@ -74,7 +76,7 @@ pub fn ide_layout<'a>(
             .height(Length::Fill),
         vertical_rule(1),
         // Editor area - takes most space
-        container(editor_panel(active_file_path, text_editor, is_dirty, editor_document, is_file_too_large_for_editor, file_loading_state, editor_typography, theme))
+        container(editor_panel(active_file_path, text_editor, is_dirty, editor_document, is_file_too_large_for_editor, file_loading_state, editor_typography, theme, syntax_highlight_cache))
             .width(Length::FillPortion(5))
             .height(Length::Fill),
         // AI panel (conditionally visible) - flexible width
@@ -434,6 +436,7 @@ fn editor_panel<'a>(
     file_loading_state: &'a FileLoadingState,
     editor_typography: &'a EditorTypographySettings,
     theme: NeoteTheme,
+    line_cache: Option<Vec<Vec<(Range<usize>, Color)>>>,
 ) -> Element<'a, Message> {
     let style = StyleHelpers::new(theme);
     let header = if let Some(path) = active_file_path {
@@ -674,7 +677,7 @@ fn editor_panel<'a>(
                 } else {
                     // Get the editor background color from the theme
                     let style = StyleHelpers::new(theme);
-                    super::editor::editor(text_editor, editor_typography, style.colors.editor_background, None)
+                    super::editor::editor(text_editor, editor_typography, style.colors.editor_background, line_cache)
                 }
             } else {
                 container(
