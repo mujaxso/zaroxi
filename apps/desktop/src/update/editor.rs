@@ -3,7 +3,6 @@ use crate::state::App;
 use iced::Command;
 use editor_core::EditorState;
 use std::path::Path;
-use syntax_core::SyntaxError;
 
 pub fn update(app: &mut App, message: Message) -> Command<Message> {
     match message {

@@ -1,6 +1,5 @@
 use std::sync::{Arc, Mutex};
 use std::env;
-use std::env::consts;
 use workspace_model::state::WorkspaceState;
 use core_types::workspace::DirectoryEntry;
 use editor_core::EditorState;
