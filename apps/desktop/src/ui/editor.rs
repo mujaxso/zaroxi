@@ -41,12 +41,21 @@ impl iced_core::text::highlighter::Highlighter for SyntaxHighlighter {
         let line_index = self.current_line;
         let mut ranges = Vec::new();
         if let Some(line_highlights) = self.line_cache.get(line_index) {
-            for (range, color) in line_highlights {
-                // Ensure range is within line bytes length.
-                let end = range.end.min(line.len());
-                let start = range.start.min(end);
-                if start < end {
-                    ranges.push((start..end, *color));
+            // Convert character ranges to byte ranges
+            let line_chars: Vec<char> = line.chars().collect();
+            for (char_range, color) in line_highlights {
+                // Convert character positions to byte positions
+                let char_start = char_range.start;
+                let char_end = char_range.end.min(line_chars.len());
+                
+                if char_start < char_end {
+                    // Calculate byte positions
+                    let byte_start = line_chars[..char_start].iter().map(|c| c.len_utf8()).sum::<usize>();
+                    let byte_end = byte_start + line_chars[char_start..char_end].iter().map(|c| c.len_utf8()).sum::<usize>();
+                    
+                    if byte_start < byte_end && byte_end <= line.len() {
+                        ranges.push((byte_start..byte_end, *color));
+                    }
                 }
             }
         }
@@ -145,36 +154,68 @@ pub fn editor<'a>(
     // Use a transparent style for the editor; background is provided by the container
     let custom_style = iced::theme::TextEditor::Custom(Box::new(TransparentStyle));
     
-    // Create a base editor
-    let editor = text_editor::TextEditor::new(text_editor_content)
-        .on_action(Message::EditorContentChanged)
-        .font(font)
-        .style(custom_style);
+    // Check if we should use syntax highlighting
+    let use_syntax_highlighting = line_cache.as_ref().map_or(false, |cache| !cache.is_empty());
     
-    // Note: syntax highlighting via line_cache is currently disabled due to compilation issues
-    // Will be integrated in a future update.
-    // For now, we'll just use the plain editor without highlighting
-    eprintln!("DEBUG: Editor created (syntax highlighting disabled for now)");
-    
-    // The text editor widget has built-in scrolling capabilities
-    // It handles both vertical and horizontal scrolling automatically
-    // We don't need to wrap it in additional scrollable containers
-    // Ensure the editor is properly clipped to prevent overflow
-    container(editor)
-        .padding(0) // No padding
-        .width(Length::Fill)
-        .height(Length::Fill)
-        .clip(true) // Ensure content doesn't overflow
-        .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
-            container::Appearance {
-                background: Some(background_color.into()),
-                border: iced::Border {
-                    color: Color::TRANSPARENT,
-                    width: 0.0,
-                    radius: 0.0.into(),
+    if use_syntax_highlighting {
+        let cache = line_cache.unwrap();
+        eprintln!("DEBUG: Using syntax highlighting with {} lines of cache", cache.len());
+        // Create editor with syntax highlighting
+        let editor = text_editor::TextEditor::new(text_editor_content)
+            .on_action(Message::EditorContentChanged)
+            .font(font)
+            .style(custom_style)
+            .highlight::<SyntaxHighlighter>(
+                cache,
+                |color: &Color, _font: &Font| {
+                    iced_core::text::highlighter::Format {
+                        color: Some(*color),
+                        font: None,
+                    }
                 },
-                ..Default::default()
-            }
-        })))
-        .into()
+            );
+        
+        container(editor)
+            .padding(0)
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .clip(true)
+            .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
+                container::Appearance {
+                    background: Some(background_color.into()),
+                    border: iced::Border {
+                        color: Color::TRANSPARENT,
+                        width: 0.0,
+                        radius: 0.0.into(),
+                    },
+                    ..Default::default()
+                }
+            })))
+            .into()
+    } else {
+        eprintln!("DEBUG: No syntax highlighting");
+        // Create editor without syntax highlighting
+        let editor = text_editor::TextEditor::new(text_editor_content)
+            .on_action(Message::EditorContentChanged)
+            .font(font)
+            .style(custom_style);
+        
+        container(editor)
+            .padding(0)
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .clip(true)
+            .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
+                container::Appearance {
+                    background: Some(background_color.into()),
+                    border: iced::Border {
+                        color: Color::TRANSPARENT,
+                        width: 0.0,
+                        radius: 0.0.into(),
+                    },
+                    ..Default::default()
+                }
+            })))
+            .into()
+    }
 }
