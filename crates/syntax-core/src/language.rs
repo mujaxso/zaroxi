@@ -38,9 +38,8 @@ impl LanguageId {
             LanguageId::Rust => {
                 #[cfg(feature = "rust")]
                 {
-                    // tree_sitter_rust::LANGUAGE is a function pointer that returns Language
-                    // We need to call it to get the Language
-                    Some(unsafe { tree_sitter_rust::LANGUAGE() })
+                    // tree_sitter_rust::LANGUAGE is a LanguageFn which implements Into<Language>
+                    Some(tree_sitter_rust::LANGUAGE.into())
                 }
                 #[cfg(not(feature = "rust"))]
                 {

@@ -61,13 +61,11 @@ impl SyntaxTree {
     pub fn reparse(&mut self) -> Result<(), crate::SyntaxError> {
         let mut parser = self.parser.lock();
         // We can't use std::mem::take because Tree doesn't implement Default
-        // So we'll parse with the old tree and then replace it
-        let old_tree = std::mem::replace(&mut self.tree, unsafe {
-            // Create an uninitialized tree as a placeholder
-            // We'll immediately replace it with a parsed tree
-            // This is safe because we never read from this placeholder
-            std::mem::MaybeUninit::uninit().assume_init()
-        });
+        // So we'll use std::ptr::read to move the tree out without dropping
+        let old_tree = unsafe {
+            // Read the tree from self.tree, leaving the memory uninitialized
+            std::ptr::read(&self.tree)
+        };
         
         // Convert rope to string for parsing
         let text_str = self.text.to_string();
@@ -75,8 +73,10 @@ impl SyntaxTree {
             .parse(&text_str, Some(&old_tree))
             .ok_or_else(|| crate::SyntaxError::ParserError("Failed to reparse".to_string()))?;
         
-        // The old tree will be dropped when this function returns
-        self.tree = new_tree;
+        // Write the new tree back, and the old tree will be dropped
+        unsafe {
+            std::ptr::write(&mut self.tree, new_tree);
+        }
         
         Ok(())
     }
