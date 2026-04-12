@@ -157,23 +157,32 @@ pub fn editor<'a>(
     // Check if we should use syntax highlighting
     let use_syntax_highlighting = line_cache.as_ref().map_or(false, |cache| !cache.is_empty());
     
+    // Create a base editor with explicit theme type
+    fn create_base_editor<'b>(
+        content: &'b iced::widget::text_editor::Content,
+        font: Font,
+        custom_style: iced::theme::TextEditor,
+    ) -> iced::widget::TextEditor<'b, iced_core::text::highlighter::PlainText, Message, iced::Theme> {
+        text_editor::TextEditor::new(content)
+            .on_action(Message::EditorContentChanged)
+            .font(font)
+            .style(custom_style)
+    }
+    
     if use_syntax_highlighting {
         let cache = line_cache.unwrap();
         eprintln!("DEBUG: Using syntax highlighting with {} lines of cache", cache.len());
         // Create editor with syntax highlighting
-        let editor = text_editor::TextEditor::new(text_editor_content)
-            .on_action(Message::EditorContentChanged)
-            .font(font)
-            .style(custom_style)
-            .highlight::<SyntaxHighlighter>(
-                cache,
-                |color: &Color, _font: &Font| {
-                    iced_core::text::highlighter::Format {
-                        color: Some(*color),
-                        font: None,
-                    }
-                },
-            );
+        let base_editor = create_base_editor(text_editor_content, font, custom_style);
+        let editor = base_editor.highlight::<SyntaxHighlighter>(
+            cache,
+            |color: &Color, _font: &Font| {
+                iced_core::text::highlighter::Format {
+                    color: Some(*color),
+                    font: None,
+                }
+            },
+        );
         
         container(editor)
             .padding(0)
@@ -195,10 +204,7 @@ pub fn editor<'a>(
     } else {
         eprintln!("DEBUG: No syntax highlighting");
         // Create editor without syntax highlighting
-        let editor = text_editor::TextEditor::new(text_editor_content)
-            .on_action(Message::EditorContentChanged)
-            .font(font)
-            .style(custom_style);
+        let editor = create_base_editor(text_editor_content, font, custom_style);
         
         container(editor)
             .padding(0)
