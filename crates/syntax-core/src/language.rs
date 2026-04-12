@@ -39,8 +39,14 @@ impl LanguageId {
     /// Return the statically linked Tree-sitter language if available.
     pub fn tree_sitter_language(&self) -> Option<tree_sitter::Language> {
         match self {
+            #[cfg(feature = "rust")]
             LanguageId::Rust => Some(tree_sitter_rust::language()),
+            #[cfg(not(feature = "rust"))]
+            LanguageId::Rust => None,
+            #[cfg(feature = "toml")]
             LanguageId::Toml => Some(tree_sitter_toml::language()),
+            #[cfg(not(feature = "toml"))]
+            LanguageId::Toml => None,
             LanguageId::PlainText => None,
         }
     }
