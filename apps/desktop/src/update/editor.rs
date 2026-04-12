@@ -3,6 +3,7 @@ use crate::state::App;
 use iced::Command;
 use editor_core::EditorState;
 use std::path::Path;
+use syntax_core::SyntaxError;
 
 pub fn update(app: &mut App, message: Message) -> Command<Message> {
     match message {
@@ -49,8 +50,8 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                                         Err(_) => {
                                             app.syntax_highlight_span_count = 0;
                                             app.syntax_highlight_spans.clear();
+                                        }
                                     }
-                                }
                                 Err(e) => {
                                     // Don't show error for unsupported languages
                                     if !matches!(e, syntax_core::SyntaxError::LanguageNotSupported(_)) {
