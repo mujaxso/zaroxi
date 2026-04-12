@@ -76,6 +76,17 @@ impl iced::widget::text_editor::StyleSheet for EditorStyleSheet {
         }
     }
 
+    fn hovered(&self, _style: &Self::Style) -> iced::widget::text_editor::Appearance {
+        iced::widget::text_editor::Appearance {
+            background: self.background_color.into(),
+            border: iced::Border {
+                color: Color::TRANSPARENT,
+                width: 0.0,
+                radius: 0.0.into(),
+            },
+        }
+    }
+
     fn focused(&self, _style: &Self::Style) -> iced::widget::text_editor::Appearance {
         iced::widget::text_editor::Appearance {
             background: self.background_color.into(),
@@ -130,16 +141,18 @@ pub fn editor<'a>(
     let style_sheet = EditorStyleSheet {
         background_color,
     };
+    let custom_style: iced::theme::TextEditor = 
+        iced::theme::TextEditor::Custom(Box::new(style_sheet) as Box<dyn iced::widget::text_editor::StyleSheet<Style = iced::Theme>>);
     
     let mut editor = text_editor::TextEditor::new(text_editor_content)
         .on_action(Message::EditorContentChanged)
         .font(font)
-        .style(iced::theme::TextEditor::Custom(Box::new(style_sheet)));
+        .style(custom_style);
 
     // Apply syntax highlighting if a line cache is provided
     if let Some(cache) = line_cache {
         let highlighter = SyntaxHighlighter::new(&cache);
-        editor = editor.highlight(highlighter, |_settings, color| {
+        editor = editor.highlight(highlighter, |_settings: &Vec<Vec<(Range<usize>, Color)>>, color| {
             Format {
                 color: Some(*color),
                 font: None,
