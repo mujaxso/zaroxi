@@ -38,8 +38,14 @@ impl LanguageId {
             LanguageId::Rust => {
                 #[cfg(feature = "rust")]
                 {
-                    // tree_sitter_rust::LANGUAGE is a LanguageFn which implements Into<Language>
-                    Some(tree_sitter_rust::LANGUAGE.into())
+                    // Use the raw C function to get the language pointer
+                    extern "C" {
+                        fn tree_sitter_rust() -> *const ();
+                    }
+                    let ptr = unsafe { tree_sitter_rust() };
+                    // Convert raw pointer to Language using from_raw
+                    // Safety: tree_sitter_rust() returns a valid language pointer
+                    Some(unsafe { std::mem::transmute(ptr) })
                 }
                 #[cfg(not(feature = "rust"))]
                 {
