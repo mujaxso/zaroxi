@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Script to fetch Tree‑sitter grammar shared libraries for Neote runtime.
+# Script to build Tree‑sitter grammar shared libraries from source.
 # Supports Linux, macOS, and Windows (if compiled).
 # Usage: Called from build.rs with TARGET environment variable set.
 
@@ -78,97 +78,109 @@ case "$OS" in
         ;;
 esac
 
-# Map language names to download URLs (release artifacts).
-# Format: language_name|url|optional_subpath
-# For languages where release asset naming differs, we adjust.
-LANGUAGES="
-bash|https://github.com/tree-sitter/tree-sitter-bash/releases/download/v0.20.4
-c|https://github.com/tree-sitter/tree-sitter-c/releases/download/v0.20.6
-cpp|https://github.com/tree-sitter/tree-sitter-cpp/releases/download/v0.20.3
-c-sharp|https://github.com/tree-sitter/tree-sitter-c-sharp/releases/download/v0.20.3
-css|https://github.com/tree-sitter/tree-sitter-css/releases/download/v0.20.0
-go|https://github.com/tree-sitter/tree-sitter-go/releases/download/v0.20.1
-html|https://github.com/tree-sitter/tree-sitter-html/releases/download/v0.20.0
-java|https://github.com/tree-sitter/tree-sitter-java/releases/download/v0.20.2
-javascript|https://github.com/tree-sitter/tree-sitter-javascript/releases/download/v0.20.3
-json|https://github.com/tree-sitter/tree-sitter-json/releases/download/v0.20.2
-python|https://github.com/tree-sitter/tree-sitter-python/releases/download/v0.20.4
-ruby|https://github.com/tree-sitter/tree-sitter-ruby/releases/download/v0.20.3
-rust|https://github.com/tree-sitter/tree-sitter-rust/releases/download/v0.20.4
-typescript|https://github.com/tree-sitter/tree-sitter-typescript/releases/download/v0.20.3
-tsx|https://github.com/tree-sitter/tree-sitter-typescript/releases/download/v0.20.3
-lua|https://github.com/tree-sitter-grammars/tree-sitter-lua/releases/download/v0.20.2
-toml|https://github.com/tree-sitter-grammars/tree-sitter-toml/releases/download/v0.20.2
-yaml|https://github.com/tree-sitter-grammars/tree-sitter-yaml/releases/download/v0.20.0
-zig|https://github.com/tree-sitter-grammars/tree-sitter-zig/releases/download/v0.20.0
-cmake|https://github.com/uyha/tree-sitter-cmake/releases/download/v0.5.0
-dockerfile|https://github.com/camdencheek/tree-sitter-dockerfile/releases/download/v0.5.0
-elixir|https://github.com/elixir-lang/tree-sitter-elixir/releases/download/v0.20.2
-nix|https://github.com/nix-community/tree-sitter-nix/releases/download/v0.20.2
-"
+# Language definitions: language|git‑repo|branch|subdir (optional fields)
+LANGUAGES=(
+    "bash|https://github.com/tree-sitter/tree-sitter-bash"
+    "c|https://github.com/tree-sitter/tree-sitter-c"
+    "cpp|https://github.com/tree-sitter/tree-sitter-cpp"
+    "c-sharp|https://github.com/tree-sitter/tree-sitter-c-sharp"
+    "css|https://github.com/tree-sitter/tree-sitter-css"
+    "go|https://github.com/tree-sitter/tree-sitter-go"
+    "html|https://github.com/tree-sitter/tree-sitter-html"
+    "java|https://github.com/tree-sitter/tree-sitter-java"
+    "javascript|https://github.com/tree-sitter/tree-sitter-javascript"
+    "json|https://github.com/tree-sitter/tree-sitter-json"
+    "python|https://github.com/tree-sitter/tree-sitter-python"
+    "ruby|https://github.com/tree-sitter/tree-sitter-ruby"
+    "rust|https://github.com/tree-sitter/tree-sitter-rust"
+    "typescript|https://github.com/tree-sitter/tree-sitter-typescript||typescript/src"
+    "tsx|https://github.com/tree-sitter/tree-sitter-typescript||tsx/src"
+    "lua|https://github.com/tree-sitter-grammars/tree-sitter-lua"
+    "toml|https://github.com/tree-sitter-grammars/tree-sitter-toml"
+    "yaml|https://github.com/tree-sitter-grammars/tree-sitter-yaml"
+    "zig|https://github.com/tree-sitter-grammars/tree-sitter-zig"
+    "cmake|https://github.com/uyha/tree-sitter-cmake"
+    "dockerfile|https://github.com/camdencheek/tree-sitter-dockerfile"
+    "elixir|https://github.com/elixir-lang/tree-sitter-elixir"
+    "nix|https://github.com/nix-community/tree-sitter-nix"
+    "markdown|https://github.com/tree-sitter-grammars/tree-sitter-markdown|split_parser|tree-sitter-markdown/src"
+)
 
-# Special handling for markdown (split parser)
-MARKDOWN_URL="https://github.com/tree-sitter-grammars/tree-sitter-markdown/releases/download/v0.20.2"
-
-echo "Fetching grammars..."
-
-for lang_spec in $LANGUAGES; do
-    if [[ -z "$lang_spec" ]]; then continue; fi
-    IFS='|' read -r lang base_url <<< "$lang_spec"
-    lib_name="${PREFIX}tree-sitter-${lang}${EXT}"
-    dest="${GRAMMAR_DIR}/${lib_name}"
-    # Determine asset name (some differ)
-    case "$lang" in
-        c-sharp)
-            asset_name="libtree-sitter-c_sharp${EXT}"
-            ;;
-        typescript)
-            asset_name="libtree-sitter-typescript${EXT}"
-            ;;
-        tsx)
-            asset_name="libtree-sitter-tsx${EXT}"
-            ;;
-        *)
-            asset_name="$lib_name"
-            ;;
-    esac
-    url="${base_url}/${asset_name}"
-    echo "Fetching ${lang}…"
-    if curl -Lf "$url" -o "$dest" 2>/dev/null; then
-        echo "  → ${lang} OK"
+# Check for tree‑sitter CLI
+if ! command -v tree-sitter >/dev/null 2>&1; then
+    echo "tree‑sitter CLI is not installed."
+    echo "Attempting to install via cargo (this may take a while)..."
+    # Try to install globally using cargo
+    if command -v cargo >/dev/null 2>&1; then
+        cargo install tree-sitter-cli --locked 2>/dev/null || {
+            echo "Failed to install tree‑sitter CLI via cargo."
+            echo "Please install it manually: cargo install tree-sitter-cli"
+            exit 1
+        }
     else
-        echo "  → ${lang} download failed, attempting to build from source…"
-        # Try to build using tree-sitter CLI if available
-        if command -v tree-sitter >/dev/null 2>&1; then
-            TS_DIR=$(mktemp -d)
-            git clone --depth 1 "$base_url" "$TS_DIR" 2>/dev/null || true
-            if [[ -d "$TS_DIR" ]]; then
-                (cd "$TS_DIR" && tree-sitter generate 2>/dev/null && tree-sitter build 2>/dev/null) || true
-                # The built library location depends on platform
-                built_lib="$TS_DIR/${asset_name}"
-                if [[ -f "$built_lib" ]]; then
-                    cp "$built_lib" "$dest"
-                    echo "  → built from source"
-                else
-                    echo "  → building failed"
-                fi
-                rm -rf "$TS_DIR"
-            fi
-        else
-            echo "  → tree‑sitter CLI not installed. Skipping."
-        fi
+        echo "Cargo not found. Please install Rust and tree‑sitter CLI manually."
+        exit 1
     fi
-done
-
-# Handle markdown separately (split parser)
-echo "Fetching markdown grammar…"
-md_lib_name="${PREFIX}tree-sitter-markdown${EXT}"
-md_dest="${GRAMMAR_DIR}/${md_lib_name}"
-if curl -Lf "${MARKDOWN_URL}/libtree-sitter-markdown${EXT}" -o "$md_dest" 2>/dev/null; then
-    echo "  → markdown OK"
-else
-    echo "  → markdown download failed, skipping."
 fi
 
-echo "Grammars have been placed in ${GRAMMAR_DIR}"
+echo "Building grammars from source (using tree‑sitter CLI)..."
+
+# Temporary directory for all builds (will be cleaned up on exit)
+BUILD_ROOT="$(mktemp -d)"
+trap 'rm -rf "$BUILD_ROOT"' EXIT
+
+for lang_spec in "${LANGUAGES[@]}"; do
+    IFS='|' read -r lang repo branch subdir <<< "$lang_spec"
+    # Set default branch to master if not specified
+    branch="${branch:-master}"
+    echo "Building ${lang}…"
+
+    # Unique temporary directory for this language
+    lang_tmp="$(mktemp -d -p "$BUILD_ROOT")"
+    # Clone the repository
+    if git clone --depth 1 --branch "$branch" "$repo" "$lang_tmp" 2>/dev/null; then
+        pushd "$lang_tmp" > /dev/null
+        # Enter subdirectory if specified
+        if [[ -n "$subdir" && -d "$subdir" ]]; then
+            cd "$subdir"
+        fi
+        # Generate parser (if grammar.js exists)
+        if [[ -f "grammar.js" ]]; then
+            tree-sitter generate 2>/dev/null || true
+        fi
+        # Build the library
+        if tree-sitter build 2>/dev/null; then
+            # Find the built library
+            # It may be placed in the current directory or in target/release
+            built_lib=""
+            for pattern in "${PREFIX}tree-sitter-${lang}${EXT}" \
+                          "target/release/${PREFIX}tree-sitter-${lang}${EXT}" \
+                          "target/debug/${PREFIX}tree-sitter-${lang}${EXT}" \
+                          "*.${EXT}"; do
+                # Only match the specific prefix
+                matches=($pattern)
+                if [[ ${#matches[@]} -gt 0 && -f "${matches[0]}" ]]; then
+                    built_lib="${matches[0]}"
+                    break
+                fi
+            done
+            if [[ -n "$built_lib" ]]; then
+                cp "$built_lib" "${GRAMMAR_DIR}/"
+                echo "  → ${lang} built successfully"
+            else
+                echo "  → ${lang}: could not locate built library"
+            fi
+        else
+            echo "  → ${lang}: build failed"
+        fi
+        popd > /dev/null
+    else
+        echo "  → ${lang}: failed to clone repository"
+    fi
+    # Clean up this language's source directory (optional, but we are in a temp that will be removed later)
+done
+
+# Special handling for markdown (already included as separate entry)
+echo "All grammars processed."
+echo "Built libraries are in ${GRAMMAR_DIR}"
 ls -la "${GRAMMAR_DIR}/"
