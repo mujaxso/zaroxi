@@ -1,94 +1,60 @@
-; Rust highlight queries for Tree‑sitter
-; This is a minimal set; you can expand it with more captures.
+; Rust highlight queries for Tree‑sitter (compatible with tree‑sitter‑rust 0.20)
 
-(
-  (line_comment) @comment
-  (block_comment) @comment
-)
+(block_comment) @comment
+(line_comment) @comment
 
-(
-  (string_literal) @string
-  (raw_string_literal) @string
-)
+(string_literal) @string
+(raw_string_literal) @string
+(char_literal) @string
 
-(
-  (char_literal) @string
-)
+(integer_literal) @number
+(float_literal) @number
 
-(
-  (identifier) @variable
-)
+(identifier) @variable
+(type_identifier) @type
 
-(
-  (type_identifier) @type
-)
+(call_expression
+  function: (identifier) @function.call)
 
-(
-  "fn" @keyword
-  "let" @keyword
-  "mut" @keyword
-  "pub" @keyword
-  "use" @keyword
-  "mod" @keyword
-  "struct" @keyword
-  "enum" @keyword
-  "impl" @keyword
-  "trait" @keyword
-  "where" @keyword
-  "match" @keyword
-  "if" @keyword
-  "else" @keyword
-  "for" @keyword
-  "in" @keyword
-  "while" @keyword
-  "loop" @keyword
-  "return" @keyword
-  "break" @keyword
-  "continue" @keyword
-  "self" @keyword
-  "Self" @keyword
-  "true" @constant
-  "false" @constant
-  "as" @keyword
-  "ref" @keyword
-  "move" @keyword
-)
+(function_item
+  name: (identifier) @function)
 
-(
-  (integer_literal) @number
-  (float_literal) @number
-)
+(struct_item
+  name: (type_identifier) @type)
 
-(
-  (call_expression
-    function: (identifier) @function.call)
-)
+(enum_item
+  name: (type_identifier) @type)
 
-(
-  (field_expression
-    field: (field_identifier) @property)
-)
+[
+  "fn"
+  "let"
+  "mut"
+  "pub"
+  "use"
+  "mod"
+  "struct"
+  "enum"
+  "impl"
+  "trait"
+  "where"
+  "match"
+  "if"
+  "else"
+  "for"
+  "in"
+  "while"
+  "loop"
+  "return"
+  "break"
+  "continue"
+  "self"
+  "Self"
+  "as"
+  "ref"
+  "move"
+] @keyword
 
-; Function definitions
-(
-  (function_item
-    name: (identifier) @function)
-)
-
-; Struct definitions
-(
-  (struct_item
-    name: (type_identifier) @type)
-)
-
-; Enum definitions
-(
-  (enum_item
-    name: (type_identifier) @type)
-)
-
-; Module declarations
-(
-  (mod_item
-    name: (identifier) @namespace)
-)
+[
+  "true"
+  "false"
+] @constant
