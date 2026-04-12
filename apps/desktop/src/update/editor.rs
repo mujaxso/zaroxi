@@ -2,6 +2,7 @@ use crate::message::Message;
 use crate::state::App;
 use iced::Command;
 use editor_core::EditorState;
+use syntax_core::language::LanguageId;
 use std::path::Path;
 
 pub fn update(app: &mut App, message: Message) -> Command<Message> {
@@ -31,20 +32,29 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                         if let Some(path) = &app.active_file_path {
                             let doc_id = path.clone();
                             let mut syntax_manager = app.syntax_manager.lock().unwrap();
+                            let language = LanguageId::from_path(Path::new(path));
                             match syntax_manager.update_document(&doc_id, &current_text, Path::new(path)) {
                                 Ok(()) => {
                                     // Successfully updated syntax
-                                    app.status_message = format!("Syntax highlighting active for {}", doc_id);
+                                    app.status_message = format!("Syntax highlighting active for {} (language: {:?})", doc_id, language);
                                     // Try to retrieve highlight spans to prove it works
                                     match syntax_manager.highlight_spans(&doc_id) {
                                         Ok(spans) => {
                                             app.syntax_highlight_span_count = spans.len();
                                             app.syntax_highlight_spans = spans.clone();
-                                            app.status_message = format!(
-                                                "{} highlights for {}",
-                                                spans.len(),
-                                                doc_id
-                                            );
+                                            if spans.is_empty() {
+                                                app.status_message = format!(
+                                                    "No syntax spans for {} (language: {:?})",
+                                                    doc_id, language
+                                                );
+                                            } else {
+                                                app.status_message = format!(
+                                                    "{} highlights for {} (language: {:?})",
+                                                    spans.len(),
+                                                    doc_id,
+                                                    language
+                                                );
+                                            }
                                         }
                                         Err(_) => {
                                             app.syntax_highlight_span_count = 0;
