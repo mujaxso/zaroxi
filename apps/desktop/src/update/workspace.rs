@@ -85,6 +85,7 @@ fn handle_workspace_loaded(app: &mut App, result: Result<(String, Vec<core_types
 }
 
 fn handle_file_selected(app: &mut App, index: usize) -> Command<Message> {
+    eprintln!("DEBUG: FileSelected: index {}", index);
     if index < app.file_entries.len() {
         let entry = &app.file_entries[index];
         // Only handle files, not directories
