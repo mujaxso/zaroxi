@@ -4,6 +4,7 @@ use crate::message::Message;
 use crate::state::App;
 use super::style::StyleHelpers;
 use super::editor;
+use super::syntax_editor;
 use crate::ui::icons::Icon;
 
 pub fn editor_panel(app: &App) -> Element<'_, Message> {
@@ -121,8 +122,15 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
             .height(Length::Fill)
             .into()
         } else {
-            // Use the existing editor component with typography settings
-            editor::editor(&app.text_editor, &app.editor_typography, style.colors.editor_background)
+            // Use the new syntax‑highlighting editor view
+            let raw_text = app.text_editor.text();
+            let spans = &app.syntax_highlight_spans;
+            syntax_editor::syntax_highlighted_view(
+                &raw_text,
+                spans,
+                &app.editor_typography,
+                &style,
+            )
         }
     } else {
         // Welcome screen

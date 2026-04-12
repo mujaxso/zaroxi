@@ -1,6 +1,7 @@
 use iced::{Color, widget::{button, container, text_input}};
 use crate::theme::{current_colors, NeoteTheme, SemanticColors};
 use super::common;
+use syntax_core::Highlight;
 
 /// Get current theme colors from app state
 pub fn colors(theme: NeoteTheme) -> SemanticColors {
@@ -201,5 +202,24 @@ impl StyleHelpers {
     /// Text on accent color
     pub fn text_on_accent(&self) -> iced::Color {
         self.colors.text_on_accent
+    }
+
+    /// Map a syntax highlight token to a semantic color.
+    pub fn highlight_color(&self, highlight: Highlight) -> iced::Color {
+        match highlight {
+            Highlight::Comment => self.colors.text_muted,
+            Highlight::String => self.colors.success,
+            Highlight::Keyword => self.colors.accent,
+            Highlight::Function => self.colors.blue,
+            Highlight::Variable => self.colors.text_primary,
+            Highlight::Type => self.colors.purple,
+            Highlight::Constant => self.colors.orange,
+            Highlight::Attribute => self.colors.cyan,
+            Highlight::Operator => self.colors.text_secondary,
+            Highlight::Number => self.colors.orange,
+            Highlight::Property => self.colors.green,
+            Highlight::Namespace => self.colors.purple,
+            Highlight::Plain => self.colors.text_primary,
+        }
     }
 }
