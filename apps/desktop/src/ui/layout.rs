@@ -677,12 +677,7 @@ fn editor_panel<'a>(
                 } else {
                     // Get the editor background color from the theme
                     let style = StyleHelpers::new(theme);
-                    // Pass the line cache only if it's not empty
-                    let line_cache = if line_cache.as_ref().map_or(false, |cache| !cache.is_empty()) {
-                        line_cache
-                    } else {
-                        None
-                    };
+                    // Pass the line cache to the editor
                     super::editor::editor(text_editor, editor_typography, style.colors.editor_background, line_cache)
                 }
             } else {

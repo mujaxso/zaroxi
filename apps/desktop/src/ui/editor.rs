@@ -3,7 +3,6 @@ use iced::{
     Element, Length, Font, Color,
 };
 use std::ops::Range;
-use iced_core::text::highlighter::Highlighter;
 
 use crate::app::Message;
 use crate::settings::editor::EditorTypographySettings;
@@ -149,42 +148,28 @@ pub fn editor<'a>(
     // Check if we should use syntax highlighting
     let use_syntax_highlighting = line_cache.as_ref().map_or(false, |cache| !cache.is_empty());
     
-    let editor = if use_syntax_highlighting {
+    // Create a base editor
+    let mut editor = text_editor::TextEditor::new(text_editor_content)
+        .on_action(Message::EditorContentChanged)
+        .font(font)
+        .style(custom_style);
+    
+    // Apply syntax highlighting if available
+    if use_syntax_highlighting {
         let cache = line_cache.unwrap();
         eprintln!("DEBUG: Using syntax highlighting with {} lines of cache", cache.len());
         // Use the syntax highlighter with the highlight() method
-        text_editor::TextEditor::new(text_editor_content)
-            .on_action(Message::EditorContentChanged)
-            .font(font)
-            .style(custom_style)
-            .highlight::<SyntaxHighlighter>(
-                cache,
-                |color: &Color, _font: &Font| {
-                    iced_core::text::highlighter::Format {
-                        color: Some(*color),
-                        background: None,
-                        font: None,
-                        size: None,
-                        line_height: None,
-                        horizontal_alignment: None,
-                        vertical_alignment: None,
-                        underline: None,
-                        strikethrough: None,
-                        font_features: None,
-                        font_variation_settings: None,
-                        shadow: None,
-                        shaping: None,
-                    }
-                },
-            )
+        editor = editor.highlight::<SyntaxHighlighter>(
+            cache,
+            |color: &Color, _font: &Font| {
+                iced_core::text::highlighter::Format {
+                    color: Some(*color),
+                }
+            },
+        );
     } else {
         eprintln!("DEBUG: No syntax highlighting");
-        // No syntax highlighting
-        text_editor::TextEditor::new(text_editor_content)
-            .on_action(Message::EditorContentChanged)
-            .font(font)
-            .style(custom_style)
-    };
+    }
     
     // The text editor widget has built-in scrolling capabilities
     // It handles both vertical and horizontal scrolling automatically
