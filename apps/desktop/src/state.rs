@@ -193,6 +193,8 @@ pub struct App {
     pub syntax_highlight_span_count: usize,
     // Actual highlight spans for the active document (for UI rendering)
     pub syntax_highlight_spans: Vec<syntax_core::HighlightSpan>,
+    // Per‑line cache of highlight ranges for the real editor widget
+    pub syntax_highlight_cache: Vec<Vec<(std::ops::Range<usize>, iced::Color)>>,
 }
 
 impl App {
@@ -237,6 +239,7 @@ impl App {
                 syntax_manager: Arc::new(Mutex::new(syntax_core::SyntaxManager::new())),
                 syntax_highlight_span_count: 0,
                 syntax_highlight_spans: Vec::new(),
+                syntax_highlight_cache: Vec::new(),
             },
             iced::Command::none(),
         )

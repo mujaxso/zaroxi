@@ -2,9 +2,25 @@ use iced::{
     widget::{container, text_editor},
     Element, Length, Font, Color,
 };
+use std::ops::Range;
 
 use crate::app::Message;
 use crate::settings::editor::EditorTypographySettings;
+
+/// Highlighter that uses the per‑line cache built from `syntax‑core`.
+struct SyntaxHighlighter<'a> {
+    line_cache: &'a [Vec<(Range<usize>, Color)>],
+}
+
+impl<'a> text_editor::Highlighter for SyntaxHighlighter<'a> {
+    fn highlight_line(
+        &self,
+        line: usize,
+        _text: &str,
+    ) -> Vec<(Range<usize>, Color)> {
+        self.line_cache.get(line).cloned().unwrap_or_default()
+    }
+}
 
 // Custom style sheet for text editor
 struct EditorStyleSheet {
@@ -68,6 +84,7 @@ pub fn editor<'a>(
     text_editor_content: &'a iced::widget::text_editor::Content,
     typography: &EditorTypographySettings,
     background_color: Color,
+    line_cache: Option<&'a [Vec<(Range<usize>, Color)>]>,
 ) -> Element<'a, Message> {
     // Create font based on selected font family
     // Note: Iced's font support is limited, so we use the first font in the fallback stack
@@ -79,10 +96,16 @@ pub fn editor<'a>(
         background_color,
     };
     
-    let editor = text_editor::TextEditor::new(text_editor_content)
+    let mut editor = text_editor::TextEditor::new(text_editor_content)
         .on_action(Message::EditorContentChanged)
         .font(font)
         .style(iced::theme::TextEditor::Custom(Box::new(style_sheet)));
+
+    // Apply syntax highlighting if a line cache is provided
+    if let Some(cache) = line_cache {
+        let highlighter = SyntaxHighlighter { line_cache: cache };
+        editor = editor.highlight(highlighter);
+    }
     
     // The text editor widget has built-in scrolling capabilities
     // It handles both vertical and horizontal scrolling automatically
