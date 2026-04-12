@@ -1,4 +1,4 @@
-use iced::{Element, Length, Color, Font, Renderer, widget::{column, container, row, Row, text, Text}};
+use iced::{Element, Length, Color, Font, Renderer, widget::{column, container, row, Row, text, Text, scrollable}};
 use syntax_core::{Highlight, HighlightSpan};
 use crate::message::Message;
 use crate::state::App;
@@ -112,8 +112,11 @@ pub fn syntax_highlighted_view(
         .collect();
 
     // Wrap lines in a scrollable column.
-    column(line_elements)
+    let col = column(line_elements)
         .spacing(0)
+        .width(Length::Fill)
+        .height(Length::Fill);
+    scrollable(col)
         .width(Length::Fill)
         .height(Length::Fill)
         .into()
@@ -234,12 +237,31 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
             .height(Length::Fill)
             .into()
         } else {
-            // Use the interactive text editor (syntax highlighting computed but not applied visually)
-            editor::editor(
-                &app.text_editor,
+            // Use syntax‑highlighted view (read‑only for now)
+            let raw_text = app.text_editor.text();
+            let spans = &app.syntax_highlight_spans;
+            let view = syntax_highlighted_view(
+                &raw_text,
+                spans,
                 &app.editor_typography,
-                style.colors.editor_background,
-            )
+                &style,
+            );
+            container(view)
+                .width(Length::Fill)
+                .height(Length::Fill)
+                .clip(true)
+                .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
+                    container::Appearance {
+                        background: Some(style.colors.editor_background.into()),
+                        border: iced::Border {
+                            color: Color::TRANSPARENT,
+                            width: 0.0,
+                            radius: 0.0.into(),
+                        },
+                        ..Default::default()
+                    }
+                })))
+                .into()
         }
     } else {
         // Welcome screen
@@ -361,6 +383,27 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
                 }
             })));
         column_children.push(separator.into());
+            
+        // Add a note about editing being disabled for syntax highlighting
+        let note = container(
+            text("Syntax highlighting enabled — editing temporarily disabled")
+                .size(10)
+                .style(iced::theme::Text::Color(style.colors.text_muted))
+        )
+        .padding([2, 8])
+        .width(Length::Fill)
+        .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
+            container::Appearance {
+                background: Some(style.colors.elevated_panel_background.into()),
+                border: iced::Border {
+                    color: Color::TRANSPARENT,
+                    width: 0.0,
+                    radius: 0.0.into(),
+                },
+                ..Default::default()
+            }
+        })));
+        column_children.push(note.into());
     }
     
     // Add editor content
