@@ -133,6 +133,7 @@ fn handle_file_selected_by_path(app: &mut App, path: String) -> Command<Message>
 fn handle_file_metadata_loaded(app: &mut App, result: Result<FileMetadata, String>) -> Command<Message> {
     match result {
         Ok(metadata) => {
+            eprintln!("DEBUG: FileMetadataLoaded: path={}, size={}", metadata.path, metadata.size);
             // Check file size thresholds
             if metadata.size > VERY_LARGE_FILE_THRESHOLD {
                 app.file_loading_state = FileLoadingState::VeryLargeFileWarning {
@@ -307,15 +308,24 @@ fn handle_file_loaded(app: &mut App, result: Result<(String, String, Document), 
                 let mut state = app.workspace_state.lock().unwrap();
                 state.open_buffer(&path, content);
             }
+            
+            // Send EditorSetDocument to trigger syntax highlighting
+            eprintln!("DEBUG: handle_file_loaded: sending EditorSetDocument");
+            Command::perform(
+                async move {
+                    Message::EditorSetDocument(editor_core::Document::from_text_with_path(&content, path))
+                },
+                |msg| msg,
+            )
         }
         Err(e) => {
             app.file_loading_state = FileLoadingState::Idle;
             app.is_file_read_only = false;
             app.error_message = Some(e);
             app.status_message = "Failed to load file".to_string();
+            Command::none()
         }
     }
-    Command::none()
 }
 
 fn handle_save_file(app: &mut App) -> Command<Message> {
