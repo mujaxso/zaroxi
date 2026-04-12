@@ -306,8 +306,9 @@ fn handle_file_loaded(app: &mut App, result: Result<(String, String, Document), 
             
             // Update workspace state
             {
+                let content_clone = content.clone();
                 let mut state = app.workspace_state.lock().unwrap();
-                state.open_buffer(&path, content);
+                state.open_buffer(&path, content_clone);
             }
             
             // Send EditorSetDocument to trigger syntax highlighting
