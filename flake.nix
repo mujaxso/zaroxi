@@ -18,6 +18,7 @@
             cmake
             clang
             lld
+            tree-sitter
           ];
 
           buildInputs = with pkgs; [

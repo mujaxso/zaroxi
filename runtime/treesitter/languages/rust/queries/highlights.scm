@@ -10,21 +10,6 @@
 (integer_literal) @number
 (float_literal) @number
 
-(identifier) @variable
-(type_identifier) @type
-
-(call_expression
-  function: (identifier) @function.call)
-
-(function_item
-  name: (identifier) @function)
-
-(struct_item
-  name: (type_identifier) @type)
-
-(enum_item
-  name: (type_identifier) @type)
-
 [
   "fn"
   "let"

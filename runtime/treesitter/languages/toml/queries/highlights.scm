@@ -13,4 +13,5 @@
 (table) @type
 (inline_table) @type
 
-(date) @constant
+; date node may be unavailable in some versions
+; (date) @constant
