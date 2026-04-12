@@ -3,7 +3,7 @@ use iced::{
     Element, Length, Font, Color,
 };
 use std::ops::Range;
-use iced_core::text::highlighter::Highlighter;
+use iced_core::text::highlighter::{Highlighter, Format};
 
 use crate::app::Message;
 use crate::settings::editor::EditorTypographySettings;
@@ -138,11 +138,13 @@ pub fn editor<'a>(
 
     // Apply syntax highlighting if a line cache is provided
     if let Some(cache) = line_cache {
-        let highlighter = SyntaxHighlighter {
-            line_cache: Vec::new(),
-            current_line: 0,
-        };
-        editor = editor.highlight(highlighter, &cache);
+        let highlighter = SyntaxHighlighter::new(&cache);
+        editor = editor.highlight(highlighter, |_settings, color| {
+            Format {
+                color: Some(*color),
+                font: None,
+            }
+        });
     }
     
     // The text editor widget has built-in scrolling capabilities
