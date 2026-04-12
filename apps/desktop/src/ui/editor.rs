@@ -156,7 +156,15 @@ pub fn editor<'a>(
     let custom_style = iced::theme::TextEditor::Custom(Box::new(TransparentStyle));
     
     // Check if we should use syntax highlighting
-    let use_syntax_highlighting = line_cache.as_ref().map_or(false, |cache| !cache.is_empty());
+    // We have syntax highlighting if any line in the cache has highlights
+    let use_syntax_highlighting = line_cache.as_ref().map_or(false, |cache| {
+        cache.iter().any(|line| !line.is_empty())
+    });
+    eprintln!("DEBUG: use_syntax_highlighting = {}, line_cache.is_some() = {}, line_cache.map_or(0, |c| c.len()) = {}, total_highlights = {}", 
+              use_syntax_highlighting, 
+              line_cache.is_some(),
+              line_cache.as_ref().map_or(0, |c| c.len()),
+              line_cache.as_ref().map_or(0, |c| c.iter().map(|line| line.len()).sum::<usize>()));
     
     // Create a base editor with explicit theme type
     fn create_base_editor<'b>(
