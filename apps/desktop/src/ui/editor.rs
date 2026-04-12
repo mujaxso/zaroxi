@@ -145,31 +145,16 @@ pub fn editor<'a>(
     // Use a transparent style for the editor; background is provided by the container
     let custom_style = iced::theme::TextEditor::Custom(Box::new(TransparentStyle));
     
-    // Check if we should use syntax highlighting
-    let use_syntax_highlighting = line_cache.as_ref().map_or(false, |cache| !cache.is_empty());
-    
     // Create a base editor
-    let mut editor = text_editor::TextEditor::new(text_editor_content)
+    let editor = text_editor::TextEditor::new(text_editor_content)
         .on_action(Message::EditorContentChanged)
         .font(font)
         .style(custom_style);
     
-    // Apply syntax highlighting if available
-    if use_syntax_highlighting {
-        let cache = line_cache.unwrap();
-        eprintln!("DEBUG: Using syntax highlighting with {} lines of cache", cache.len());
-        // Use the syntax highlighter with the highlight() method
-        editor = editor.highlight::<SyntaxHighlighter>(
-            cache,
-            |color: &Color, _font: &Font| {
-                iced_core::text::highlighter::Format {
-                    color: Some(*color),
-                }
-            },
-        );
-    } else {
-        eprintln!("DEBUG: No syntax highlighting");
-    }
+    // Note: syntax highlighting via line_cache is currently disabled due to compilation issues
+    // Will be integrated in a future update.
+    // For now, we'll just use the plain editor without highlighting
+    eprintln!("DEBUG: Editor created (syntax highlighting disabled for now)");
     
     // The text editor widget has built-in scrolling capabilities
     // It handles both vertical and horizontal scrolling automatically
