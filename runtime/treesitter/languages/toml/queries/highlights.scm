@@ -26,7 +26,6 @@
 (array_table (identifier) @type)
 
 ; Keys in key-value pairs
-(pair (key) @property)
 (pair (bare_key) @property)
 (pair (quoted_key) @property)
 (pair (dotted_key (identifier) @property))
