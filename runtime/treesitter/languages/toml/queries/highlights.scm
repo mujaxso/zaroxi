@@ -1,16 +1,19 @@
 ; TOML highlight queries for Tree‑sitter
 ; Based on tree-sitter-toml grammar version 0.20
 
+; Comments
 (comment) @comment
 
+; Strings and escapes
 (string) @string
 (escape_sequence) @string.escape
 
+; Numbers
 (integer) @number
 (float) @number
 
+; Constants
 (boolean) @constant.builtin
-
 (date_time) @constant.builtin
 
 ; Tables
@@ -18,27 +21,21 @@
 (table (identifier) @type)
 (table_array_element (identifier) @type)
 
-; Key-value pairs
+; Keys in key-value pairs
 (pair (key) @property)
 (pair (bare_key) @property)
-(pair (dotted_key (identifier) @property))
 (pair (quoted_key) @property)
+(pair (dotted_key (identifier) @property))
 
-; Arrays
-(array) @operator
-(array (value) @none)
+; Array and inline table delimiters
+"[" @punctuation.bracket
+"]" @punctuation.bracket
+"{" @punctuation.bracket
+"}" @punctuation.bracket
 
-; Inline tables
-(inline_table) @operator
-(inline_table_pair (key) @property)
-
-; Punctuation
+; Operators
 "=" @operator
-"[" @operator
-"]" @operator
-"{" @operator
-"}" @operator
-"," @operator
-"." @operator
+"," @punctuation.delimiter
+"." @punctuation.delimiter
 "+" @operator
 "-" @operator
