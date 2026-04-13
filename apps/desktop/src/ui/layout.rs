@@ -685,7 +685,7 @@ fn editor_panel<'a>(
                     // Get the editor background color from the theme
                     let style = StyleHelpers::new(theme);
                     // Pass the line cache to the editor
-                    super::editor::editor(text_editor, editor_typography, style.colors.editor_background, line_cache)
+                    super::editor::editor(text_editor, editor_typography, style.colors.editor_background, style.colors.text_primary, line_cache)
                 }
             } else {
                 container(
