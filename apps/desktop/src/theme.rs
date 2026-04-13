@@ -87,6 +87,22 @@ pub struct SemanticColors {
     
     // Focus
     pub focus_ring: Color,               // rgba(92, 122, 255, 0.45)
+    
+    // Syntax highlighting colors - Premium dark theme palette
+    pub syntax_comment: Color,           // #687086 - subtle, secondary
+    pub syntax_string: Color,            // #35C46B - warm, natural green
+    pub syntax_keyword: Color,           // #4C6FFF - elegant blue accent
+    pub syntax_function: Color,          // #6EA8FF - soft cyan
+    pub syntax_type: Color,              // #F0B24B - muted gold
+    pub syntax_variable: Color,          // #E6EAF2 - primary text
+    pub syntax_constant: Color,          // #D67FFF - soft magenta
+    pub syntax_number: Color,            // #D67FFF - same as constant
+    pub syntax_operator: Color,          // #B7C0D1 - quiet but visible
+    pub syntax_punctuation: Color,       // #B7C0D1 - same as operator
+    pub syntax_attribute: Color,         // #5A7BFF - lighter blue accent
+    pub syntax_macro: Color,             // #6EA8FF - same as function
+    pub syntax_builtin: Color,           // #F0B24B - same as type
+    pub syntax_plain: Color,             // #E6EAF2 - primary text
 }
 
 /// Theme variants for Neote
@@ -164,6 +180,22 @@ impl SemanticColors {
             
             // Focus
             focus_ring: Color::from_rgba(0.361, 0.478, 1.0, 0.45),     // rgba(92, 122, 255, 0.45)
+            
+            // Syntax highlighting colors - Premium dark theme palette
+            syntax_comment: Color::from_rgb(0.408, 0.439, 0.525),      // #687086 - subtle, secondary
+            syntax_string: Color::from_rgb(0.208, 0.769, 0.420),       // #35C46B - warm, natural green
+            syntax_keyword: Color::from_rgb(0.298, 0.435, 1.0),        // #4C6FFF - elegant blue accent
+            syntax_function: Color::from_rgb(0.431, 0.659, 1.0),       // #6EA8FF - soft cyan
+            syntax_type: Color::from_rgb(0.941, 0.698, 0.294),         // #F0B24B - muted gold
+            syntax_variable: Color::from_rgb(0.902, 0.918, 0.949),     // #E6EAF2 - primary text
+            syntax_constant: Color::from_rgb(0.839, 0.498, 1.0),       // #D67FFF - soft magenta
+            syntax_number: Color::from_rgb(0.839, 0.498, 1.0),         // #D67FFF - same as constant
+            syntax_operator: Color::from_rgb(0.718, 0.753, 0.820),     // #B7C0D1 - quiet but visible
+            syntax_punctuation: Color::from_rgb(0.718, 0.753, 0.820),  // #B7C0D1 - same as operator
+            syntax_attribute: Color::from_rgb(0.353, 0.482, 1.0),      // #5A7BFF - lighter blue accent
+            syntax_macro: Color::from_rgb(0.431, 0.659, 1.0),          // #6EA8FF - same as function
+            syntax_builtin: Color::from_rgb(0.941, 0.698, 0.294),      // #F0B24B - same as type
+            syntax_plain: Color::from_rgb(0.902, 0.918, 0.949),        // #E6EAF2 - primary text
         }
     }
     
@@ -206,6 +238,22 @@ impl SemanticColors {
             
             // Focus
             focus_ring: Color::from_rgba(0.25, 0.55, 0.95, 0.45),
+            
+            // Syntax highlighting colors - Light theme (basic implementation)
+            syntax_comment: Color::from_rgb(0.50, 0.50, 0.50),
+            syntax_string: Color::from_rgb(0.25, 0.80, 0.45),
+            syntax_keyword: Color::from_rgb(0.25, 0.55, 0.95),
+            syntax_function: Color::from_rgb(0.35, 0.70, 0.95),
+            syntax_type: Color::from_rgb(0.95, 0.70, 0.25),
+            syntax_variable: Color::from_rgb(0.10, 0.10, 0.10),
+            syntax_constant: Color::from_rgb(0.80, 0.40, 0.90),
+            syntax_number: Color::from_rgb(0.80, 0.40, 0.90),
+            syntax_operator: Color::from_rgb(0.30, 0.30, 0.30),
+            syntax_punctuation: Color::from_rgb(0.30, 0.30, 0.30),
+            syntax_attribute: Color::from_rgb(0.35, 0.65, 1.0),
+            syntax_macro: Color::from_rgb(0.35, 0.70, 0.95),
+            syntax_builtin: Color::from_rgb(0.95, 0.70, 0.25),
+            syntax_plain: Color::from_rgb(0.10, 0.10, 0.10),
         }
     }
 }

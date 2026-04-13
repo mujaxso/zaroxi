@@ -207,19 +207,19 @@ impl StyleHelpers {
     /// Map a syntax highlight token to a semantic color.
     pub fn highlight_color(&self, highlight: Highlight) -> iced::Color {
         match highlight {
-            Highlight::Comment => self.colors.text_muted,               // #8892A6
-            Highlight::String => self.colors.success,                   // #35C46B
-            Highlight::Keyword => self.colors.accent,                   // #4C6FFF
-            Highlight::Function => self.colors.info,                    // #6EA8FF
-            Highlight::Variable => self.colors.text_primary,            // #E6EAF2
-            Highlight::Type => self.colors.warning,                     // #F0B24B
-            Highlight::Constant => self.colors.error,                   // #F05D6C
-            Highlight::Attribute => self.colors.accent_hover,           // #5A7BFF
-            Highlight::Operator => self.colors.text_secondary,          // #B7C0D1
-            Highlight::Number => self.colors.error,                     // #F05D6C
-            Highlight::Property => self.colors.success,                 // #35C46B
-            Highlight::Namespace => self.colors.accent,                 // #4C6FFF
-            Highlight::Plain => self.colors.text_primary,               // #E6EAF2
+            Highlight::Comment => self.colors.syntax_comment,
+            Highlight::String => self.colors.syntax_string,
+            Highlight::Keyword => self.colors.syntax_keyword,
+            Highlight::Function => self.colors.syntax_function,
+            Highlight::Variable => self.colors.syntax_variable,
+            Highlight::Type => self.colors.syntax_type,
+            Highlight::Constant => self.colors.syntax_constant,
+            Highlight::Attribute => self.colors.syntax_attribute,
+            Highlight::Operator => self.colors.syntax_operator,
+            Highlight::Number => self.colors.syntax_number,
+            Highlight::Property => self.colors.syntax_string,           // Use string color for properties
+            Highlight::Namespace => self.colors.syntax_type,            // Use type color for namespaces
+            Highlight::Plain => self.colors.syntax_plain,
         }
     }
 }

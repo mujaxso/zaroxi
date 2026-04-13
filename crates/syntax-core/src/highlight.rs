@@ -104,8 +104,10 @@ fn map_capture_name(name: &str) -> Highlight {
         "comment" => Highlight::Comment,
         "string" => Highlight::String,
         "keyword" => Highlight::Keyword,
-        "function" | "function.call" | "function.method" | "function.macro" => Highlight::Function,
-        "variable" | "variable.parameter" | "variable.builtin" => Highlight::Variable,
+        "function" | "function.call" | "function.method" => Highlight::Function,
+        "function.macro" | "macro" => Highlight::Function, // Macros use function color
+        "variable" | "variable.parameter" => Highlight::Variable,
+        "variable.builtin" => Highlight::Type, // Built-in variables like 'self' use type color
         "type" | "type.builtin" => Highlight::Type,
         "constant" | "constant.builtin" => Highlight::Constant,
         "attribute" => Highlight::Attribute,
