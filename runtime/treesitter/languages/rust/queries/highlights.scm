@@ -47,9 +47,6 @@
 "while" @keyword
 "yield" @keyword
 
-; Built-in types are captured via primitive_type node
-; No need for string literals
-
 ; Function definitions
 (function_item (identifier) @function)
 (function_signature_item (identifier) @function)
