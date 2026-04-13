@@ -39,9 +39,10 @@ impl iced_core::text::highlighter::Highlighter for SyntaxHighlighter {
 
     fn change_line(&mut self, line: usize) {
         eprintln!("DEBUG: SyntaxHighlighter::change_line: {}", line);
+        // Update current_line to the given line, but don't set is_new_document = false
+        // because we want to continue using sequential line numbers
         self.current_line = line;
-        // Reset the new document flag since change_line was called
-        self.is_new_document = false;
+        // Note: We're not setting is_new_document = false to avoid breaking sequential processing
     }
 
     fn current_line(&self) -> usize {
@@ -57,27 +58,14 @@ impl iced_core::text::highlighter::Highlighter for SyntaxHighlighter {
             return ranges.into_iter();
         }
         
-        // Determine which line index to use
-        let line_index = if !self.is_new_document {
-            // change_line was called, so use current_line
-            self.current_line
-        } else {
-            // change_line wasn't called, so we need to find the line ourselves
-            match self.find_best_line_match(line) {
-                Some(found_index) => {
-                    // If we found line 0, reset current_line to 0
-                    // This helps when re-rendering starts from the beginning
-                    if found_index == 0 {
-                        self.current_line = 0;
-                    }
-                    found_index
-                }
-                None => {
-                    // No match found, use current_line
-                    self.current_line
-                }
-            }
-        };
+        // Use current_line as the line index, assuming lines are processed in order
+        let line_index = self.current_line;
+        
+        // Increment current_line for the next call
+        // This ensures sequential processing even if change_line is not called for each line
+        if line_index < self.line_cache.len() {
+            self.current_line += 1;
+        }
         
         eprintln!("DEBUG: highlight_line called with text length {}, line_index = {}, current_line = {}, is_new_document = {}, cache_size = {}", 
                  line.len(), line_index, self.current_line, self.is_new_document, self.line_cache.len());
@@ -117,12 +105,6 @@ impl iced_core::text::highlighter::Highlighter for SyntaxHighlighter {
             }
         } else {
             eprintln!("DEBUG: line_index {} out of bounds (cache size: {})", line_index, self.line_cache.len());
-        }
-        
-        // If we're in new document mode (change_line wasn't called), increment current_line
-        // for the next call, assuming the next call will be for the next line
-        if self.is_new_document {
-            self.current_line += 1;
         }
         
         eprintln!("DEBUG: returning {} ranges", ranges.len());
