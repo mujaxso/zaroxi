@@ -28,7 +28,7 @@
 ; Keys in key-value pairs
 (pair (bare_key) @property)
 (pair (quoted_key) @property)
-(pair (dotted_key (bare_key) @property))
+(pair (dotted_key) @property)
 
 ; Array and inline table delimiters
 "[" @punctuation.bracket
