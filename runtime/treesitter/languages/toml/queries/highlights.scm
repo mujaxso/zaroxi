@@ -22,8 +22,8 @@
 ; (local_date_time) @constant.builtin
 
 ; Tables
-(table (key) @type)
-(array_table (key) @type)
+(table (identifier) @type)
+(array_table (identifier) @type)
 
 ; Keys in key-value pairs
 (pair (key) @property)
