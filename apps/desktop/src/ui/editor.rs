@@ -40,45 +40,79 @@ impl iced_core::text::highlighter::Highlighter for SyntaxHighlighter {
     }
 
     fn highlight_line(&mut self, line: &str) -> Self::Iterator<'_> {
-        let line_index = self.current_line;
+        // Try to find which line this is by matching with the cache
+        // This is inefficient but works around Iced not calling change_line properly
         let mut ranges = Vec::new();
-        // Print debug for all calls to see what's happening
-        eprintln!("DEBUG: highlight_line called for line {} with text length {}", line_index, line.len());
-        if let Some(line_highlights) = self.line_cache.get(line_index) {
-            eprintln!("DEBUG: line {} has {} highlights", line_index, line_highlights.len());
-            // Convert character ranges to byte ranges
-            let line_chars: Vec<char> = line.chars().collect();
-            for (i, (char_range, color)) in line_highlights.iter().enumerate() {
-                // Convert character positions to byte positions
-                let char_start = char_range.start;
-                let char_end = char_range.end.min(line_chars.len());
-                
-                eprintln!("DEBUG: highlight {}: char_range {:?}, color {:?}", i, char_range, color);
-                
-                if char_start < char_end {
-                    // Calculate byte positions
-                    let byte_start = line_chars[..char_start].iter().map(|c| c.len_utf8()).sum::<usize>();
-                    let byte_end = byte_start + line_chars[char_start..char_end].iter().map(|c| c.len_utf8()).sum::<usize>();
+        
+        // Find the line index by searching through the cache
+        // We'll use a simple approach: find the first line where the text could match
+        // Since we don't have the full line text, we'll use a heuristic
+        let line_index = self.find_line_index(line);
+        
+        eprintln!("DEBUG: highlight_line called with text length {}, found line index {:?}", line.len(), line_index);
+        
+        if let Some(line_index) = line_index {
+            if let Some(line_highlights) = self.line_cache.get(line_index) {
+                eprintln!("DEBUG: line {} has {} highlights", line_index, line_highlights.len());
+                // Convert character ranges to byte ranges
+                let line_chars: Vec<char> = line.chars().collect();
+                for (i, (char_range, color)) in line_highlights.iter().enumerate() {
+                    // Convert character positions to byte positions
+                    let char_start = char_range.start;
+                    let char_end = char_range.end.min(line_chars.len());
                     
-                    eprintln!("DEBUG:   byte_range {}..{}", byte_start, byte_end);
+                    eprintln!("DEBUG: highlight {}: char_range {:?}, color {:?}", i, char_range, color);
                     
-                    if byte_start < byte_end && byte_end <= line.len() {
-                        ranges.push((byte_start..byte_end, *color));
-                        eprintln!("DEBUG:   added range");
+                    if char_start < char_end {
+                        // Calculate byte positions
+                        let byte_start = line_chars[..char_start].iter().map(|c| c.len_utf8()).sum::<usize>();
+                        let byte_end = byte_start + line_chars[char_start..char_end].iter().map(|c| c.len_utf8()).sum::<usize>();
+                        
+                        eprintln!("DEBUG:   byte_range {}..{}", byte_start, byte_end);
+                        
+                        if byte_start < byte_end && byte_end <= line.len() {
+                            ranges.push((byte_start..byte_end, *color));
+                            eprintln!("DEBUG:   added range");
+                        } else {
+                            eprintln!("DEBUG:   range invalid (byte_end {} > line.len() {})", byte_end, line.len());
+                        }
                     } else {
-                        eprintln!("DEBUG:   range invalid (byte_end {} > line.len() {})", byte_end, line.len());
+                        eprintln!("DEBUG:   char_start >= char_end");
                     }
-                } else {
-                    eprintln!("DEBUG:   char_start >= char_end");
                 }
+            } else {
+                eprintln!("DEBUG: line {} has no highlights in cache", line_index);
             }
         } else {
-            eprintln!("DEBUG: line {} has no highlights in cache", line_index);
+            eprintln!("DEBUG: could not find line index for text");
         }
-        eprintln!("DEBUG: returning {} ranges for line {}", ranges.len(), line_index);
+        
+        eprintln!("DEBUG: returning {} ranges", ranges.len());
         // The iterator must be sorted by position ascending.
         ranges.sort_by_key(|(range, _)| range.start);
         ranges.into_iter()
+    }
+}
+
+impl SyntaxHighlighter {
+    // Try to find which line index corresponds to the given text
+    // This is a heuristic approach since we don't have the full context
+    fn find_line_index(&self, line_text: &str) -> Option<usize> {
+        // Simple approach: find the first line in the cache where the highlights
+        // could match the text length
+        // This assumes that lines with highlights are unique enough
+        for (i, highlights) in self.line_cache.iter().enumerate() {
+            if !highlights.is_empty() {
+                // Check if the last highlight end is within the text length
+                if let Some(last_highlight) = highlights.last() {
+                    if last_highlight.0.end <= line_text.chars().count() {
+                        return Some(i);
+                    }
+                }
+            }
+        }
+        // If no line with highlights matches, return None
+        None
     }
 }
 
