@@ -64,6 +64,9 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
 fn handle_workspace_loaded(app: &mut App, result: Result<(String, Vec<core_types::workspace::DirectoryEntry>), String>) -> Command<Message> {
     match result {
         Ok((path, entries)) => {
+            // Clear file cache when workspace changes
+            app.file_cache.clear();
+            
             app.workspace_path = path.clone();
             app.file_entries = entries.clone();
             app.status_message = format!("Workspace loaded: {} files", app.file_entries.len());
@@ -143,27 +146,51 @@ fn handle_file_selected_by_path(app: &mut App, path: String) -> Command<Message>
 fn handle_file_metadata_loaded(app: &mut App, result: Result<FileMetadata, String>) -> Command<Message> {
     match result {
         Ok(metadata) => {
-            // Always proceed to load the file
-            app.file_loading_state = FileLoadingState::LoadingContent {
-                path: metadata.path.clone(),
-                size: metadata.size,
-            };
-            app.status_message = format!("Loading file...");
-            
-            return Command::perform(
-                async move {
-                    let path = metadata.path;
-                    match FileLoader::load_file(&path) {
-                        Ok((content, _)) => {
-                            // Create a Document from the content
-                            let document = Document::from_text_with_path(&content, path.clone());
-                            Message::FileLoaded(Ok((path, content, document)))
+            // Check if file is in cache
+            if let Some((cached_content, cached_document)) = app.file_cache.get(&metadata.path) {
+                // File is cached, use it immediately
+                app.file_loading_state = FileLoadingState::LoadingContent {
+                    path: metadata.path.clone(),
+                    size: metadata.size,
+                };
+                app.status_message = format!("Loading from cache...");
+                
+                // Small delay to show loading state (but much faster than actual loading)
+                let path = metadata.path.clone();
+                let content = cached_content.clone();
+                let document = cached_document.clone();
+                
+                return Command::perform(
+                    async move {
+                        // Very short delay to show loading state
+                        tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+                        Message::FileLoaded(Ok((path, content, document)))
+                    },
+                    |result| result,
+                );
+            } else {
+                // File not in cache, load from disk
+                app.file_loading_state = FileLoadingState::LoadingContent {
+                    path: metadata.path.clone(),
+                    size: metadata.size,
+                };
+                app.status_message = format!("Loading file...");
+                
+                return Command::perform(
+                    async move {
+                        let path = metadata.path;
+                        match FileLoader::load_file(&path) {
+                            Ok((content, _)) => {
+                                // Create a Document from the content
+                                let document = Document::from_text_with_path(&content, path.clone());
+                                Message::FileLoaded(Ok((path, content, document)))
+                            }
+                            Err(e) => Message::FileLoaded(Err(format!("Failed to load file: {}", e))),
                         }
-                        Err(e) => Message::FileLoaded(Err(format!("Failed to load file: {}", e))),
-                    }
-                },
-                |result| result,
-            );
+                    },
+                    |result| result,
+                );
+            }
         }
         Err(e) => {
             app.file_loading_state = FileLoadingState::Idle;
@@ -223,6 +250,16 @@ fn handle_open_large_file_read_only(app: &mut App, path: String) -> Command<Mess
 fn handle_file_loaded(app: &mut App, result: Result<(String, String, Document), String>) -> Command<Message> {
     match result {
         Ok((path, content, document)) => {
+            // Cache the file for faster reopening (limit to 10 files)
+            if app.file_cache.len() >= 10 {
+                // Remove the first (oldest) entry
+                let first_key = app.file_cache.keys().next().cloned();
+                if let Some(key) = first_key {
+                    app.file_cache.remove(&key);
+                }
+            }
+            app.file_cache.insert(path.clone(), (content.clone(), document.clone()));
+            
             app.active_file_path = Some(path.clone());
             app.file_loading_state = FileLoadingState::Idle;
             

@@ -269,16 +269,44 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                 let text = editor_state.text();
                 let mut syntax_manager = app.syntax_manager.lock().unwrap();
                 
-                // Clear cache first to ensure we don't use stale data
-                app.syntax_highlight_cache.clear();
-                app.syntax_highlight_spans.clear();
-                app.syntax_highlight_span_count = 0;
-                app.syntax_cache_version += 1;
+                // Check if document is already in syntax manager to avoid reprocessing
+                let needs_syntax_update = !syntax_manager.contains_document(&doc_id);
                 
-                if let Err(e) = syntax_manager.update_document(&doc_id, &text, Path::new(path)) {
-                    app.status_message = format!("Syntax init failed: {}", e);
+                if needs_syntax_update {
+                    // Clear cache first to ensure we don't use stale data
+                    app.syntax_highlight_cache.clear();
+                    app.syntax_highlight_spans.clear();
+                    app.syntax_highlight_span_count = 0;
+                    app.syntax_cache_version += 1;
+                    
+                    if let Err(e) = syntax_manager.update_document(&doc_id, &text, Path::new(path)) {
+                        app.status_message = format!("Syntax init failed: {}", e);
+                    } else {
+                        // Retrieve highlight spans for UI
+                        match syntax_manager.highlight_spans(&doc_id) {
+                            Ok(spans) => {
+                                app.syntax_highlight_span_count = spans.len();
+                                app.syntax_highlight_spans = spans.clone();
+                                // Build per‑line cache for the real editor
+                                app.syntax_highlight_cache =
+                                    build_line_cache(&text, &spans, app.theme);
+                                app.syntax_cache_version += 1;
+                                if !spans.is_empty() {
+                                    app.status_message = format!("Syntax highlighting applied ({} spans)", spans.len());
+                                } else {
+                                    app.status_message = "No syntax highlights available for this file type".to_string();
+                                }
+                            }
+                            Err(_) => {
+                                app.syntax_highlight_span_count = 0;
+                                app.syntax_highlight_spans.clear();
+                                app.syntax_highlight_cache.clear();
+                                app.status_message = "Syntax highlighting not available".to_string();
+                            }
+                        }
+                    }
                 } else {
-                    // Retrieve highlight spans for UI
+                    // Document already in syntax manager, just retrieve highlights
                     match syntax_manager.highlight_spans(&doc_id) {
                         Ok(spans) => {
                             app.syntax_highlight_span_count = spans.len();
@@ -287,17 +315,14 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                             app.syntax_highlight_cache =
                                 build_line_cache(&text, &spans, app.theme);
                             app.syntax_cache_version += 1;
-                            if !spans.is_empty() {
-                                app.status_message = format!("Syntax highlighting applied ({} spans)", spans.len());
-                            } else {
-                                app.status_message = "No syntax highlights available for this file type".to_string();
-                            }
+                            app.status_message = "Using cached syntax highlighting".to_string();
                         }
                         Err(_) => {
                             app.syntax_highlight_span_count = 0;
                             app.syntax_highlight_spans.clear();
                             app.syntax_highlight_cache.clear();
-                            app.status_message = "Syntax highlighting not available".to_string();
+                            app.syntax_cache_version += 1;
+                            app.status_message = "No syntax highlights available".to_string();
                         }
                     }
                 }

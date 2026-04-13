@@ -199,6 +199,8 @@ pub struct App {
     pub syntax_cache_version: u32,
     // Whether syntax highlighting should be enabled for the current file
     pub syntax_highlighting_enabled: bool,
+    // File cache to speed up reopening files (max 10 files to avoid memory issues)
+    pub file_cache: std::collections::HashMap<String, (String, editor_core::Document)>,
 }
 
 impl App {
@@ -246,6 +248,7 @@ impl App {
                 syntax_highlight_cache: Vec::new(),
                 syntax_cache_version: 0,
                 syntax_highlighting_enabled: true,
+                file_cache: std::collections::HashMap::new(),
             },
             iced::Command::none(),
         )
