@@ -104,17 +104,18 @@ fn map_capture_name(name: &str) -> Highlight {
         "comment" => Highlight::Comment,
         "string" => Highlight::String,
         "keyword" => Highlight::Keyword,
-        "function" | "function.call" => Highlight::Function,
-        "variable" | "variable.parameter" => Highlight::Variable,
+        "function" | "function.call" | "function.method" | "function.macro" => Highlight::Function,
+        "variable" | "variable.parameter" | "variable.builtin" => Highlight::Variable,
         "type" | "type.builtin" => Highlight::Type,
         "constant" | "constant.builtin" => Highlight::Constant,
         "attribute" => Highlight::Attribute,
-        "operator" => Highlight::Operator,
+        "operator" | "punctuation.bracket" | "punctuation.delimiter" => Highlight::Operator,
         "number" => Highlight::Number,
         "property" => Highlight::Property,
         "namespace" => Highlight::Namespace,
-        "macro" => Highlight::Function, // Treat macros like functions
-        "punctuation" => Highlight::Operator, // Treat punctuation as operators
+        "constructor" => Highlight::Type,
+        "label" => Highlight::Variable,
+        "escape" => Highlight::String,
         _ => Highlight::Plain,
     }
 }
