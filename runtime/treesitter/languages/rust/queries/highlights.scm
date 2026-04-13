@@ -9,47 +9,45 @@
 (raw_string_literal) @string
 (char_literal) @string
 
-; Keywords - minimal set to avoid parsing errors
-[
-  "fn"
-  "let"
-  "if"
-  "else"
-  "for"
-  "while"
-  "match"
-  "struct"
-  "enum"
-  "impl"
-  "trait"
-  "use"
-  "pub"
-  "mod"
-  "type"
-  "const"
-  "static"
-  "unsafe"
-  "return"
-  "break"
-  "continue"
-  "as"
-  "in"
-  "where"
-  "loop"
-  "move"
-  "ref"
-  "mut"
-  "self"
-  "Self"
-  "super"
-  "extern"
-  "crate"
-  "true"
-  "false"
-  "async"
-  "await"
-  "dyn"
-] @keyword
+; Keywords - using individual patterns instead of list
+"fn" @keyword
+"let" @keyword
+"if" @keyword
+"else" @keyword
+"for" @keyword
+"while" @keyword
+"match" @keyword
+"struct" @keyword
+"enum" @keyword
+"impl" @keyword
+"trait" @keyword
+"use" @keyword
+"pub" @keyword
+"mod" @keyword
+"type" @keyword
+"const" @keyword
+"static" @keyword
+"unsafe" @keyword
+"return" @keyword
+"break" @keyword
+"continue" @keyword
+"as" @keyword
+"in" @keyword
+"where" @keyword
+"loop" @keyword
+"move" @keyword
+"ref" @keyword
+"mut" @keyword
+"self" @keyword
+"Self" @keyword
+"super" @keyword
+"extern" @keyword
+"crate" @keyword
+"true" @keyword
+"false" @keyword
+"async" @keyword
+"await" @keyword
+"dyn" @keyword
 
 ; Function definitions
 (function_item
