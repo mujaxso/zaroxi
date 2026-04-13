@@ -101,11 +101,9 @@
   name: (identifier) @constant)
 
 ; Uppercase identifiers (constants by convention) - override variable capture
-; Using a simpler approach without predicates
-; We'll capture identifiers that are all uppercase (common constant pattern)
-; This uses a basic pattern that should work with Tree-sitter
-(identifier) @constant
-  (#match? @constant "^[A-Z][A-Z0-9_]*$")
+; Using the correct predicate syntax
+((identifier) @constant
+ (#match? @constant "^[A-Z][A-Z0-9_]*$"))
 
 ; Parameters
 (parameter
