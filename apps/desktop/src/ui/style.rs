@@ -207,19 +207,19 @@ impl StyleHelpers {
     /// Map a syntax highlight token to a semantic color.
     pub fn highlight_color(&self, highlight: Highlight) -> iced::Color {
         match highlight {
-            Highlight::Comment => Color::from_rgb(0.5, 0.5, 0.5),       // grey
-            Highlight::String => Color::from_rgb(0.4, 1.0, 0.4),        // bright green
-            Highlight::Keyword => Color::from_rgb(0.9, 0.2, 0.2),       // red
-            Highlight::Function => Color::from_rgb(0.0, 0.6, 0.9),      // blue
-            Highlight::Variable => Color::from_rgb(0.8, 0.8, 0.8),      // light grey
-            Highlight::Type => Color::from_rgb(0.7, 0.0, 0.8),          // purple
-            Highlight::Constant => Color::from_rgb(0.9, 0.5, 0.0),      // orange
-            Highlight::Attribute => Color::from_rgb(0.0, 0.8, 0.8),     // cyan
-            Highlight::Operator => Color::from_rgb(0.9, 0.9, 0.0),      // yellow
-            Highlight::Number => Color::from_rgb(0.9, 0.6, 0.2),        // orange
-            Highlight::Property => Color::from_rgb(0.0, 0.8, 0.5),      // teal
-            Highlight::Namespace => Color::from_rgb(0.6, 0.2, 0.9),     // violet
-            Highlight::Plain => self.colors.text_primary,               // Use theme primary text
+            Highlight::Comment => self.colors.text_muted,               // #8892A6
+            Highlight::String => self.colors.success,                   // #35C46B
+            Highlight::Keyword => self.colors.accent,                   // #4C6FFF
+            Highlight::Function => self.colors.info,                    // #6EA8FF
+            Highlight::Variable => self.colors.text_primary,            // #E6EAF2
+            Highlight::Type => self.colors.warning,                     // #F0B24B
+            Highlight::Constant => self.colors.error,                   // #F05D6C
+            Highlight::Attribute => self.colors.accent_hover,           // #5A7BFF
+            Highlight::Operator => self.colors.text_secondary,          // #B7C0D1
+            Highlight::Number => self.colors.error,                     // #F05D6C
+            Highlight::Property => self.colors.success,                 // #35C46B
+            Highlight::Namespace => self.colors.accent,                 // #4C6FFF
+            Highlight::Plain => self.colors.text_primary,               // #E6EAF2
         }
     }
 }
