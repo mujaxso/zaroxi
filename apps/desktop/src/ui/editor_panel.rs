@@ -1,4 +1,4 @@
-use iced::{Element, Length, Color, widget::{column, container, row, text}};
+use iced::{Element, Length, Color, widget::{column, container, row, text, scrollable}};
 use syntax_core::Highlight;
 use crate::message::Message;
 use crate::state::App;
@@ -264,25 +264,27 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
         column_children.push(separator.into());
     }
     
-    // Add editor content with explicit minimum height
+    // Add editor content in a scrollable container to ensure it has enough height
     column_children.push(
-        container(editor_content)
-            .width(Length::Fill)
-            .height(Length::Fill)
-            .min_height(400) // Ensure editor has enough height to show multiple lines
-            .clip(true) // Ensure content doesn't overflow
-            .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
-                container::Appearance {
-                    background: Some(style.colors.editor_background.into()),
-                    border: iced::Border {
-                        color: Color::TRANSPARENT,
-                        width: 0.0,
-                        radius: 0.0.into(),
-                    },
-                    ..Default::default()
-                }
-            })))
-            .into()
+        container(
+            scrollable(editor_content)
+                .height(Length::Fill)
+        )
+        .width(Length::Fill)
+        .height(Length::Fill)
+        .clip(true) // Ensure content doesn't overflow
+        .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
+            container::Appearance {
+                background: Some(style.colors.editor_background.into()),
+                border: iced::Border {
+                    color: Color::TRANSPARENT,
+                    width: 0.0,
+                    radius: 0.0.into(),
+                },
+                ..Default::default()
+            }
+        })))
+        .into()
     );
 
     // Add syntax highlight legend
