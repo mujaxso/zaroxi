@@ -67,6 +67,14 @@ impl SyntaxManager {
         Ok(())
     }
 
+    pub fn contains_document(&self, doc_id: &str) -> bool {
+        self.documents.contains_key(doc_id)
+    }
+
+    pub fn contains_document(&self, doc_id: &str) -> bool {
+        self.documents.contains_key(doc_id)
+    }
+
     pub fn highlight_spans(&self, doc_id: &str) -> Result<Vec<HighlightSpan>, SyntaxError> {
         let doc = self
             .documents
