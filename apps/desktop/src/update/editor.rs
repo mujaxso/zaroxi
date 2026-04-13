@@ -31,10 +31,7 @@ fn build_line_cache(
     let line_count = line_starts.len() - 1;
     let mut line_cache = vec![Vec::new(); line_count];
 
-    eprintln!("DEBUG: build_line_cache: text has {} chars, {} lines, {} spans", 
-              text.len(), line_count, spans.len());
-    
-    for (i, span) in spans.iter().enumerate() {
+    for span in spans.iter() {
         // convert byte offsets to character offsets
         let byte_start = span.start;
         let byte_end = span.end;
@@ -42,15 +39,11 @@ fn build_line_cache(
         let char_start = text[..byte_start].chars().count();
         let char_end = char_start + text[byte_start..byte_end].chars().count();
 
-        eprintln!("DEBUG: span {}: byte [{}, {}], char [{}, {}], highlight {:?}", 
-                 i, byte_start, byte_end, char_start, char_end, span.highlight);
-
         // find the line that contains char_start
         let line_idx = match line_starts.binary_search(&char_start) {
             Ok(i) => i,
             Err(i) => i.saturating_sub(1),
         };
-        eprintln!("DEBUG:   line_idx = {}", line_idx);
         
         let mut remaining_start = char_start;
         let remaining_end = char_end;
@@ -63,19 +56,12 @@ fn build_line_cache(
             if seg_start < seg_end {
                 let line_range = (seg_start - line_start)..(seg_end - line_start);
                 let color = style.highlight_color(span.highlight);
-                let line_range_clone = line_range.clone();
                 line_cache[current_line].push((line_range, color));
-                eprintln!("DEBUG:   added to line {}: range {:?}, color {:?}", 
-                         current_line, line_range_clone, color);
             }
             remaining_start = seg_end;
             current_line += 1;
         }
     }
-    
-    // Count non-empty lines
-    let non_empty = line_cache.iter().filter(|v| !v.is_empty()).count();
-    eprintln!("DEBUG: build_line_cache: {} lines have highlights", non_empty);
     
     line_cache
 }
@@ -297,11 +283,9 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                             app.syntax_highlight_span_count = spans.len();
                             app.syntax_highlight_spans = spans.clone();
                             // Build per‑line cache for the real editor
-                            eprintln!("DEBUG: Initial load: building line cache with {} spans, text length {}", spans.len(), text.len());
                             app.syntax_highlight_cache =
                                 build_line_cache(&text, &spans, app.theme);
                             app.syntax_cache_version += 1;
-                            eprintln!("DEBUG: Initial cache built with {} lines, version {}", app.syntax_highlight_cache.len(), app.syntax_cache_version);
                             if !spans.is_empty() {
                                 app.status_message = format!("Syntax highlighting applied ({} spans)", spans.len());
                             } else {

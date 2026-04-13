@@ -98,16 +98,17 @@ fn map_capture_name(name: &str) -> Highlight {
         "comment" => Highlight::Comment,
         "string" => Highlight::String,
         "keyword" => Highlight::Keyword,
-        "function" => Highlight::Function,
-        "variable" => Highlight::Variable,
-        "type" => Highlight::Type,
-        "constant" => Highlight::Constant,
+        "function" | "function.call" => Highlight::Function,
+        "variable" | "variable.parameter" => Highlight::Variable,
+        "type" | "type.builtin" => Highlight::Type,
+        "constant" | "constant.builtin" => Highlight::Constant,
         "attribute" => Highlight::Attribute,
         "operator" => Highlight::Operator,
         "number" => Highlight::Number,
         "property" => Highlight::Property,
         "namespace" => Highlight::Namespace,
-        "function.call" => Highlight::Function,
+        "macro" => Highlight::Function, // Treat macros like functions
+        "punctuation" => Highlight::Operator, // Treat punctuation as operators
         _ => Highlight::Plain,
     }
 }

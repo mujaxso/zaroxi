@@ -34,15 +34,11 @@ impl iced_core::text::highlighter::Highlighter for SyntaxHighlighter {
         // Reset when we get new settings (new document)
         self.current_line = 0;
         self.is_new_document = true;
-        eprintln!("DEBUG: SyntaxHighlighter::update called with {} lines", self.line_cache.len());
     }
 
     fn change_line(&mut self, line: usize) {
-        eprintln!("DEBUG: SyntaxHighlighter::change_line: {}", line);
-        // Update current_line to the given line, but don't set is_new_document = false
-        // because we want to continue using sequential line numbers
+        // Update current_line to the given line
         self.current_line = line;
-        // Note: We're not setting is_new_document = false to avoid breaking sequential processing
     }
 
     fn current_line(&self) -> usize {
@@ -54,7 +50,6 @@ impl iced_core::text::highlighter::Highlighter for SyntaxHighlighter {
         
         // If the cache is empty, return empty ranges immediately
         if self.line_cache.is_empty() {
-            eprintln!("DEBUG: highlight_line called with empty cache, returning 0 ranges");
             return ranges.into_iter();
         }
         
@@ -67,47 +62,29 @@ impl iced_core::text::highlighter::Highlighter for SyntaxHighlighter {
             self.current_line += 1;
         }
         
-        eprintln!("DEBUG: highlight_line called with text length {}, line_index = {}, current_line = {}, is_new_document = {}, cache_size = {}", 
-                 line.len(), line_index, self.current_line, self.is_new_document, self.line_cache.len());
-        
         // Check bounds
         if line_index < self.line_cache.len() {
             if let Some(line_highlights) = self.line_cache.get(line_index) {
-                eprintln!("DEBUG: line {} has {} highlights", line_index, line_highlights.len());
                 // Convert character ranges to byte ranges
                 let line_chars: Vec<char> = line.chars().collect();
-                for (i, (char_range, color)) in line_highlights.iter().enumerate() {
+                for (char_range, color) in line_highlights.iter() {
                     // Convert character positions to byte positions
                     let char_start = char_range.start;
                     let char_end = char_range.end.min(line_chars.len());
-                    
-                    eprintln!("DEBUG: highlight {}: char_range {:?}, color {:?}", i, char_range, color);
                     
                     if char_start < char_end {
                         // Calculate byte positions
                         let byte_start = line_chars[..char_start].iter().map(|c| c.len_utf8()).sum::<usize>();
                         let byte_end = byte_start + line_chars[char_start..char_end].iter().map(|c| c.len_utf8()).sum::<usize>();
                         
-                        eprintln!("DEBUG:   byte_range {}..{}", byte_start, byte_end);
-                        
                         if byte_start < byte_end && byte_end <= line.len() {
                             ranges.push((byte_start..byte_end, *color));
-                            eprintln!("DEBUG:   added range");
-                        } else {
-                            eprintln!("DEBUG:   range invalid (byte_end {} > line.len() {})", byte_end, line.len());
                         }
-                    } else {
-                        eprintln!("DEBUG:   char_start >= char_end");
                     }
                 }
-            } else {
-                eprintln!("DEBUG: line {} has no highlights in cache", line_index);
             }
-        } else {
-            eprintln!("DEBUG: line_index {} out of bounds (cache size: {})", line_index, self.line_cache.len());
         }
         
-        eprintln!("DEBUG: returning {} ranges", ranges.len());
         // The iterator must be sorted by position ascending.
         ranges.sort_by_key(|(range, _)| range.start);
         ranges.into_iter()
@@ -245,11 +222,6 @@ pub fn editor<'a>(
     // Check if we have a valid cache
     let cache = line_cache.unwrap_or_else(|| Vec::new());
     let has_cache = !cache.is_empty();
-    
-    eprintln!("DEBUG: Using editor with cache of {} lines, total highlights: {}, has_cache={}", 
-              cache.len(),
-              cache.iter().map(|line| line.len()).sum::<usize>(),
-              has_cache);
     
     // Create editor with syntax highlighting only if we have a cache
     let base_editor = text_editor::TextEditor::new(text_editor_content)
