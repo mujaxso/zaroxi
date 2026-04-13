@@ -198,33 +198,35 @@ pub fn editor_panel(app: &App) -> Element<'_, Message> {
                     .into()
                 } else {
                     eprintln!("DEBUG: editor_panel: Showing editor for file (is_file_too_large_for_editor=false)");
-            // Use the interactive text editor (editable) with syntax highlighting
-            // Only pass the cache if it's ready (non-empty) and the file is loaded
-            // This prevents rendering with empty cache during file load
-            let version = app.syntax_cache_version;
-            let cache_ready = !app.syntax_highlight_cache.is_empty();
-            
-            eprintln!("DEBUG: editor_panel: syntax_highlight_cache has {} lines with {} total highlights, version {}, cache_ready={}", 
-                     app.syntax_highlight_cache.len(),
-                     app.syntax_highlight_cache.iter().map(|line| line.len()).sum::<usize>(),
-                     version,
-                     cache_ready);
-            eprintln!("DEBUG: editor_panel: text_editor text length: {}", app.text_editor.text().len());
-            
-            // Only pass the cache if it's ready
-            let line_cache = if cache_ready {
-                Some(app.syntax_highlight_cache.clone())
-            } else {
-                None
-            };
-            
-            editor::editor(
-                &app.text_editor,
-                &app.editor_typography,
-                style.colors.editor_background,
-                style.colors.text_primary,
-                line_cache,
-            )
+                    // Use the interactive text editor (editable) with syntax highlighting
+                    // Only pass the cache if it's ready (non-empty) and the file is loaded
+                    // This prevents rendering with empty cache during file load
+                    let version = app.syntax_cache_version;
+                    let cache_ready = !app.syntax_highlight_cache.is_empty();
+                    
+                    eprintln!("DEBUG: editor_panel: syntax_highlight_cache has {} lines with {} total highlights, version {}, cache_ready={}", 
+                             app.syntax_highlight_cache.len(),
+                             app.syntax_highlight_cache.iter().map(|line| line.len()).sum::<usize>(),
+                             version,
+                             cache_ready);
+                    eprintln!("DEBUG: editor_panel: text_editor text length: {}", app.text_editor.text().len());
+                    
+                    // Only pass the cache if it's ready
+                    let line_cache = if cache_ready {
+                        Some(app.syntax_highlight_cache.clone())
+                    } else {
+                        None
+                    };
+                    
+                    editor::editor(
+                        &app.text_editor,
+                        &app.editor_typography,
+                        style.colors.editor_background,
+                        style.colors.text_primary,
+                        line_cache,
+                    )
+                }
+            }
         }
     } else {
         // Welcome screen
