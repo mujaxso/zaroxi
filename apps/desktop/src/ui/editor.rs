@@ -84,10 +84,12 @@ impl Default for SyntaxHighlighter {
     }
 }
 
-// Transparent style sheet for text editor (background comes from container)
-struct TransparentStyle;
+// Custom style sheet for text editor (background comes from container)
+struct EditorStyle {
+    text_color: Color,
+}
 
-impl iced::widget::text_editor::StyleSheet for TransparentStyle {
+impl iced::widget::text_editor::StyleSheet for EditorStyle {
     type Style = iced::Theme;
 
     fn active(&self, _style: &Self::Style) -> iced::widget::text_editor::Appearance {
@@ -128,9 +130,7 @@ impl iced::widget::text_editor::StyleSheet for TransparentStyle {
     }
 
     fn value_color(&self, _style: &Self::Style) -> Color {
-        // Use a color that won't interfere with syntax highlighting
-        // This is the base color for non-highlighted text
-        Color::from_rgb(0.9, 0.9, 0.9)  // Light gray
+        self.text_color
     }
 
     fn disabled_color(&self, _style: &Self::Style) -> Color {
