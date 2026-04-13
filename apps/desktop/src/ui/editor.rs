@@ -218,7 +218,6 @@ pub fn editor<'a>(
                     ..Default::default()
                 }
             })))
-            .into()
     } else {
         eprintln!("DEBUG: No syntax highlighting");
         // Create editor without syntax highlighting
@@ -240,6 +239,5 @@ pub fn editor<'a>(
                     ..Default::default()
                 }
             })))
-            .into()
     }
 }
