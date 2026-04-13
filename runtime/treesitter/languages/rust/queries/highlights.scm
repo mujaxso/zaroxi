@@ -76,35 +76,21 @@
 ; Function definitions
 (function_item
   name: (identifier) @function)
-(function_signature_item
-  name: (identifier) @function)
 
 ; Function calls
 (call_expression
   function: (identifier) @function.call)
-(call_expression
-  function: (field_expression
-    field: (field_identifier) @function.call))
-(call_expression
-  function: (scoped_identifier
-    name: (identifier) @function.call))
 
 ; Type definitions
 (type_identifier) @type
 (primitive_type) @type.builtin
 
-; Variables - default for identifiers
+; Variables
 (identifier) @variable
 
 ; Constants
 (const_item
   name: (identifier) @constant)
-
-; Uppercase identifiers (constants by convention) - override variable capture
-; Note: predicate syntax may not be supported in this Tree-sitter version
-; Temporarily disabled to fix query parsing
-; ((identifier) @constant
-;  (#match? @constant "^[A-Z][A-Z0-9_]*$"))
 
 ; Parameters
 (parameter
@@ -112,64 +98,25 @@
 
 ; Attributes
 (attribute_item) @attribute
-(inner_attribute_item) @attribute
 
 ; Macros
 (macro_invocation
   macro: (identifier) @macro)
-(use_wildcard) @macro ; use statement wildcard
 
 ; Operators
 [
-  "+"
-  "-"
-  "*"
-  "/"
-  "%"
-  "="
-  "=="
-  "!="
-  "<"
-  "<="
-  ">"
-  ">="
-  "!"
-  "&&"
-  "||"
-  "&"
-  "|"
-  "^"
-  "<<"
-  ">>"
-  "+="
-  "-="
-  "*="
-  "/="
-  "%="
-  "&="
-  "|="
-  "^="
-  "<<="
-  ">>="
-  ".."
-  "..="
-  "->"
-  "=>"
+  "+" "-" "*" "/" "%"
+  "=" "==" "!=" "<" "<=" ">" ">="
+  "!" "&&" "||"
+  "&" "|" "^" "<<" ">>"
+  "+=" "-=" "*=" "/=" "%="
+  "&=" "|=" "^=" "<<=" ">>="
+  ".." "..=" "->" "=>"
 ] @operator
 
 ; Punctuation
 [
-  ","
-  ";"
-  ":"
-  "::"
-  "."
-  "("
-  ")"
-  "["
-  "]"
-  "{"
-  "}"
+  "," ";" ":" "::" "." "(" ")" "[" "]" "{" "}"
 ] @punctuation
 
 ; Literals

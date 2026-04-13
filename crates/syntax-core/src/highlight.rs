@@ -64,7 +64,9 @@ fn highlight_with_query(
     // highlighting for that particular language.
     let query = match Query::new(ts_lang, query_str) {
         Ok(q) => q,
-        Err(_) => {
+        Err(e) => {
+            // Log the error for debugging
+            eprintln!("DEBUG: Tree-sitter query error for {}: {}", language.as_str(), e);
             return Ok(Vec::new());
         }
     };
@@ -90,6 +92,10 @@ fn highlight_with_query(
 
     // Sort spans by start position
     spans.sort_by_key(|span| span.start);
+    
+    // Log for debugging
+    eprintln!("DEBUG: highlight_with_query for {}: found {} spans", language.as_str(), spans.len());
+    
     Ok(spans)
 }
 
