@@ -116,11 +116,15 @@ impl Runtime {
                 .get(symbol_name.as_bytes())
                 .map_err(|e| format!("Failed to get symbol {}: {}", symbol_name, e))?;
             
+            // Call the function to get the language before we forget the library
+            let language = language_fn();
+            
             // The library must not be unloaded while the language is in use.
             // We leak the library handle to keep it loaded for the lifetime of the program.
+            // The language_fn symbol is no longer needed after we've called it.
             std::mem::forget(lib);
             
-            Ok(language_fn())
+            Ok(language)
         }
     }
 
