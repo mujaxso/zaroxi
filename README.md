@@ -46,26 +46,32 @@ Qyzer Studio follows a modular architecture with clear separation between UI, bu
 ## 📦 Project Structure
 
 ```
-qyzer-studio/
+qyzer/
 ├── apps/                    # Applications
-│   └── desktop/            # Main desktop application
+│   └── desktop/            # Main desktop application (Iced-based GUI)
 ├── crates/                 # Core libraries
-│   ├── core-types/         # Shared data structures
-│   ├── editor-core/        # Text editing primitives
-│   ├── workspace-model/    # Workspace state management
-│   ├── lsp-client/         # Language Server Protocol client
-│   ├── ai-context/         # AI context management
-│   ├── ai-agent/           # AI task orchestration
-│   ├── patch-engine/       # Diff generation and application
-│   ├── rpc/                # Remote Procedure Call framework
-│   ├── settings/           # Configuration management
-│   └── permissions/        # Access control and security
+│   ├── core-types/         # Shared data structures and types
+│   ├── editor-core/        # Text editing primitives, rope data structure, cursor management
+│   ├── syntax-core/        # Tree-sitter integration, syntax highlighting, language support
+│   ├── workspace-model/    # Workspace state management, file tree, buffer management
+│   ├── lsp-client/         # Language Server Protocol client for intelligent code analysis
+│   ├── ai-context/         # AI context collection and management from workspace
+│   ├── ai-agent/           # AI task orchestration and execution
+│   ├── patch-engine/       # Diff generation and application for AI suggestions
+│   ├── rpc/                # Remote Procedure Call framework for inter-process communication
+│   ├── settings/           # Configuration management and persistence
+│   ├── permissions/        # Access control and security permissions system
+│   └── file-ops/           # File system operations and metadata handling
 ├── services/               # Background services
 │   ├── workspace-daemon/   # Workspace management service
-│   └── ai-daemon/          # AI operations service
-├── extensions/             # Language extensions
+│   └── ai-daemon/          # AI operations and model management service
 ├── docs/                   # Documentation
-└── tests/                  # Test suites
+│   ├── architecture.md     # High-level system design
+│   ├── crates.md          # Detailed crate documentation
+│   ├── roadmap.md         # Development roadmap and future plans
+│   ├── rpc.md             # RPC framework documentation
+│   └── security.md        # Security architecture and practices
+└── Cargo.toml             # Workspace configuration
 ```
 
 ## 🛠️ Getting Started
@@ -124,25 +130,26 @@ cargo build -p desktop --release
 ### Core Crates
 
 - **`core-types`**: Shared data structures and types used across the entire workspace
-- **`editor-core`**: Text editing primitives, rope data structure, cursor management
-- **`workspace-model`**: Workspace state management, file tree, buffer management
-- **`lsp-client`**: Language Server Protocol client for intelligent code analysis
-- **`ai-context`**: AI context collection and management from workspace
-- **`ai-agent`**: AI task orchestration and execution
-- **`patch-engine`**: Diff generation and application for AI suggestions
-- **`rpc`**: Remote Procedure Call framework for inter-process communication
-- **`settings`**: Configuration management and persistence
-- **`permissions`**: Access control and security permissions system
-- **`file-ops`**: File system operations and metadata handling
+- **`editor-core`**: Text editing primitives, rope data structure, cursor management, document handling
+- **`syntax-core`**: Tree-sitter integration, syntax highlighting, language parsing and analysis
+- **`workspace-model`**: Workspace state management, file tree, buffer management, project organization
+- **`lsp-client`**: Language Server Protocol client for intelligent code analysis and language features
+- **`ai-context`**: AI context collection and management from workspace, prompt engineering
+- **`ai-agent`**: AI task orchestration and execution, model integration, response processing
+- **`patch-engine`**: Diff generation and application for AI suggestions, code transformation
+- **`rpc`**: Remote Procedure Call framework for inter-process communication between components
+- **`settings`**: Configuration management and persistence, user preferences storage
+- **`permissions`**: Access control and security permissions system, authorization logic
+- **`file-ops`**: File system operations and metadata handling, file watching, I/O utilities
 
 ### Services
 
-- **`workspace-daemon`**: Background service for workspace management
-- **`ai-daemon`**: Background service for AI operations and model management
+- **`workspace-daemon`**: Background service for workspace management, file indexing, and resource monitoring
+- **`ai-daemon`**: Background service for AI operations and model management, inference optimization
 
 ### Applications
 
-- **`desktop`**: Main desktop application built with Iced GUI framework
+- **`desktop`**: Main desktop application built with Iced GUI framework, user interface and interaction
 
 ## 🎯 Key Features in Detail
 
