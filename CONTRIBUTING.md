@@ -1,6 +1,6 @@
-# Contributing to Neote
+# Contributing to Qyzer Studio
 
-Thank you for your interest in contributing to Neote! This document provides guidelines and instructions for contributing to the project.
+Thank you for your interest in contributing to Qyzer Studio! This document provides guidelines and instructions for contributing to the project.
 
 ## Code of Conduct
 
@@ -171,4 +171,4 @@ If you have questions about contributing:
 - Join discussions on GitHub
 - Open an issue with the `question` label
 
-Thank you for contributing to Neote! 🎉
+Thank you for contributing to Qyzer Studio! 🎉
