@@ -248,6 +248,8 @@ fn handle_open_large_file_read_only(app: &mut App, path: String) -> Command<Mess
 }
 
 fn handle_file_loaded(app: &mut App, result: Result<(String, String, Document), String>) -> Command<Message> {
+    use std::time::Instant;
+    let start_time = Instant::now();
     match result {
         Ok((path, content, document)) => {
             // Cache the file for faster reopening (limit to 10 files)

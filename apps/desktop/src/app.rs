@@ -30,6 +30,14 @@ impl iced::Application for App {
             }
         }
         
+        // Precompile syntax highlighting queries for faster file opening
+        {
+            let mut syntax_manager = app.syntax_manager.lock().unwrap();
+            // Precompile queries for supported languages
+            // This caches compiled Tree-sitter queries to avoid recompiling them for each file
+            syntax_manager.precompile_queries();
+        }
+        
         // Load custom fonts for icon support
         // We'll try to load multiple fonts to ensure icons are visible
         let mut font_commands = Vec::new();

@@ -93,13 +93,10 @@ fn highlight_with_query(
     // Sort spans by start position
     spans.sort_by_key(|span| span.start);
     
-    // Log for debugging
-    eprintln!("DEBUG: highlight_with_query for {}: found {} spans", language.as_str(), spans.len());
-    
     Ok(spans)
 }
 
-fn map_capture_name(name: &str) -> Highlight {
+pub fn map_capture_name(name: &str) -> Highlight {
     match name {
         "comment" => Highlight::Comment,
         "string" => Highlight::String,
