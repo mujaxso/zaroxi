@@ -340,23 +340,61 @@ fn handle_file_loaded(app: &mut App, result: Result<(String, String, Document), 
                 state.open_buffer(&path, content);
             }
             
-            // Send EditorSetDocument to trigger syntax highlighting only for appropriate files
+            // Start syntax highlighting immediately for normal files
             if needs_syntax_highlight {
-                // Use the document from editor state to avoid recreating it
-                if let Some(ref editor_state) = app.editor_state {
-                    let doc = editor_state.document().clone();
-                    Command::perform(
-                        async move {
-                            Message::EditorSetDocument(doc)
-                        },
-                        |msg| msg,
-                    )
-                } else {
-                    Command::none()
+                // Update syntax document in the background
+                if let Some(path) = &app.active_file_path {
+                    let doc_id = path.clone();
+                    let text = content.clone();
+                    let theme = app.theme;
+                    
+                    // Update syntax manager and get spans
+                    let spans = {
+                        let mut syntax_manager = app.syntax_manager.lock().unwrap();
+                        
+                        // Update the document in syntax manager
+                        if let Err(e) = syntax_manager.update_document(&doc_id, &text, std::path::Path::new(path)) {
+                            eprintln!("Failed to update syntax document: {}", e);
+                            None
+                        } else {
+                            // Get highlight spans
+                            match syntax_manager.highlight_spans(&doc_id) {
+                                Ok(spans) => Some(spans),
+                                Err(e) => {
+                                    eprintln!("Failed to get highlight spans: {}", e);
+                                    None
+                                }
+                            }
+                        }
+                    };
+                    
+                    // Build cache outside the lock to avoid holding it
+                    if let Some(spans) = spans {
+                        app.syntax_highlight_span_count = spans.len();
+                        app.syntax_highlight_spans = spans.clone();
+                        // Build per‑line cache for the real editor
+                        app.syntax_highlight_cache =
+                            crate::update::editor::build_line_cache(&text, &spans, theme);
+                        app.syntax_cache_version += 1;
+                    }
                 }
+            }
+            
+            // Send EditorSetDocument to update editor state
+            let elapsed = start_time.elapsed();
+            if elapsed.as_millis() > 50 {
+                eprintln!("File loading took {}ms (highlighting: {})", elapsed.as_millis(), needs_syntax_highlight);
+            }
+            
+            if let Some(ref editor_state) = app.editor_state {
+                let doc = editor_state.document().clone();
+                Command::perform(
+                    async move {
+                        Message::EditorSetDocument(doc)
+                    },
+                    |msg| msg,
+                )
             } else {
-                // For files without syntax highlighting, just update the editor state
-                // without triggering expensive syntax processing
                 Command::none()
             }
         }
