@@ -111,9 +111,9 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
     
     // Navigate to subdirectory if needed
     let source_dir = if let Some(subdir) = &grammar_info.subdirectory {
-        repo_dir.join(subdir)
+        source_dir.join(subdir)
     } else {
-        repo_dir.clone()
+        source_dir
     };
     
     // Check if tree-sitter CLI is available
@@ -273,8 +273,9 @@ fn download_file(url: &str, path: &std::path::Path) -> Result<(), String> {
     
     // Try using ureq for HTTP requests (no authentication required)
     let response = ureq::get(url)
-        .timeout_connect(30_000)
-        .timeout_read(60_000)
+        .timeout_connect(10_000)  // 10 seconds
+        .timeout_read(30_000)     // 30 seconds
+        .timeout_write(10_000)    // 10 seconds
         .call();
     
     match response {
@@ -291,8 +292,12 @@ fn download_file(url: &str, path: &std::path::Path) -> Result<(), String> {
         Err(ureq::Error::Status(code, resp)) => {
             Err(format!("HTTP error {}: {}", code, resp.status_text()))
         }
+        Err(ureq::Error::Status(code, resp)) => {
+            Err(format!("HTTP error {}: {}", code, resp.status_text()))
+        }
         Err(e) => {
             // Fall back to curl/wget if ureq fails
+            eprintln!("ureq download failed: {}. Trying fallback...", e);
             fallback_download(url, path)
         }
     }

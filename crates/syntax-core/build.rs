@@ -12,14 +12,10 @@ fn main() {
         println!("cargo:rerun-if-env-changed=NEOTE_RUNTIME");
         println!("cargo:rerun-if-changed=build.rs");
         
-        // Check if we should skip automatic download
-        if env::var("NEOTE_SKIP_GRAMMAR_DOWNLOAD").is_ok() {
-            println!("cargo:warning=Skipping automatic grammar download (NEOTE_SKIP_GRAMMAR_DOWNLOAD is set)");
-            return;
-        }
-        
-        // Try to download and compile the markdown grammar
-        download_markdown_grammar();
+        // Always skip automatic download in build script to avoid git operations
+        // Users should use the download-grammars tool instead
+        println!("cargo:warning=Skipping automatic grammar download in build script. Use 'cargo run --bin download-grammars -- install markdown' instead.");
+        return;
     }
 }
 
