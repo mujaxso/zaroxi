@@ -98,10 +98,23 @@ impl Runtime {
         
         let library_path = self.grammar_library_path(language_id);
         if !library_path.exists() {
-            return Err(format!(
-                "Grammar library not found at {}",
+            let mut err = format!(
+                "Grammar library not found at {}\n\n",
                 library_path.display()
-            ));
+            );
+            
+            // Provide helpful installation instructions
+            err.push_str(&format!("To install the {} grammar:\n", language_id));
+            err.push_str("1. Install required tools: git, cc (gcc/clang), and optionally tree-sitter CLI\n");
+            err.push_str("2. Run: cargo run --bin download-grammars -- install ");
+            err.push_str(language_id);
+            err.push_str("\n");
+            err.push_str("   Or for all common grammars:\n");
+            err.push_str("   cargo run --bin download-grammars -- install-common\n");
+            err.push_str("\n");
+            err.push_str("The grammar will be automatically downloaded, compiled, and installed.\n");
+            
+            return Err(err);
         }
 
         // Safety: We're loading a shared library that we expect to be a valid
