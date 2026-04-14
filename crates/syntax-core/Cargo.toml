@@ -4,10 +4,10 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-tree-sitter = "0.19"
-tree-sitter-rust = { version = "0.19", optional = true }
-tree-sitter-toml = { version = "0.19", optional = true }
-tree-sitter-markdown = { version = "0.7", optional = true }
+tree-sitter = "0.20"
+tree-sitter-rust = { version = "0.20", optional = true }
+tree-sitter-toml = { version = "0.20", optional = true }
+tree-sitter-markdown = { git = "https://github.com/tree-sitter/tree-sitter-markdown", branch = "master", optional = true }
 ropey = "1.6"
 thiserror = "1.0"
 libloading = { version = "0.8", optional = true }

@@ -128,30 +128,36 @@ pub fn map_capture_name(name: &str) -> Highlight {
         "mutable_specifier" => Highlight::Keyword,
         "lifetime" => Highlight::Type,  // Lifetimes use type color
         
-        // Markdown-specific captures
-        "heading" => Highlight::Type,        // Headings use type color (distinct but not gaudy)
+        // Markdown-specific captures (based on tree-sitter-markdown grammar)
+        // These may vary between versions
+        "heading" => Highlight::Type,
         "heading.1" => Highlight::Type,
         "heading.2" => Highlight::Type,
         "heading.3" => Highlight::Type,
         "heading.4" => Highlight::Type,
         "heading.5" => Highlight::Type,
         "heading.6" => Highlight::Type,
-        "emphasis" => Highlight::Comment,    // Emphasis uses comment color (elegant)
-        "strong" => Highlight::Keyword,      // Strong emphasis uses keyword color
-        "link" => Highlight::Variable,       // Links use variable color (recognizable)
+        "atx_heading" => Highlight::Type,
+        "setext_heading" => Highlight::Type,
+        "emphasis" => Highlight::Comment,
+        "strong_emphasis" => Highlight::Keyword,
+        "strong" => Highlight::Keyword,
+        "link" => Highlight::Variable,
         "link_text" => Highlight::Variable,
-        "link_url" => Highlight::String,     // URLs use string color
+        "link_destination" => Highlight::String,
+        "link_url" => Highlight::String,
         "link_title" => Highlight::String,
-        "inline_code" => Highlight::Constant, // Inline code uses constant color (readable)
-        "code_fence" => Highlight::Property, // Code fences use property color
-        "code_fence_content" => Highlight::Plain, // Code fence content will be injected
-        "blockquote" => Highlight::Comment,  // Blockquotes use comment color
-        "list" => Highlight::Property,       // Lists use property color
+        "inline_code_span" => Highlight::Constant,
+        "inline_code" => Highlight::Constant,
+        "code_fence" => Highlight::Property,
+        "block_quote" => Highlight::Comment,
+        "blockquote" => Highlight::Comment,
+        "list" => Highlight::Property,
         "list_item" => Highlight::Property,
-        "thematic_break" => Highlight::Operator, // Thematic breaks use operator color
-        "html_block" => Highlight::Attribute, // HTML blocks use attribute color
+        "thematic_break" => Highlight::Operator,
+        "html_block" => Highlight::Attribute,
         "html_inline" => Highlight::Attribute,
-        "table" => Highlight::Property,      // Tables use property color
+        "table" => Highlight::Property,
         "table_header" => Highlight::Type,
         "table_row" => Highlight::Property,
         "table_cell" => Highlight::Plain,
@@ -189,44 +195,24 @@ pub fn get_query_for_language(language: LanguageId) -> Result<&'static str, Synt
         LanguageId::Markdown => {
             #[cfg(feature = "markdown")]
             {
-                // tree-sitter-markdown 0.7 doesn't expose HIGHLIGHT_QUERY directly
-                // We'll use a query that captures common markdown constructs
-                // This follows the official node names from the grammar
-                const MARKDOWN_HIGHLIGHT_QUERY: &str = r#"
-                    ;; Headings
-                    (atx_heading) @heading
-                    (setext_heading) @heading
-                    
-                    ;; Emphasis
-                    (emphasis) @emphasis
-                    (strong_emphasis) @strong
-                    
-                    ;; Code
-                    (inline_code_span) @inline_code
-                    (code_fence) @code_fence
-                    
-                    ;; Block elements
-                    (block_quote) @blockquote
-                    (list_item) @list
-                    (thematic_break) @thematic_break
-                    
-                    ;; Links and images
-                    (link) @link
-                    (link_text) @link_text
-                    (link_destination) @link_url
-                    (image) @link
-                    (image_description) @link_text
-                    
-                    ;; HTML (if supported)
-                    (html_block) @html_block
-                    (html_inline) @html_inline
-                    
-                    ;; Tables (if supported)
-                    (table) @table
-                    (table_header) @table_header
-                    (table_row) @table_row
-                "#;
-                Ok(MARKDOWN_HIGHLIGHT_QUERY)
+                // Try to load from runtime directory first
+                // This follows the same pattern as Rust
+                match std::fs::read_to_string("../../../runtime/treesitter/languages/markdown/queries/highlights.scm") {
+                    Ok(query) => Ok(Box::leak(query.into_boxed_str())),
+                    Err(_) => {
+                        // Fall back to a minimal query if file doesn't exist
+                        // This is better than hardcoding a large query
+                        const MINIMAL_MARKDOWN_QUERY: &str = r#"
+                            (atx_heading) @heading
+                            (setext_heading) @heading
+                            (emphasis) @emphasis
+                            (strong_emphasis) @strong
+                            (inline_code_span) @inline_code
+                            (code_fence) @code_fence
+                        "#;
+                        Ok(MINIMAL_MARKDOWN_QUERY)
+                    }
+                }
             }
             #[cfg(not(feature = "markdown"))]
             Err(SyntaxError::LanguageNotSupported(

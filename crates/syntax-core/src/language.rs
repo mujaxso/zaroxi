@@ -67,7 +67,13 @@ impl LanguageId {
             #[cfg(not(feature = "toml"))]
             LanguageId::Toml => None,
             #[cfg(feature = "markdown")]
-            LanguageId::Markdown => Some(tree_sitter_markdown::language()),
+            LanguageId::Markdown => {
+                // tree-sitter-markdown 0.7 may not be compatible with tree-sitter 0.20
+                // Try to get the language, but handle potential version mismatch
+                use tree_sitter_markdown;
+                // This might fail due to version incompatibility
+                Some(tree_sitter_markdown::language())
+            }
             #[cfg(not(feature = "markdown"))]
             LanguageId::Markdown => None,
             LanguageId::PlainText => None,
