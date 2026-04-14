@@ -3,7 +3,6 @@ use crate::state::{App, FileLoadingState, FileMetadata};
 use crate::update::dialog;
 use file_ops::{FileLoader, WorkspaceLoader};
 use iced::Command;
-use tokio::time;
 use editor_core::Document;
 
 // File size thresholds for tiered handling
@@ -330,10 +329,13 @@ fn handle_file_loaded(app: &mut App, result: Result<(String, String, Document), 
             app.error_message = None;
             app.is_dirty = false;
             
+            // Clone content for workspace state and syntax highlighting
+            let content_clone = content.clone();
+            
             // Update workspace state - use the content we already have
             {
                 let mut state = app.workspace_state.lock().unwrap();
-                state.open_buffer(&path, content);
+                state.open_buffer(&path, content_clone);
             }
             
             // Start syntax highlighting immediately for normal files
@@ -376,22 +378,24 @@ fn handle_file_loaded(app: &mut App, result: Result<(String, String, Document), 
                 }
             }
             
-            // Send EditorSetDocument to update editor state
+            // Send EditorSetDocument to update editor state for non-very-large files
             let elapsed = start_time.elapsed();
             if elapsed.as_millis() > 50 {
                 eprintln!("File loading took {}ms (highlighting: {})", elapsed.as_millis(), needs_syntax_highlight);
             }
             
-            if let Some(ref editor_state) = app.editor_state {
-                let doc = editor_state.document().clone();
+            if is_very_large {
+                // For very large files, we've already set up the editor state
+                Command::none()
+            } else {
+                // For normal files, send EditorSetDocument
+                let doc = document.clone();
                 Command::perform(
                     async move {
                         Message::EditorSetDocument(doc)
                     },
                     |msg| msg,
                 )
-            } else {
-                Command::none()
             }
         }
         Err(e) => {

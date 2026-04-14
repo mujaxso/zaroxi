@@ -9,7 +9,7 @@ use std::ops::Range;
 
 /// Build a per‑line cache of highlight ranges from the raw highlight spans.
 /// This cache is used by the real editor widget to apply syntax colors.
-fn build_line_cache(
+pub fn build_line_cache(
     text: &str,
     spans: &[syntax_core::HighlightSpan],
     theme: crate::theme::NeoteTheme,
