@@ -205,8 +205,8 @@ pub fn top_bar(app: &App) -> Element<'_, Message> {
             // Minimal logo/brand
             container(
                 row![
-                    text("N").size(18).style(iced::theme::Text::Color(style.colors.accent)),
-                    text("eote").size(18).style(iced::theme::Text::Color(style.colors.text_primary)),
+                    text("Q").size(18).style(iced::theme::Text::Color(style.colors.accent)),
+                    text("yzer").size(18).style(iced::theme::Text::Color(style.colors.text_primary)),
                 ]
                 .spacing(0)
             )
