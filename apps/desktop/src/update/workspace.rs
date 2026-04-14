@@ -323,9 +323,8 @@ fn handle_file_loaded(app: &mut App, result: Result<(String, String, Document), 
                 } else {
                     app.status_message = format!("File loaded: {} ({} bytes)", path, file_size_bytes);
                 }
-                
                 // Don't set editor state here - it will be set in EditorSetDocument
-                // For very large files, we handle it differently
+                // This prevents a flash of unstyled content
             }
             
             app.error_message = None;
