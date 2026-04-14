@@ -1,11 +1,11 @@
 use crate::message::Message;
 use crate::state::App;
-use iced::Command;
-use editor_core::EditorState;
-use syntax_core::language::LanguageId;
-use std::path::Path;
 use crate::ui::style::StyleHelpers;
+use editor_core::EditorState;
+use iced::Command;
 use std::ops::Range;
+use std::path::Path;
+use syntax_core::language::LanguageId;
 
 /// Build a per‑line cache of highlight ranges from the raw highlight spans.
 /// This cache is used by the real editor widget to apply syntax colors.
@@ -45,7 +45,7 @@ pub fn build_line_cache(
             Ok(i) => i,
             Err(i) => i.saturating_sub(1),
         };
-        
+
         let mut remaining_start = char_start;
         let remaining_end = char_end;
         let mut current_line = line_idx;
@@ -63,7 +63,7 @@ pub fn build_line_cache(
             current_line += 1;
         }
     }
-    
+
     line_cache
 }
 
@@ -75,10 +75,10 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                 app.status_message = "File is too large - editing disabled".to_string();
                 return Command::none();
             }
-            
+
             // Perform the action on the text editor
             app.text_editor.perform(action.clone());
-            
+
             // Only update the document for edit actions to improve performance
             match &action {
                 iced::widget::text_editor::Action::Edit(_edit) => {
@@ -89,13 +89,17 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                         editor_state.document_mut().replace_all(&current_text);
                         app.is_dirty = editor_state.document().is_dirty();
                         app.status_message = "Text updated".to_string();
-                        
+
                         // Update syntax document
                         if let Some(path) = &app.active_file_path {
                             let doc_id = path.clone();
                             let mut syntax_manager = app.syntax_manager.lock().unwrap();
                             let language = LanguageId::from_path(Path::new(path));
-                            match syntax_manager.update_document(&doc_id, &current_text, Path::new(path)) {
+                            match syntax_manager.update_document(
+                                &doc_id,
+                                &current_text,
+                                Path::new(path),
+                            ) {
                                 Ok(()) => {
                                     // Successfully updated syntax
                                     // Try to retrieve highlight spans
@@ -104,8 +108,11 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                                             app.syntax_highlight_span_count = spans.len();
                                             app.syntax_highlight_spans = spans.clone();
                                             // Always rebuild the per‑line cache for the editor widget
-                                            app.syntax_highlight_cache =
-                                                build_line_cache(&current_text, &spans, app.theme);
+                                            app.syntax_highlight_cache = build_line_cache(
+                                                &current_text,
+                                                &spans,
+                                                app.current_theme,
+                                            );
                                             app.syntax_cache_version += 1;
                                             if spans.is_empty() {
                                                 app.status_message = format!(
@@ -124,16 +131,17 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                                             app.syntax_highlight_span_count = 0;
                                             app.syntax_highlight_spans.clear();
                                             app.syntax_highlight_cache.clear();
-                                            app.status_message = format!(
-                                                "Highlight error for {}: {}",
-                                                doc_id, e
-                                            );
+                                            app.status_message =
+                                                format!("Highlight error for {}: {}", doc_id, e);
                                         }
                                     }
                                 }
                                 Err(e) => {
                                     // Don't show error for unsupported languages
-                                    if !matches!(e, syntax_core::SyntaxError::LanguageNotSupported(_)) {
+                                    if !matches!(
+                                        e,
+                                        syntax_core::SyntaxError::LanguageNotSupported(_)
+                                    ) {
                                         app.status_message = format!("Syntax update failed: {}", e);
                                     }
                                     app.syntax_highlight_span_count = 0;
@@ -157,12 +165,17 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                     Ok((start_byte, old_end_byte, new_text)) => {
                         app.is_dirty = editor_state.document().is_dirty();
                         app.status_message = "Text inserted".to_string();
-                        
+
                         // Update syntax document with incremental edit
                         if let Some(path) = &app.active_file_path {
                             let doc_id = path.clone();
                             let mut syntax_manager = app.syntax_manager.lock().unwrap();
-                            if let Err(e) = syntax_manager.edit_document(&doc_id, start_byte, old_end_byte, &new_text) {
+                            if let Err(e) = syntax_manager.edit_document(
+                                &doc_id,
+                                start_byte,
+                                old_end_byte,
+                                &new_text,
+                            ) {
                                 app.status_message = format!("Syntax edit failed: {}", e);
                             }
                         }
@@ -180,12 +193,14 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                     Ok((start_byte, old_end_byte, _)) => {
                         app.is_dirty = editor_state.document().is_dirty();
                         app.status_message = "Deleted backward".to_string();
-                        
+
                         // Update syntax document with incremental edit
                         if let Some(path) = &app.active_file_path {
                             let doc_id = path.clone();
                             let mut syntax_manager = app.syntax_manager.lock().unwrap();
-                            if let Err(e) = syntax_manager.edit_document(&doc_id, start_byte, old_end_byte, "") {
+                            if let Err(e) =
+                                syntax_manager.edit_document(&doc_id, start_byte, old_end_byte, "")
+                            {
                                 app.status_message = format!("Syntax edit failed: {}", e);
                             }
                         }
@@ -203,12 +218,14 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                     Ok((start_byte, old_end_byte, _)) => {
                         app.is_dirty = editor_state.document().is_dirty();
                         app.status_message = "Deleted forward".to_string();
-                        
+
                         // Update syntax document with incremental edit
                         if let Some(path) = &app.active_file_path {
                             let doc_id = path.clone();
                             let mut syntax_manager = app.syntax_manager.lock().unwrap();
-                            if let Err(e) = syntax_manager.edit_document(&doc_id, start_byte, old_end_byte, "") {
+                            if let Err(e) =
+                                syntax_manager.edit_document(&doc_id, start_byte, old_end_byte, "")
+                            {
                                 app.status_message = format!("Syntax edit failed: {}", e);
                             }
                         }
@@ -230,13 +247,13 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
         Message::EditorSetDocument(document) => {
             let editor_state = EditorState::from_document(document);
             let char_count = editor_state.document().len_chars();
-            
+
             // Use consistent thresholds with workspace logic
             // VERY_LARGE_FILE_THRESHOLD is 100 MB = 100 * 1024 * 1024 bytes ≈ 100 million characters
             // LARGE_FILE_THRESHOLD is 10 MB = 10 * 1024 * 1024 bytes ≈ 10 million characters
             const VERY_LARGE_CHAR_THRESHOLD: usize = 100_000_000; // 100 million characters
             const LARGE_CHAR_THRESHOLD: usize = 10_000_000; // 10 million characters
-            
+
             // Safety check: if the file was already marked as not too large in handle_file_loaded,
             // don't mark it as too large here unless it's truly huge (> 100 MB)
             // This prevents race conditions where handle_file_loaded sets it to false
@@ -255,39 +272,41 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                 let text = editor_state.document().text();
                 app.text_editor = iced::widget::text_editor::Content::with_text(&text);
                 if char_count > LARGE_CHAR_THRESHOLD {
-                    app.status_message = format!(
-                        "Large file ({} MB) - editing enabled",
-                        char_count / 1_000_000
-                    );
+                    app.status_message =
+                        format!("Large file ({} MB) - editing enabled", char_count / 1_000_000);
                 } else {
                     app.status_message = format!("Loaded file ({} chars)", char_count);
                 }
             }
-            
+
             // The syntax highlighting cache should already be built in handle_file_loaded
             // for normal files. If not, we can build it here.
             if let Some(path) = editor_state.path() {
                 let doc_id = path.to_string();
                 let text = editor_state.text();
-                
+
                 // Only process if cache is empty (for large files or edge cases)
                 if app.syntax_highlight_cache.is_empty() && app.syntax_highlighting_enabled {
                     let mut syntax_manager = app.syntax_manager.lock().unwrap();
-                    
+
                     if !syntax_manager.contains_document(&doc_id) {
-                        if let Err(e) = syntax_manager.update_document(&doc_id, &text, Path::new(path)) {
+                        if let Err(e) =
+                            syntax_manager.update_document(&doc_id, &text, Path::new(path))
+                        {
                             app.status_message = format!("Syntax init failed: {}", e);
                         }
                     }
-                    
+
                     match syntax_manager.highlight_spans(&doc_id) {
                         Ok(spans) => {
                             app.syntax_highlight_span_count = spans.len();
                             app.syntax_highlight_spans = spans.clone();
-                            app.syntax_highlight_cache = build_line_cache(&text, &spans, app.current_theme);
+                            app.syntax_highlight_cache =
+                                build_line_cache(&text, &spans, app.current_theme);
                             app.syntax_cache_version += 1;
                             if !spans.is_empty() {
-                                app.status_message = format!("Syntax highlighting applied ({} spans)", spans.len());
+                                app.status_message =
+                                    format!("Syntax highlighting applied ({} spans)", spans.len());
                             }
                         }
                         Err(_) => {
@@ -301,11 +320,14 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                 } else {
                     // Cache is already built, just update status
                     if !app.syntax_highlight_cache.is_empty() {
-                        app.status_message = format!("Syntax highlighting ready ({} spans)", app.syntax_highlight_span_count);
+                        app.status_message = format!(
+                            "Syntax highlighting ready ({} spans)",
+                            app.syntax_highlight_span_count
+                        );
                     }
                 }
             }
-            
+
             app.editor_state = Some(editor_state);
             Command::none()
         }
