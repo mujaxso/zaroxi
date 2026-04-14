@@ -20,7 +20,7 @@ impl Default for AppSettings {
     fn default() -> Self {
         Self {
             typography: EditorTypographySettings::default(),
-            theme_preference: NeoteTheme::System,
+            theme_preference: QyzerTheme::System,
         }
     }
 }
