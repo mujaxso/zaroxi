@@ -2,8 +2,8 @@
 
 > ⚠️ **Heavily Under Development**: Qyzer Studio is currently in active development. APIs, features, and architecture are subject to change. We welcome early adopters and contributors to help shape the project!
 
-[![CI](https://github.com/mujaxso/qyzer-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/mujaxso/qyzer-studio/actions/workflows/ci.yml)
-[![Security Audit](https://github.com/mujaxso/qyzer-studio/actions/workflows/security-audit.yml/badge.svg)](https://github.com/mujaxso/qyzer-studio/actions/workflows/security-audit.yml)
+[![CI](https://github.com/mujaxso/qyzer/actions/workflows/ci.yml/badge.svg)](https://github.com/mujaxso/qyzer/actions/workflows/ci.yml)
+[![Security Audit](https://github.com/mujaxso/qyzer/actions/workflows/security-audit.yml/badge.svg)](https://github.com/mujaxso/qyzer/actions/workflows/security-audit.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Rust](https://img.shields.io/badge/rust-1.75%2B-orange.svg)](https://www.rust-lang.org)
 
@@ -79,8 +79,8 @@ qyzer-studio/
 
 ```bash
 # Clone the repository
-git clone https://github.com/mujaxso/neote.git
-cd neote
+git clone https://github.com/mujaxso/qyzer.git
+cd qyzer
 
 # Build all crates
 cargo build --workspace
@@ -154,7 +154,7 @@ Security is a top priority for Qyzer Studio. Please review our [Security Documen
 - AI safety measures
 - Vulnerability reporting process
 
-To report a security vulnerability, please email security@qyzer-studio.dev (encrypted communication preferred).
+To report a security vulnerability, please email security@qyzer.dev (encrypted communication preferred).
 
 ## 📄 License
 
@@ -168,13 +168,13 @@ Qyzer Studio is licensed under the MIT License. See [LICENSE](LICENSE) for detai
 
 ## 📞 Contact
 
-- **GitHub Issues**: [Bug reports and feature requests](https://github.com/mujaxso/qyzer-studio/issues)
-- **Discussions**: [Community discussions](https://github.com/mujaxso/qyzer-studio/discussions)
-- **Email**: contact@qyzer-studio.dev
+- **GitHub Issues**: [Bug reports and feature requests](https://github.com/mujaxso/qyzer/issues)
+- **Discussions**: [Community discussions](https://github.com/mujaxso/qyzer/discussions)
+- **Email**: contact@qyzer.dev
 
 ## 🌟 Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=mujaxso/qyzer-studio&type=Date)](https://star-history.com/#mujaxso/qyzer-studio&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=mujaxso/qyzer&type=Date)](https://star-history.com/#mujaxso/qyzer&Date)
 
 ---
 
