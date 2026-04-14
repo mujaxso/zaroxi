@@ -189,43 +189,44 @@ pub fn get_query_for_language(language: LanguageId) -> Result<&'static str, Synt
         LanguageId::Markdown => {
             #[cfg(feature = "markdown")]
             {
-                // Try to get the highlight query from tree-sitter-markdown
-                // Different versions may expose it differently
-                use tree_sitter_markdown;
-                
-                // Check for various possible query constant names
-                // Some grammars use HIGHLIGHTS_QUERY (plural)
-                #[allow(unused_imports)]
-                use tree_sitter_markdown as ts_md;
-                
-                // First try HIGHLIGHTS_QUERY (common in newer versions)
-                #[cfg(any(feature = "markdown"))]
-                {
-                    // If the constant doesn't exist, we'll fall back to a basic query
-                    // that we define inline for common markdown constructs
-                    const FALLBACK_MARKDOWN_QUERY: &str = "
-                        (atx_heading) @heading
-                        (setext_heading) @heading
-                        (emphasis) @emphasis
-                        (strong_emphasis) @strong
-                        (inline_code_span) @inline_code
-                        (code_fence) @code_fence
-                        (block_quote) @blockquote
-                        (list_item) @list
-                        (thematic_break) @thematic_break
-                        (link) @link
-                        (link_text) @link_text
-                        (link_destination) @link_url
-                        (image) @link
-                        (image_description) @link_text
-                        (image_title) @link_title
-                    ";
+                // tree-sitter-markdown 0.7 doesn't expose HIGHLIGHT_QUERY directly
+                // We'll use a query that captures common markdown constructs
+                // This follows the official node names from the grammar
+                const MARKDOWN_HIGHLIGHT_QUERY: &str = r#"
+                    ;; Headings
+                    (atx_heading) @heading
+                    (setext_heading) @heading
                     
-                    // Attempt to use the crate's query if available
-                    // Note: tree-sitter-markdown 0.7 may not expose query constants
-                    // For now, use our fallback query
-                    Ok(FALLBACK_MARKDOWN_QUERY)
-                }
+                    ;; Emphasis
+                    (emphasis) @emphasis
+                    (strong_emphasis) @strong
+                    
+                    ;; Code
+                    (inline_code_span) @inline_code
+                    (code_fence) @code_fence
+                    
+                    ;; Block elements
+                    (block_quote) @blockquote
+                    (list_item) @list
+                    (thematic_break) @thematic_break
+                    
+                    ;; Links and images
+                    (link) @link
+                    (link_text) @link_text
+                    (link_destination) @link_url
+                    (image) @link
+                    (image_description) @link_text
+                    
+                    ;; HTML (if supported)
+                    (html_block) @html_block
+                    (html_inline) @html_inline
+                    
+                    ;; Tables (if supported)
+                    (table) @table
+                    (table_header) @table_header
+                    (table_row) @table_row
+                "#;
+                Ok(MARKDOWN_HIGHLIGHT_QUERY)
             }
             #[cfg(not(feature = "markdown"))]
             Err(SyntaxError::LanguageNotSupported(
