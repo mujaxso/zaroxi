@@ -303,7 +303,9 @@ fn handle_file_loaded(app: &mut App, result: Result<(String, String, Document), 
                     preview_content
                 ));
                 // Create editor state from document for consistency
-                app.editor_state = Some(editor_core::EditorState::from_document(document));
+                // Clone document since we need to move it
+                let document_clone = document.clone();
+                app.editor_state = Some(editor_core::EditorState::from_document(document_clone));
             } else {
                 // Large or normal files: editing enabled
                 app.is_file_read_only = false;
@@ -389,6 +391,7 @@ fn handle_file_loaded(app: &mut App, result: Result<(String, String, Document), 
                 Command::none()
             } else {
                 // For normal files, send EditorSetDocument
+                // Clone document here since it hasn't been moved yet
                 let doc = document.clone();
                 Command::perform(
                     async move {
