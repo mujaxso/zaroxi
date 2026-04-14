@@ -1,5 +1,5 @@
 use crate::message::Message;
-use file_ops::WorkspaceLoader;
+use crate::update::workspace::load_directory_recursive;
 use iced::Command;
 use rfd::AsyncFileDialog;
 
@@ -41,9 +41,10 @@ pub fn open_workspace_dialog() -> Command<Message> {
             match dialog.pick_folder().await {
                 Some(handle) => {
                     let path = handle.path().to_string_lossy().to_string();
-                    match WorkspaceLoader::list_directory(&path) {
-                        Ok(entries) => Message::WorkspaceLoaded(Ok((path, entries))),
-                        Err(e) => Message::WorkspaceLoaded(Err(format!("Failed to open workspace: {}", e))),
+                    match tokio::task::spawn_blocking(move || load_directory_recursive(&path)).await {
+                        Ok(Ok(entries)) => Message::WorkspaceLoaded(Ok((path, entries))),
+                        Ok(Err(e)) => Message::WorkspaceLoaded(Err(format!("Failed to open workspace: {}", e))),
+                        Err(e) => Message::WorkspaceLoaded(Err(format!("Task failed: {}", e))),
                     }
                 }
                 None => {
@@ -53,9 +54,10 @@ pub fn open_workspace_dialog() -> Command<Message> {
                     
                     match try_sync_dialog().await {
                         Ok(path) => {
-                            match WorkspaceLoader::list_directory(&path) {
-                                Ok(entries) => Message::WorkspaceLoaded(Ok((path, entries))),
-                                Err(e) => Message::WorkspaceLoaded(Err(format!("Failed to open workspace: {}", e))),
+                            match tokio::task::spawn_blocking(move || load_directory_recursive(&path)).await {
+                                Ok(Ok(entries)) => Message::WorkspaceLoaded(Ok((path, entries))),
+                                Ok(Err(e)) => Message::WorkspaceLoaded(Err(format!("Failed to open workspace: {}", e))),
+                                Err(e) => Message::WorkspaceLoaded(Err(format!("Task failed: {}", e))),
                             }
                         }
                         Err(_) => {
