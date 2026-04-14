@@ -13,7 +13,6 @@ libloading = { version = "0.8", optional = true }
 tempfile = "3.10"
 clap = { version = "4.4", features = ["derive"] }
 ureq = { version = "2.9", default-features = false, features = ["tls"] }
-ureq = { version = "2.9", default-features = false, features = ["tls"] }
 
 [features]
 default = ["rust", "toml", "dynamic-loading"]
