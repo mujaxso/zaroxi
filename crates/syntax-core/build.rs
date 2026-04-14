@@ -1,13 +1,12 @@
-fn main() {
-    // The tree-sitter-rust crate handles its own linking
-    // We don't need to do anything special here
-}
 use std::env;
 use std::fs;
 use std::path::Path;
 use std::process::Command;
 
 fn main() {
+    // The tree-sitter-rust crate handles its own linking
+    // We don't need to do anything special here for that
+    
     // Only run if the markdown feature is enabled
     if env::var("CARGO_FEATURE_MARKDOWN").is_ok() {
         println!("cargo:rerun-if-env-changed=NEOTE_RUNTIME");

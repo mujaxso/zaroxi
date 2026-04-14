@@ -18,6 +18,13 @@ for cmd in git cc cargo; do
     fi
 done
 
+# Create runtime directory structure if it doesn't exist
+RUNTIME_DIR="$PROJECT_ROOT/runtime/treesitter"
+mkdir -p "$RUNTIME_DIR/grammars"
+mkdir -p "$RUNTIME_DIR/languages"
+
+echo "Runtime directory: $RUNTIME_DIR"
+
 # Build and run the download-grammars tool
 cd "$PROJECT_ROOT"
 

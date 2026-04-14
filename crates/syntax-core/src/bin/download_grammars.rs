@@ -54,10 +54,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
         Commands::InstallAll => {
-            let languages: Vec<&str> = GrammarInfo::available_languages()
-                .iter()
-                .map(|s| s.as_str())
-                .collect();
+            let languages_vec = GrammarInfo::available_languages();
+            let languages: Vec<&str> = languages_vec.iter().map(|s| s.as_str()).collect();
             install_missing_grammars(&languages);
         }
         Commands::InstallCommon => {
