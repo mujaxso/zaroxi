@@ -19,7 +19,6 @@ serde = { version = "1", features = ["derive"] }
 default = ["rust", "toml", "dynamic-loading"]
 rust = ["tree-sitter-rust"]
 toml = ["tree-sitter-toml"]
-markdown = ["dynamic-loading"]  # Markdown uses dynamic loading only
 dynamic-loading = ["libloading"]
 
 [[bin]]

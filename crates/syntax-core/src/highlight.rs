@@ -62,10 +62,24 @@ fn highlight_with_query(
     source: &str,
     tree: &Tree,
 ) -> Result<Vec<HighlightSpan>, SyntaxError> {
-    let query_str = get_query_for_language(language)?;
-    let ts_lang = language
-        .tree_sitter_language()
-        .ok_or_else(|| SyntaxError::LanguageNotSupported(language.as_str().to_string()))?;
+    // Get the Tree-sitter language
+    let ts_lang = match language.tree_sitter_language() {
+        Some(lang) => lang,
+        None => {
+            // No language available, return empty spans
+            return Ok(Vec::new());
+        }
+    };
+
+    // Try to get the query string
+    let query_str = match get_query_for_language(language) {
+        Ok(str) => str,
+        Err(e) => {
+            eprintln!("DEBUG: Failed to get query for {}: {:?}", language.as_str(), e);
+            // Return empty spans when query can't be loaded
+            return Ok(Vec::new());
+        }
+    };
 
     // Try to compile the query
     let query = match Query::new(ts_lang, query_str) {
@@ -170,172 +184,57 @@ pub fn map_capture_name(name: &str) -> Highlight {
 }
 
 pub fn get_query_for_language(language: LanguageId) -> Result<&'static str, SyntaxError> {
-    match language {
-        LanguageId::Rust => {
-            eprintln!("DEBUG: Getting query for Rust");
-            // Try to load the query from cache
-            if let Some(_) = crate::query_cache::get_query("rust", "highlights") {
-                eprintln!("DEBUG: Found Rust query in cache");
-            } else {
-                eprintln!("DEBUG: Rust query not in cache");
-            }
-            
-            if crate::query_cache::get_query("rust", "highlights").is_some() {
-                // Store the query source in a static string using OnceLock
-                use std::sync::OnceLock;
-                static RUST_QUERY: OnceLock<Option<&'static str>> = OnceLock::new();
-                
-                let query_str = RUST_QUERY.get_or_init(|| {
-                    // Load query text from file
-                    let runtime = crate::runtime::Runtime::new();
-                    let query_path = runtime.language_dir("rust").join("queries/highlights.scm");
-                    eprintln!("DEBUG: Looking for query at: {}", query_path.display());
-                    match std::fs::read_to_string(&query_path) {
-                        Ok(query_text) => {
-                            eprintln!("DEBUG: Found Rust query file");
-                            Some(Box::leak(query_text.into_boxed_str()))
-                        }
-                        Err(e) => {
-                            eprintln!("DEBUG: Failed to read Rust query file: {}", e);
-                            None
-                        }
-                    }
-                });
-                
-                match query_str {
-                    Some(str) => {
-                        eprintln!("DEBUG: Returning Rust query");
-                        Ok(*str)
-                    }
-                    None => {
-                        eprintln!("DEBUG: No Rust query available");
-                        Err(SyntaxError::LanguageNotSupported(
-                            "rust grammar not available".to_string(),
-                        ))
-                    }
-                }
-            } else {
-                eprintln!("DEBUG: Rust query not in cache, checking file directly");
-                // Try to load directly
-                let runtime = crate::runtime::Runtime::new();
-                let query_path = runtime.language_dir("rust").join("queries/highlights.scm");
-                eprintln!("DEBUG: Direct check for query at: {}", query_path.display());
-                if query_path.exists() {
-                    match std::fs::read_to_string(&query_path) {
-                        Ok(query_text) => {
-                            let leaked = Box::leak(query_text.into_boxed_str());
-                            eprintln!("DEBUG: Loaded Rust query directly");
-                            Ok(leaked)
-                        }
-                        Err(e) => {
-                            eprintln!("DEBUG: Failed to read Rust query directly: {}", e);
-                            Err(SyntaxError::LanguageNotSupported(
-                                format!("rust query read error: {}", e),
-                            ))
-                        }
-                    }
-                } else {
-                    eprintln!("DEBUG: Rust query file doesn't exist");
-                    Err(SyntaxError::LanguageNotSupported(
-                        "rust grammar not available".to_string(),
-                    ))
-                }
-            }
-        }
-        LanguageId::Toml => {
-            eprintln!("DEBUG: Getting query for TOML");
-            // Try to load directly from runtime directory
-            let runtime = crate::runtime::Runtime::new();
-            let query_path = runtime.language_dir("toml").join("queries/highlights.scm");
-            eprintln!("DEBUG: Direct check for TOML query at: {}", query_path.display());
-            if query_path.exists() {
-                match std::fs::read_to_string(&query_path) {
-                    Ok(query_text) => {
-                        eprintln!("DEBUG: Loaded TOML query directly");
-                        let leaked = Box::leak(query_text.into_boxed_str());
-                        Ok(leaked)
-                    }
-                    Err(e) => {
-                        eprintln!("DEBUG: Failed to read TOML query directly: {}", e);
-                        Err(SyntaxError::LanguageNotSupported(
-                            format!("toml query read error: {}", e),
-                        ))
-                    }
-                }
-            } else {
-                eprintln!("DEBUG: TOML query file doesn't exist");
-                Err(SyntaxError::LanguageNotSupported(
-                    "toml grammar not available".to_string(),
-                ))
-            }
-        }
-        LanguageId::Markdown => {
-            if crate::query_cache::get_query("markdown", "highlights").is_some() {
-                use std::sync::OnceLock;
-                static MARKDOWN_QUERY: OnceLock<Option<&'static str>> = OnceLock::new();
-                
-                let query_str = MARKDOWN_QUERY.get_or_init(|| {
-                    let runtime = crate::runtime::Runtime::new();
-                    let query_path = runtime.language_dir("markdown").join("queries/highlights.scm");
-                    match std::fs::read_to_string(&query_path) {
-                        Ok(query_text) => Some(Box::leak(query_text.into_boxed_str())),
-                        Err(_) => None,
-                    }
-                });
-                
-                match query_str {
-                    Some(str) => Ok(*str),
-                    None => Err(SyntaxError::LanguageNotSupported(
-                        "markdown grammar not available".to_string(),
-                    )),
-                }
-            } else {
-                Err(SyntaxError::LanguageNotSupported(
-                    "markdown grammar not available".to_string(),
-                ))
-            }
-        }
-        LanguageId::PlainText => Err(SyntaxError::LanguageNotSupported(
-            "plaintext has no syntax queries".to_string(),
-        )),
-        LanguageId::Dynamic(id) => {
-            // Use OnceLock with a Mutex for interior mutability
-            use std::sync::{OnceLock, Mutex};
-            use std::collections::HashMap;
-            
-            static DYNAMIC_QUERIES: OnceLock<Mutex<HashMap<String, &'static str>>> = OnceLock::new();
-            
-            let queries_mutex = DYNAMIC_QUERIES.get_or_init(|| Mutex::new(HashMap::new()));
-            
-            // Check cache first
-            {
-                let queries = queries_mutex.lock().unwrap();
-                if let Some(query_str) = queries.get(id) {
-                    return Ok(*query_str);
-                }
-            }
-            
-            // Not in cache, load from file
-            let runtime = crate::runtime::Runtime::new();
-            let query_path = runtime.language_dir(id).join("queries/highlights.scm");
-            
+    let language_id = language.as_str();
+    
+    // Always try to load from the query cache first
+    if let Some(query) = crate::query_cache::get_query(language_id, "highlights") {
+        // The query cache stores compiled queries, not strings
+        // We need to get the query text from the file
+        // Let's load it from the runtime directory
+        let runtime = crate::runtime::Runtime::new();
+        let query_path = runtime.language_dir(language_id).join("queries/highlights.scm");
+        
+        if query_path.exists() {
             match std::fs::read_to_string(&query_path) {
                 Ok(query_text) => {
                     // Leak the string to make it static
-                    let query_str = Box::leak(query_text.into_boxed_str());
-                    
-                    // Insert into cache
-                    let mut queries = queries_mutex.lock().unwrap();
-                    queries.insert(id.to_string(), query_str);
-                    
-                    Ok(query_str)
+                    let leaked = Box::leak(query_text.into_boxed_str());
+                    return Ok(leaked);
                 }
-                Err(_) => {
-                    Err(SyntaxError::LanguageNotSupported(
-                        format!("{} grammar not available", id),
-                    ))
+                Err(e) => {
+                    eprintln!("DEBUG: Failed to read query file for {}: {}", language_id, e);
+                    return Err(SyntaxError::LanguageNotSupported(
+                        format!("failed to read query file: {}", e),
+                    ));
                 }
             }
         }
+    }
+    
+    // If not in cache, try to load directly from file
+    let runtime = crate::runtime::Runtime::new();
+    let query_path = runtime.language_dir(language_id).join("queries/highlights.scm");
+    
+    eprintln!("DEBUG: Loading query for {} from {}", language_id, query_path.display());
+    
+    if query_path.exists() {
+        match std::fs::read_to_string(&query_path) {
+            Ok(query_text) => {
+                // Leak the string to make it static
+                let leaked = Box::leak(query_text.into_boxed_str());
+                Ok(leaked)
+            }
+            Err(e) => {
+                eprintln!("DEBUG: Failed to read query file for {}: {}", language_id, e);
+                Err(SyntaxError::LanguageNotSupported(
+                    format!("failed to read query file: {}", e),
+                ))
+            }
+        }
+    } else {
+        eprintln!("DEBUG: Query file doesn't exist for {}", language_id);
+        Err(SyntaxError::LanguageNotSupported(
+            format!("{} grammar not available", language_id),
+        ))
     }
 }

@@ -99,7 +99,7 @@ impl LanguageId {
                 #[cfg(feature = "rust")]
                 {
                     eprintln!("DEBUG: Using built-in tree-sitter-rust v0.24");
-                    return Some(tree_sitter_rust::language());
+                    return Some(tree_sitter_rust::LANGUAGE());
                 }
                 #[cfg(not(feature = "rust"))]
                 {
@@ -115,7 +115,7 @@ impl LanguageId {
                 // Use built-in tree-sitter-toml (v0.20) which should match the query file
                 #[cfg(feature = "toml")]
                 {
-                    return Some(tree_sitter_toml::language());
+                    return Some(tree_sitter_toml::LANGUAGE());
                 }
                 #[cfg(not(feature = "toml"))]
                 {
@@ -123,16 +123,8 @@ impl LanguageId {
                 }
             }
             LanguageId::Markdown => {
-                crate::dynamic_loader::load_language("markdown").or_else(|| {
-                    #[cfg(feature = "markdown")]
-                    {
-                        Some(tree_sitter_markdown::language())
-                    }
-                    #[cfg(not(feature = "markdown"))]
-                    {
-                        None
-                    }
-                })
+                // Always use dynamic loading for markdown since we don't have a built-in feature
+                crate::dynamic_loader::load_language("markdown")
             }
             LanguageId::PlainText => None,
             LanguageId::Dynamic(id) => crate::dynamic_loader::load_language(id),
