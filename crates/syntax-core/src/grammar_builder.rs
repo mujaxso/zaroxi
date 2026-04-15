@@ -98,7 +98,9 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
         .output()
         .is_ok();
     
-    let lib_path = if has_tree_sitter_cli {
+    let lib_path;
+    
+    if has_tree_sitter_cli {
         // Use tree-sitter CLI
         println!("Using tree-sitter CLI to build {}...", language_id);
         
@@ -154,47 +156,39 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
         let debug_path = source_dir.join("target").join("debug").join(&lib_name);
         let all_paths: Vec<_> = possible_paths.into_iter().chain(std::iter::once(debug_path)).collect();
         
+        let mut found = None;
         for path in &all_paths {
             if path.exists() {
                 println!("Found library at: {}", path.display());
-                // We need to return the path, but the function returns Result<(), String>
-                // Actually, we need to set lib_path to this path and continue
-                // But we're in a branch that should return a PathBuf
-                // Let me check the structure: this is in a let lib_path = if ... block
-                // So we need to break out with the path
-                // We'll store it in a variable and break
-                let found_path = path.clone();
-                // We need to handle this differently
-                // Actually, we should set lib_path to found_path and break out of the if
-                // But we can't break from an if expression
-                // Let me restructure: we'll find the path and assign it to a variable
-                // Then use that as the result of this branch
-                let found_path = path.clone();
-                // We'll use this as the result of the if branch
-                return Ok(found_path);
+                found = Some(path.clone());
+                break;
             }
         }
         
-        // If not found, try to list files to debug
-        println!("Searching for library {} in {}...", lib_name, source_dir.display());
-        if let Ok(entries) = std::fs::read_dir(&source_dir) {
-            for entry in entries.flatten() {
-                println!("  Found: {}", entry.path().display());
-            }
-        }
-        
-        // Also check target directory
-        let target_dir = source_dir.join("target");
-        if target_dir.exists() {
-            println!("Checking target directory...");
-            if let Ok(entries) = std::fs::read_dir(&target_dir) {
+        if let Some(found_path) = found {
+            lib_path = found_path;
+        } else {
+            // If not found, try to list files to debug
+            println!("Searching for library {} in {}...", lib_name, source_dir.display());
+            if let Ok(entries) = std::fs::read_dir(&source_dir) {
                 for entry in entries.flatten() {
-                    println!("  Found in target: {}", entry.path().display());
+                    println!("  Found: {}", entry.path().display());
                 }
             }
+            
+            // Also check target directory
+            let target_dir = source_dir.join("target");
+            if target_dir.exists() {
+                println!("Checking target directory...");
+                if let Ok(entries) = std::fs::read_dir(&target_dir) {
+                    for entry in entries.flatten() {
+                        println!("  Found in target: {}", entry.path().display());
+                    }
+                }
+            }
+            
+            return Err(format!("Could not find built library {} after tree-sitter build. Searched in: {:?}", lib_name, all_paths));
         }
-        
-        return Err(format!("Could not find built library {} after tree-sitter build. Searched in: {:?}", lib_name, all_paths));
     } else {
         // Manual compilation with cc
         println!("Using cc to build {}...", language_id);
@@ -250,7 +244,7 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
         
         // Link shared library
         let lib_name = get_library_name(language_id);
-        let lib_path = temp_dir.path().join(&lib_name);
+        lib_path = temp_dir.path().join(&lib_name);
         
         let mut cmd = Command::new("cc");
         cmd.args(["-shared", "-fPIC", "-o"])
@@ -268,9 +262,7 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
         if !status.success() {
             return Err("Failed to link shared library".to_string());
         }
-        
-        lib_path
-    };
+    }
     
     // Install library to runtime directory
     let target_dir = runtime.grammar_dir();
