@@ -25,42 +25,94 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
     fs::create_dir_all(&repo_dir)
         .map_err(|e| format!("Failed to create directory {}: {}", repo_dir.display(), e))?;
     
-    println!("Cloning {}...", grammar_info.repo_url);
+    // Special handling for markdown to ensure correct URL
+    let repo_url = if language_id == "markdown" {
+        println!("Using corrected markdown repository URL...");
+        "https://github.com/tree-sitter-grammars/tree-sitter-markdown".to_string()
+    } else {
+        grammar_info.repo_url.clone()
+    };
     
-    // Set up git command with environment to avoid prompts
-    let mut cmd = Command::new("git");
-    cmd.args(["clone", "--depth", "1"]);
+    println!("Cloning {}...", repo_url);
     
-    // Set environment to avoid interactive prompts
-    cmd.env("GIT_TERMINAL_PROMPT", "0");
+    // Try multiple approaches to clone
+    let mut success = false;
+    let mut last_error = None;
     
-    cmd.args([&grammar_info.repo_url, repo_dir.to_str().unwrap()]);
-    
-    let clone_result = cmd.status();
-    
-    if !clone_result.as_ref().map(|s| s.success()).unwrap_or(false) {
-        // Try without GIT_TERMINAL_PROMPT for systems that don't support it
-        println!("First clone attempt failed, trying alternative approach...");
+    // Approach 1: HTTPS with GIT_TERMINAL_PROMPT=0
+    {
+        let mut cmd = Command::new("git");
+        cmd.args(["clone", "--depth", "1"]);
+        cmd.env("GIT_TERMINAL_PROMPT", "0");
+        cmd.args([&repo_url, repo_dir.to_str().unwrap()]);
         
-        // Remove existing directory if clone failed
+        if let Ok(status) = cmd.status() {
+            if status.success() {
+                println!("Successfully cloned repository (approach 1)");
+                success = true;
+            } else {
+                last_error = Some(format!("HTTPS with GIT_TERMINAL_PROMPT=0 failed with exit code: {:?}", status.code()));
+            }
+        } else {
+            last_error = Some("Failed to run git command (approach 1)".to_string());
+        }
+    }
+    
+    // If approach 1 failed, try approach 2: HTTPS with credential.helper=
+    if !success {
+        println!("First clone attempt failed, trying alternative approach...");
         let _ = std::fs::remove_dir_all(&repo_dir);
         
-        let mut cmd2 = Command::new("git");
-        cmd2.args(["clone", "--depth", "1", "--config", "credential.helper=", &grammar_info.repo_url, repo_dir.to_str().unwrap()]);
+        let mut cmd = Command::new("git");
+        cmd.args(["clone", "--depth", "1", "--config", "credential.helper=", &grammar_info.repo_url, repo_dir.to_str().unwrap()]);
         
-        match cmd2.status() {
-            Ok(status) if status.success() => {
-                println!("Successfully cloned repository");
+        if let Ok(status) = cmd.status() {
+            if status.success() {
+                println!("Successfully cloned repository (approach 2)");
+                success = true;
+            } else {
+                last_error = Some(format!("HTTPS with credential.helper= failed with exit code: {:?}", status.code()));
             }
-            Ok(status) => {
-                return Err(format!("Failed to clone repository. Exit code: {:?}", status.code()));
-            }
-            Err(e) => {
-                return Err(format!("Failed to run git clone: {}. Try manually cloning the repository: {}", e, grammar_info.repo_url));
-            }
+        } else {
+            last_error = Some("Failed to run git command (approach 2)".to_string());
         }
-    } else {
-        println!("Successfully cloned repository");
+    }
+    
+    // If approach 2 failed, try approach 3: Convert HTTPS to SSH URL
+    if !success {
+        println!("HTTPS cloning failed, trying SSH URL...");
+        let _ = std::fs::remove_dir_all(&repo_dir);
+        
+        // Convert HTTPS URL to SSH URL
+        let ssh_url = if repo_url.starts_with("https://github.com/") {
+            repo_url.replace("https://github.com/", "git@github.com:")
+        } else if repo_url.starts_with("https://") {
+            // Generic conversion
+            repo_url.replacen("https://", "git@", 1).replace("/", ":/", 1)
+        } else {
+            repo_url.clone()
+        };
+        
+        println!("Trying SSH URL: {}", ssh_url);
+        
+        let mut cmd = Command::new("git");
+        cmd.args(["clone", "--depth", "1", &ssh_url, repo_dir.to_str().unwrap()]);
+        
+        if let Ok(status) = cmd.status() {
+            if status.success() {
+                println!("Successfully cloned repository (approach 3 - SSH)");
+                success = true;
+            } else {
+                last_error = Some(format!("SSH cloning failed with exit code: {:?}", status.code()));
+            }
+        } else {
+            last_error = Some("Failed to run git command (approach 3)".to_string());
+        }
+    }
+    
+    if !success {
+        return Err(format!("Failed to clone repository after multiple attempts. Last error: {}. Try manually cloning: {}", 
+                          last_error.unwrap_or_default(), repo_url));
     }
     
     // No zip extraction needed - we cloned directly into repo_dir
