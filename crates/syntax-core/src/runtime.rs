@@ -27,7 +27,12 @@ impl Runtime {
             // Fallback to a placeholder path; errors will be reported when trying to load.
             PathBuf::from("./runtime/treesitter")
         });
-        Self { root }
+        let runtime = Self { root };
+        
+        // Try to fix nested structure if it exists
+        let _ = runtime.fix_nested_structure();
+        
+        runtime
     }
 
     fn locate_root() -> Option<PathBuf> {
@@ -47,47 +52,54 @@ impl Runtime {
             }
         }
 
-        // 3. Sibling to executable (development mode)
-        if let Ok(exe_path) = env::current_exe() {
-            if let Some(exe_dir) = exe_path.parent() {
-                // Try development layout: ../runtime/treesitter
-                let candidate = exe_dir.join("../runtime/treesitter").canonicalize().ok();
-                if candidate.as_ref().and_then(|p| p.is_dir().then(|| ())).is_some() {
-                    return candidate;
+        // 3. Check for the correct structure: look for runtime/treesitter directory
+        // First, try current working directory
+        if let Ok(cwd) = env::current_dir() {
+            // Check for runtime/treesitter directly
+            let candidate = cwd.join("runtime/treesitter");
+            if candidate.is_dir() {
+                return Some(candidate);
+            }
+            
+            // Check for nested runtime/treesitter/runtime/treesitter (incorrect structure)
+            let nested_candidate = candidate.join("runtime/treesitter");
+            if nested_candidate.is_dir() {
+                // This is the incorrect nested structure, use the parent instead
+                eprintln!("WARNING: Found nested runtime directory at {:?}. Using parent directory {:?} instead.", 
+                         nested_candidate, candidate);
+                return Some(candidate);
+            }
+            
+            // Try to find the runtime directory by walking up
+            let mut current = cwd.clone();
+            while current.parent().is_some() {
+                let candidate = current.join("runtime/treesitter");
+                if candidate.is_dir() {
+                    return Some(candidate);
                 }
-                
-                // Try packaged layout: ../Resources/runtime/treesitter (macOS) or ../share/qyzer-studio/runtime/treesitter (Linux)
-                #[cfg(target_os = "macos")]
-                {
-                    let candidate = exe_dir.join("../Resources/runtime/treesitter");
-                    if candidate.is_dir() {
-                        return Some(candidate);
-                    }
-                }
-                
-                #[cfg(target_os = "linux")]
-                {
-                    let candidate = exe_dir.join("../share/qyzer-studio/runtime/treesitter");
-                    if candidate.is_dir() {
-                        return Some(candidate);
-                    }
-                }
-                
-                #[cfg(windows)]
-                {
-                    let candidate = exe_dir.join("../resources/runtime/treesitter");
-                    if candidate.is_dir() {
-                        return Some(candidate);
-                    }
-                }
+                current = current.parent().unwrap().to_path_buf();
             }
         }
 
-        // 4. Current working directory
-        let cwd = env::current_dir().ok()?;
-        let candidate = cwd.join("runtime/treesitter");
-        if candidate.is_dir() {
-            return Some(candidate);
+        // 4. Sibling to executable (development mode)
+        if let Ok(exe_path) = env::current_exe() {
+            if let Some(exe_dir) = exe_path.parent() {
+                // Try development layout: ../runtime/treesitter
+                let candidate = exe_dir.join("../runtime/treesitter");
+                if candidate.is_dir() {
+                    return Some(candidate);
+                }
+                
+                // Try walking up from executable
+                let mut current = exe_dir.to_path_buf();
+                while current.parent().is_some() {
+                    let candidate = current.join("runtime/treesitter");
+                    if candidate.is_dir() {
+                        return Some(candidate);
+                    }
+                    current = current.parent().unwrap().to_path_buf();
+                }
+            }
         }
 
         None
@@ -185,6 +197,64 @@ impl Runtime {
     pub fn exists(&self) -> bool {
         self.root.is_dir()
     }
+    
+    /// Fix nested runtime directory structure if found
+    pub fn fix_nested_structure(&self) -> std::io::Result<()> {
+        let nested_path = self.root.join("runtime/treesitter");
+        if nested_path.is_dir() {
+            eprintln!("Found nested runtime directory at {:?}. Attempting to fix...", nested_path);
+            
+            // Move contents from nested to parent
+            let grammars_nested = nested_path.join("grammars");
+            let languages_nested = nested_path.join("languages");
+            
+            let grammars_target = self.root.join("grammars");
+            let languages_target = self.root.join("languages");
+            
+            // Move grammars if they exist
+            if grammars_nested.exists() {
+                if !grammars_target.exists() {
+                    std::fs::create_dir_all(&grammars_target)?;
+                }
+                move_dir_contents(&grammars_nested, &grammars_target)?;
+            }
+            
+            // Move languages if they exist
+            if languages_nested.exists() {
+                if !languages_target.exists() {
+                    std::fs::create_dir_all(&languages_target)?;
+                }
+                move_dir_contents(&languages_nested, &languages_target)?;
+            }
+            
+            // Try to remove the now-empty nested directory
+            let _ = std::fs::remove_dir_all(&nested_path);
+            eprintln!("Fixed nested runtime structure.");
+        }
+        Ok(())
+    }
+}
+
+/// Helper to move directory contents
+fn move_dir_contents(src: &std::path::Path, dst: &std::path::Path) -> std::io::Result<()> {
+    if !dst.exists() {
+        std::fs::create_dir_all(dst)?;
+    }
+    
+    for entry in std::fs::read_dir(src)? {
+        let entry = entry?;
+        let src_path = entry.path();
+        let dst_path = dst.join(entry.file_name());
+        
+        if src_path.is_dir() {
+            move_dir_contents(&src_path, &dst_path)?;
+            // Try to remove the now-empty source directory
+            let _ = std::fs::remove_dir(&src_path);
+        } else {
+            std::fs::rename(&src_path, &dst_path)?;
+        }
+    }
+    Ok(())
 }
 
 impl Default for Runtime {

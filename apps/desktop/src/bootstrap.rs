@@ -11,9 +11,20 @@ fn init_dynamic_grammars() {
     use syntax_core::dynamic_loader;
     use syntax_core::query_cache;
     use syntax_core::grammar_registry;
+    use syntax_core::runtime::Runtime;
     
     // Check for available grammars
     println!("Initializing dynamic grammar system...");
+    
+    // Initialize runtime and fix any nested structure
+    let runtime = Runtime::new();
+    println!("Runtime directory: {:?}", runtime.root());
+    
+    if !runtime.exists() {
+        println!("Warning: Runtime directory does not exist at {:?}", runtime.root());
+        println!("Creating directory structure...");
+        let _ = std::fs::create_dir_all(runtime.root());
+    }
     
     // Check which grammars are available
     let registry = grammar_registry::GrammarRegistry::global();

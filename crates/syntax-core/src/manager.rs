@@ -144,6 +144,11 @@ impl SyntaxManager {
     pub fn initialize_dynamic_grammars(&mut self) {
         use crate::dynamic_loader::preload_available_grammars;
         use crate::query_cache::preload_queries;
+        use crate::runtime::Runtime;
+        
+        // Log runtime path for debugging
+        let runtime = Runtime::new();
+        eprintln!("DEBUG: Runtime directory: {:?}", runtime.root());
         
         // Preload available grammars
         preload_available_grammars();
