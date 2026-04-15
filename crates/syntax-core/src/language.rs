@@ -95,27 +95,12 @@ impl LanguageId {
         match self {
             LanguageId::Rust => {
                 eprintln!("DEBUG: tree_sitter_language for Rust");
-                // Use built-in tree-sitter-rust v0.24 which should match the query file
-                #[cfg(feature = "rust")]
-                {
-                    eprintln!("DEBUG: Using built-in tree-sitter-rust v0.24");
-                    // tree_sitter_rust::LANGUAGE is a function pointer constant
-                    // We need to call it as a function
-                    // Cast to function pointer and call it
-                    let lang_fn: unsafe extern "C" fn() -> tree_sitter::Language = tree_sitter_rust::LANGUAGE;
-                    unsafe {
-                        return Some(lang_fn());
-                    }
-                }
-                #[cfg(not(feature = "rust"))]
-                {
-                    // Fall back to dynamic loading only if built-in not available
-                    eprintln!("DEBUG: No built-in rust feature, trying dynamic loading");
-                    let lang = crate::dynamic_loader::load_language("rust");
-                    eprintln!("DEBUG: dynamic_loader::load_language('rust') returned {:?}", 
-                             if lang.is_some() { "Some" } else { "None" });
-                    return lang;
-                }
+                // Always use dynamic loading for now to avoid the LANGUAGE type issue
+                // The built-in feature will be fixed later when we understand the API better
+                let lang = crate::dynamic_loader::load_language("rust");
+                eprintln!("DEBUG: dynamic_loader::load_language('rust') returned {:?}", 
+                         if lang.is_some() { "Some" } else { "None" });
+                return lang;
             }
             LanguageId::Toml => {
                 // Use built-in tree-sitter-toml (v0.20) which should match the query file
