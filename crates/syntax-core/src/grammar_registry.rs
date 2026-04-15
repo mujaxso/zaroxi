@@ -65,14 +65,14 @@ impl GrammarRegistry {
             scanner_lang: Some("c".to_string()),
         });
         
-        // TOML
+        // TOML - moved to tree-sitter-grammars organization
         self.add_language(GrammarInfo {
             language_id: "toml".to_string(),
             name: "TOML".to_string(),
             extensions: vec!["toml".to_string()],
             filenames: vec!["Cargo.toml".to_string(), "rust-toolchain.toml".to_string()],
-            repo_url: "https://github.com/tree-sitter/tree-sitter-toml".to_string(),
-            revision: "v0.20.0".to_string(),
+            repo_url: "https://github.com/tree-sitter-grammars/tree-sitter-toml".to_string(),
+            revision: "master".to_string(),
             subdirectory: None,
             source_files: vec!["src/parser.c".to_string()],
             query_files: vec!["highlights.scm".to_string()],
@@ -80,16 +80,16 @@ impl GrammarRegistry {
             scanner_lang: None,
         });
         
-        // Markdown
+        // Markdown - moved to tree-sitter-grammars organization with split_parser branch
         self.add_language(GrammarInfo {
             language_id: "markdown".to_string(),
             name: "Markdown".to_string(),
             extensions: vec!["md".to_string(), "markdown".to_string()],
             filenames: vec!["README.md".to_string()],
-            repo_url: "https://github.com/tree-sitter/tree-sitter-markdown".to_string(),
-            revision: "v0.10.0".to_string(),  // Updated to a more recent version
-            subdirectory: None,
-            source_files: vec!["src/parser.c".to_string(), "src/scanner.c".to_string()],
+            repo_url: "https://github.com/tree-sitter-grammars/tree-sitter-markdown".to_string(),
+            revision: "split_parser".to_string(),
+            subdirectory: Some("tree-sitter-markdown/src".to_string()),
+            source_files: vec!["parser.c".to_string(), "scanner.c".to_string()],
             query_files: vec!["highlights.scm".to_string(), "injections.scm".to_string()],
             has_scanner: true,
             scanner_lang: Some("c".to_string()),
