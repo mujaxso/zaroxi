@@ -24,32 +24,7 @@ impl LanguageId {
             .unwrap_or("")
             .to_lowercase();
         
-        // Check for TOML files
-        if ext.eq_ignore_ascii_case("toml") {
-            return LanguageId::Toml;
-        }
-        
-        // Check for Markdown files
-        if ext.eq_ignore_ascii_case("md") || ext.eq_ignore_ascii_case("markdown") {
-            return LanguageId::Markdown;
-        }
-        
-        // Check for specific TOML filenames
-        match name.as_str() {
-            "cargo.toml" | "rust-toolchain.toml" | "clippy.toml" | "rustfmt.toml" 
-            | ".clippy.toml" | ".rustfmt.toml" | "pyproject.toml" | "taplo.toml" => {
-                return LanguageId::Toml;
-            }
-            _ => {}
-        }
-        
-        // Check for built-in languages first
-        match ext {
-            "rs" => return LanguageId::Rust,
-            _ => {}
-        }
-        
-        // Try to match against dynamic language registry
+        // Try to match against dynamic language registry first
         // First check by filename
         if let Some(lang_id) = Self::from_filename_dynamic(&name) {
             return LanguageId::Dynamic(lang_id);
@@ -58,6 +33,25 @@ impl LanguageId {
         // Then check by extension
         if let Some(lang_id) = Self::from_extension_dynamic(ext) {
             return LanguageId::Dynamic(lang_id);
+        }
+        
+        // Fall back to built-in language detection for common cases
+        match ext {
+            "rs" => return LanguageId::Rust,
+            "toml" => return LanguageId::Toml,
+            "md" | "markdown" => return LanguageId::Markdown,
+            _ => {}
+        }
+        
+        // Check for specific filenames
+        match name.as_str() {
+            "cargo.toml" | "rust-toolchain.toml" | "clippy.toml" | "rustfmt.toml" 
+            | ".clippy.toml" | ".rustfmt.toml" | "pyproject.toml" | "taplo.toml" => {
+                return LanguageId::Toml;
+            }
+            "dockerfile" => return LanguageId::Dynamic("dockerfile"),
+            "cmakelists.txt" => return LanguageId::Dynamic("cmake"),
+            _ => {}
         }
         
         LanguageId::PlainText

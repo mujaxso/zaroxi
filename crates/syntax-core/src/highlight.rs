@@ -175,10 +175,11 @@ pub fn map_capture_name(name: &str) -> Highlight {
 pub fn get_query_for_language(language: LanguageId) -> Result<&'static str, SyntaxError> {
     let language_id = language.as_str();
     
-    // Always try to load from the query cache first
-    // Check if query exists in cache (but we need the query text, not the compiled query)
-    // The cache stores compiled queries, but we need the raw text
-    // So we'll always load from file for now
+    // For plaintext, return an empty query
+    if language_id == "plaintext" {
+        return Ok("");
+    }
+    
     let runtime = crate::runtime::Runtime::new();
     let query_path = runtime.language_dir(language_id).join("queries/highlights.scm");
     
@@ -190,14 +191,16 @@ pub fn get_query_for_language(language: LanguageId) -> Result<&'static str, Synt
                 Ok(leaked)
             }
             Err(e) => {
-                Err(SyntaxError::LanguageNotSupported(
-                    format!("failed to read query file: {}", e),
-                ))
+                // If we can't read the query file, return an empty query instead of failing
+                // This allows syntax highlighting to fall back gracefully
+                eprintln!("Warning: Failed to read query file for {}: {}", language_id, e);
+                Ok("")
             }
         }
     } else {
-        Err(SyntaxError::LanguageNotSupported(
-            format!("{} grammar not available", language_id),
-        ))
+        // If no query file exists, return an empty query
+        // This is better than failing, as it allows the editor to work without syntax highlighting
+        eprintln!("Warning: No query file found for {} at {}", language_id, query_path.display());
+        Ok("")
     }
 }

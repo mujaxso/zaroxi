@@ -39,6 +39,7 @@ impl SyntaxManager {
         let ts_lang = match language.tree_sitter_language() {
             Some(lang) => lang,
             None => {
+                // If no language is available, store document without a tree
                 let doc = SyntaxDocument {
                     text: text.to_string(),
                     language,
@@ -49,34 +50,24 @@ impl SyntaxManager {
             }
         };
 
-        // Create a new parser for this document
-        let mut parser = Parser::new();
-        
-        // Try to set the language on the parser
-        match parser.set_language(&ts_lang) {
-            Ok(_) => {
-                // Parse the document
-                let tree = parser.parse(text, None);
+        // Try to get or create a parser for this language
+        let parser = self.parsers.entry(language).or_insert_with(|| {
+            let mut parser = Parser::new();
+            // Try to set the language, but don't panic if it fails
+            let _ = parser.set_language(&ts_lang);
+            parser
+        });
 
-                let doc = SyntaxDocument {
-                    text: text.to_string(),
-                    language,
-                    tree,
-                };
-                self.documents.insert(doc_id.to_string(), doc);
-                Ok(())
-            }
-            Err(_) => {
-                // If setting fails, document will have no tree
-                let doc = SyntaxDocument {
-                    text: text.to_string(),
-                    language,
-                    tree: None,
-                };
-                self.documents.insert(doc_id.to_string(), doc);
-                Ok(())
-            }
-        }
+        // Parse the document
+        let tree = parser.parse(text, None);
+
+        let doc = SyntaxDocument {
+            text: text.to_string(),
+            language,
+            tree,
+        };
+        self.documents.insert(doc_id.to_string(), doc);
+        Ok(())
     }
 
     pub fn edit_document(

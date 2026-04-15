@@ -118,12 +118,15 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
     fs::create_dir_all(&repo_dir)
         .map_err(|e| format!("Failed to create directory {}: {}", repo_dir.display(), e))?;
     
-    // Special handling for markdown to ensure correct URL
-    let repo_url = if language_id == "markdown" {
-        println!("Using corrected markdown repository URL...");
-        "https://github.com/tree-sitter-grammars/tree-sitter-markdown".to_string()
+    // Special handling for markdown to ensure correct URL and structure
+    let (repo_url, subdirectory) = if language_id == "markdown" {
+        println!("Using corrected markdown repository URL and structure...");
+        (
+            "https://github.com/tree-sitter-grammars/tree-sitter-markdown".to_string(),
+            Some("tree-sitter-markdown/src".to_string())
+        )
     } else {
-        grammar_info.repo_url.clone()
+        (grammar_info.repo_url.clone(), grammar_info.subdirectory.clone())
     };
     
     println!("Cloning {}...", repo_url);
@@ -149,7 +152,7 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
     
     // We cloned directly into repo_dir, so source_dir is repo_dir
     // Navigate to subdirectory if needed
-    let source_dir = if let Some(subdir) = &grammar_info.subdirectory {
+    let source_dir = if let Some(subdir) = &subdirectory {
         repo_dir.join(subdir)
     } else {
         repo_dir.clone()
