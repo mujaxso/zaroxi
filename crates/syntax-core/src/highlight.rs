@@ -39,19 +39,8 @@ pub fn highlight(
     source: &str,
     tree: &Tree,
 ) -> Result<Vec<HighlightSpan>, SyntaxError> {
-    match language {
-        LanguageId::Rust => {
-            eprintln!("DEBUG: Highlighting Rust code");
-            highlight_with_query(language, source, tree)
-        }
-        #[cfg(feature = "toml")]
-        LanguageId::Toml => highlight_with_query(language, source, tree),
-        #[cfg(not(feature = "toml"))]
-        LanguageId::Toml => Ok(Vec::new()),
-        LanguageId::Markdown => highlight_with_query(language, source, tree),
-        LanguageId::PlainText => Ok(Vec::new()),
-        LanguageId::Dynamic(_) => highlight_with_query(language, source, tree),
-    }
+    // Always try to highlight with query, regardless of language
+    highlight_with_query(language, source, tree)
 }
 
 fn highlight_with_query(

@@ -12,7 +12,7 @@ core-types = { path = "../../crates/core-types" }
 workspace-model = { path = "../../crates/workspace-model" }
 editor-core = { path = "../../crates/editor-core" }
 file-ops = { path = "../../crates/file-ops" }
-syntax-core = { path = "../../crates/syntax-core", features = ["toml", "dynamic-loading", "markdown"] }
+syntax-core = { path = "../../crates/syntax-core", features = ["dynamic-loading"] }
 uuid.workspace = true
 iced = { version = "0.12", features = ["tokio", "multi-window", "image", "svg"] }
 iced_core = "0.12"

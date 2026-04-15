@@ -43,6 +43,10 @@ impl SyntaxManager {
             Parser::new()
         });
 
+        // Get or create parser for this language
+        // Instead of reusing parsers, create a new parser each time to avoid version conflicts
+        let mut parser = Parser::new();
+        
         // Try to get the language
         let ts_lang = match language.tree_sitter_language() {
             Some(lang) => lang,
@@ -60,28 +64,18 @@ impl SyntaxManager {
         };
 
         // Try to set the language on the parser
-        if parser.language() != Some(ts_lang) {
-            eprintln!("DEBUG: Setting tree-sitter language");
-            if let Err(e) = parser.set_language(ts_lang) {
-                eprintln!("DEBUG: Failed to set language: {:?}", e);
-                // If setting fails, create a new parser
-                eprintln!("DEBUG: Creating fresh parser");
-                let mut new_parser = Parser::new();
-                if let Err(e) = new_parser.set_language(ts_lang) {
-                    eprintln!("DEBUG: Failed to set language on fresh parser too: {:?}", e);
-                    // Still can't set language, give up
-                    let doc = SyntaxDocument {
-                        text: text.to_string(),
-                        language,
-                        tree: None,
-                    };
-                    self.documents.insert(doc_id.to_string(), doc);
-                    eprintln!("DEBUG: Document updated without tree");
-                    return Ok(());
-                }
-                // Replace the parser in the cache
-                *parser = new_parser;
-            }
+        eprintln!("DEBUG: Setting tree-sitter language");
+        if let Err(e) = parser.set_language(ts_lang) {
+            eprintln!("DEBUG: Failed to set language: {:?}", e);
+            // If setting fails, document will have no tree
+            let doc = SyntaxDocument {
+                text: text.to_string(),
+                language,
+                tree: None,
+            };
+            self.documents.insert(doc_id.to_string(), doc);
+            eprintln!("DEBUG: Document updated without tree");
+            return Ok(());
         }
 
         // Parse the document
@@ -106,12 +100,19 @@ impl SyntaxManager {
         old_end_byte: usize,
         new_text: &str,
     ) -> Result<(), SyntaxError> {
-        // For simplicity, we reparse the whole document after each edit.
-        // A real implementation would use incremental parsing.
-        // Currently we do nothing, but we could call update_document again.
-        // However we don't have the original text here.
-        // We'll just ignore for now.
-        let _ = (doc_id, start_byte, old_end_byte, new_text);
+        // Find the document
+        if let Some(doc) = self.documents.get_mut(doc_id) {
+            // Apply the edit to the text
+            let mut text = doc.text.clone();
+            if start_byte <= old_end_byte && old_end_byte <= text.len() {
+                text.replace_range(start_byte..old_end_byte, new_text);
+                doc.text = text;
+                
+                // Re-parse the document
+                // For now, we'll clear the tree and it will be re-parsed on next highlight
+                doc.tree = None;
+            }
+        }
         Ok(())
     }
 

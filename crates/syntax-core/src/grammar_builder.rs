@@ -379,6 +379,7 @@ pub fn install_missing_grammars(language_ids: &[&str]) -> Vec<String> {
                 }
                 Err(e) => {
                     eprintln!("Failed to install {} grammar: {}", language_id, e);
+                    eprintln!("Will continue with other grammars...");
                 }
             }
         } else {
