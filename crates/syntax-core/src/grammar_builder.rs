@@ -267,27 +267,48 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
         // Check if we should use tree-sitter build or manual compilation
         // If grammar.js exists, use tree-sitter build, otherwise compile manually
         if source_dir.join("grammar.js").exists() {
-            // Run tree-sitter build and capture output
-            let build_output = Command::new("tree-sitter")
-                .current_dir(&source_dir)
-                .arg("build")
-                .output()
-                .map_err(|e| format!("Failed to run tree-sitter build: {}", e))?;
+            // For markdown, always run tree-sitter build to ensure the library is built
+            let should_run_build = if language_id == "markdown" {
+                true
+            } else {
+                // For other languages, check if the library already exists
+                let lib_name = get_library_name(language_id);
+                let parser_lib_name = if cfg!(windows) {
+                    "parser.dll"
+                } else if cfg!(target_os = "macos") {
+                    "parser.dylib"
+                } else {
+                    "parser.so"
+                };
+                !source_dir.join(parser_lib_name).exists() && !source_dir.join(&lib_name).exists()
+            };
             
-            if !build_output.status.success() {
-                let stderr = String::from_utf8_lossy(&build_output.stderr);
-                let stdout = String::from_utf8_lossy(&build_output.stdout);
-                return Err(format!("tree-sitter build failed:\nstdout: {}\nstderr: {}", stdout, stderr));
-            }
-            
-            // Print build output for debugging
-            let build_stdout = String::from_utf8_lossy(&build_output.stdout);
-            let build_stderr = String::from_utf8_lossy(&build_output.stderr);
-            if !build_stdout.trim().is_empty() {
-                println!("tree-sitter build stdout: {}", build_stdout);
-            }
-            if !build_stderr.trim().is_empty() {
-                println!("tree-sitter build stderr: {}", build_stderr);
+            if should_run_build {
+                println!("Running tree-sitter build for {}...", language_id);
+                // Run tree-sitter build and capture output
+                let build_output = Command::new("tree-sitter")
+                    .current_dir(&source_dir)
+                    .arg("build")
+                    .output()
+                    .map_err(|e| format!("Failed to run tree-sitter build: {}", e))?;
+                
+                if !build_output.status.success() {
+                    let stderr = String::from_utf8_lossy(&build_output.stderr);
+                    let stdout = String::from_utf8_lossy(&build_output.stdout);
+                    return Err(format!("tree-sitter build failed:\nstdout: {}\nstderr: {}", stdout, stderr));
+                }
+                
+                // Print build output for debugging
+                let build_stdout = String::from_utf8_lossy(&build_output.stdout);
+                let build_stderr = String::from_utf8_lossy(&build_output.stderr);
+                if !build_stdout.trim().is_empty() {
+                    println!("tree-sitter build stdout: {}", build_stdout);
+                }
+                if !build_stderr.trim().is_empty() {
+                    println!("tree-sitter build stderr: {}", build_stderr);
+                }
+            } else {
+                println!("Library already exists, skipping tree-sitter build");
             }
             
             // Find the built library - tree-sitter CLI may place it in several locations
@@ -304,8 +325,17 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
                 "parser.so"
             };
             
+            // For markdown, also check for markdown-inline.so
+            let markdown_inline_lib_name = if cfg!(windows) {
+                "markdown-inline.dll"
+            } else if cfg!(target_os = "macos") {
+                "markdown-inline.dylib"
+            } else {
+                "markdown-inline.so"
+            };
+            
             // Possible locations where tree-sitter CLI might place the library
-            let possible_paths = vec![
+            let mut possible_paths = vec![
                 source_dir.join(parser_lib_name),                     // parser.so in source directory
                 source_dir.join(&lib_name),                           // libtree-sitter-{language}.so in source directory
                 source_dir.join("target").join("release").join(parser_lib_name), // target/release/parser.so
@@ -317,6 +347,15 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
                 source_dir.join("build").join(parser_lib_name),       // build/parser.so (some grammars)
                 source_dir.join("build").join(&lib_name),             // build/libtree-sitter-{language}.so (some grammars)
             ];
+            
+            // Add markdown-specific library names
+            if language_id == "markdown" {
+                possible_paths.insert(0, source_dir.join(markdown_inline_lib_name));
+                possible_paths.insert(1, source_dir.join("target").join("release").join(markdown_inline_lib_name));
+                possible_paths.insert(2, source_dir.join("target").join(markdown_inline_lib_name));
+                possible_paths.insert(3, source_dir.join("out").join(markdown_inline_lib_name));
+                possible_paths.insert(4, source_dir.join("build").join(markdown_inline_lib_name));
+            }
             
             // Also check for debug builds
             let debug_paths = vec![
@@ -513,7 +552,21 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
     
     let target_lib_path = target_dir.join(get_library_name(language_id));
     
-    fs::copy(&lib_path, &target_lib_path)
+    // For markdown, if the built library has a different name, rename it
+    let source_lib_path = if language_id == "markdown" && lib_path.file_name()
+        .and_then(|n| n.to_str())
+        .map(|n| n.contains("markdown-inline"))
+        .unwrap_or(false) {
+        // Rename markdown-inline.so to libtree-sitter-markdown.so
+        let renamed_path = lib_path.parent().unwrap().join(get_library_name(language_id));
+        fs::copy(&lib_path, &renamed_path)
+            .map_err(|e| format!("Failed to rename library: {}", e))?;
+        renamed_path
+    } else {
+        lib_path
+    };
+    
+    fs::copy(&source_lib_path, &target_lib_path)
         .map_err(|e| format!("Failed to copy library: {}", e))?;
     
     println!("Installed library to: {}", target_lib_path.display());
