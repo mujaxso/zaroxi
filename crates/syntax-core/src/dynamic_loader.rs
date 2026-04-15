@@ -37,6 +37,7 @@ fn load_language_impl(language_id: &str) -> Option<tree_sitter::Language> {
     // Check if the language is in the registry
     let registry = GrammarRegistry::global();
     if !registry.contains_language(language_id) {
+        eprintln!("DEBUG: Language {} not in registry", language_id);
         return None;
     }
     
@@ -45,8 +46,11 @@ fn load_language_impl(language_id: &str) -> Option<tree_sitter::Language> {
     // Check if the grammar library exists
     let library_path = runtime.grammar_library_path(language_id);
     if !library_path.exists() {
+        eprintln!("DEBUG: Library path doesn't exist: {}", library_path.display());
         return None;
     }
+    
+    println!("DEBUG: Loading language {} from {}", language_id, library_path.display());
     
     // Load the library
     unsafe {
@@ -54,22 +58,44 @@ fn load_language_impl(language_id: &str) -> Option<tree_sitter::Language> {
             Ok(lib) => {
                 // Get the language function
                 let symbol_name = format!("tree_sitter_{}", language_id);
+                println!("DEBUG: Looking for symbol: {}", symbol_name);
+                
                 let language_fn: Result<Symbol<unsafe extern "C" fn() -> tree_sitter::Language>, _> = 
                     lib.get(symbol_name.as_bytes());
                 
                 match language_fn {
                     Ok(func) => {
+                        println!("DEBUG: Found symbol for {}", language_id);
                         let language = func();
                         // Leak the library to keep it loaded
                         std::mem::forget(lib);
                         Some(language)
                     }
-                    Err(_) => {
+                    Err(e) => {
+                        eprintln!("DEBUG: Failed to get symbol {}: {}", symbol_name, e);
+                        // Try alternative symbol names
+                        // For markdown, try tree_sitter_markdown_inline
+                        if language_id == "markdown" {
+                            println!("DEBUG: Trying alternative symbol for markdown...");
+                            let alt_symbol_name = "tree_sitter_markdown_inline";
+                            match lib.get(alt_symbol_name.as_bytes()) {
+                                Ok(func) => {
+                                    println!("DEBUG: Found alternative symbol {}", alt_symbol_name);
+                                    let language = func();
+                                    std::mem::forget(lib);
+                                    return Some(language);
+                                }
+                                Err(e) => {
+                                    eprintln!("DEBUG: Failed to get alternative symbol {}: {}", alt_symbol_name, e);
+                                }
+                            }
+                        }
                         None
                     }
                 }
             }
-            Err(_) => {
+            Err(e) => {
+                eprintln!("DEBUG: Failed to load library {}: {}", library_path.display(), e);
                 None
             }
         }

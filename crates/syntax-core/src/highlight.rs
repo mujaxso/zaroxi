@@ -89,8 +89,6 @@ fn highlight_with_query(
     // Debug: print capture names for markdown
     if language.as_str() == "markdown" {
         println!("DEBUG: Markdown capture names: {:?}", query.capture_names());
-        println!("DEBUG: Query string length: {}", query_str.len());
-        println!("DEBUG: Query first 500 chars: {}", &query_str[..query_str.len().min(500)]);
     }
 
     let mut cursor = QueryCursor::new();
@@ -110,10 +108,6 @@ fn highlight_with_query(
             let capture_name = &query.capture_names()[capture.index as usize];
             let highlight = map_capture_name(capture_name);
             
-            // Debug for markdown
-            if language.as_str() == "markdown" {
-                println!("DEBUG: Markdown capture: {} at [{}, {}]", capture_name, start, end);
-            }
             
             spans.push(HighlightSpan {
                 start,
@@ -123,10 +117,6 @@ fn highlight_with_query(
         }
     }
 
-    // Debug: print match count
-    if language.as_str() == "markdown" {
-        println!("DEBUG: Markdown matches found: {}", match_count);
-    }
 
     // Sort spans by start position
     spans.sort_by_key(|span| span.start);
