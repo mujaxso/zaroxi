@@ -44,7 +44,7 @@ impl SyntaxManager {
                 // We can't directly check the version, but we can try to create a parser and set the language
                 // If it fails, we'll know it's incompatible
                 eprintln!("DEBUG: Got tree-sitter language for {:?}", language);
-                eprintln!("DEBUG: Language version: {}", lang.version());
+                eprintln!("DEBUG: Language ABI version: {}", lang.abi_version());
                 lang
             }
             None => {

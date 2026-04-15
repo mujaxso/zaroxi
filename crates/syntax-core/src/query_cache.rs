@@ -64,7 +64,7 @@ fn load_query_from_file(language_id: &str, query_type: &str) -> Result<Query, St
         .map_err(|e| format!("Failed to read query file {}: {}", query_path.display(), e))?;
     
     // Compile query
-    Query::new(language, &query_text)
+    Query::new(&language, &query_text)
         .map_err(|e| format!("Failed to compile query for {}: {}", language_id, e))
 }
 

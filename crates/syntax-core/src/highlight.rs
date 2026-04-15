@@ -68,7 +68,7 @@ fn highlight_with_query(
     };
 
     // Try to compile the query
-    let query = match Query::new(ts_lang, query_str) {
+    let query = match Query::new(&ts_lang, query_str) {
         Ok(q) => q,
         Err(e) => {
             // Log the error for debugging
@@ -82,19 +82,21 @@ fn highlight_with_query(
     let root_node = tree.root_node();
     let mut spans = Vec::new();
 
-    for match_ in cursor.matches(&query, root_node, source.as_bytes()) {
-        for capture in match_.captures {
-            let node = capture.node;
-            let start = node.start_byte();
-            let end = node.end_byte();
-            let capture_name = &query.capture_names()[capture.index as usize];
-            let highlight = map_capture_name(capture_name);
-            spans.push(HighlightSpan {
-                start,
-                end,
-                highlight,
-            });
-        }
+    // In tree-sitter 0.26.8, we need to use captures() instead of matches()
+    // The captures() method returns an iterator over QueryCapture items
+    let captures = cursor.captures(&query, root_node, source.as_bytes());
+    for (match_, capture_index) in captures {
+        let capture = match_.captures[capture_index];
+        let node = capture.node;
+        let start = node.start_byte();
+        let end = node.end_byte();
+        let capture_name = &query.capture_names()[capture.index as usize];
+        let highlight = map_capture_name(capture_name);
+        spans.push(HighlightSpan {
+            start,
+            end,
+            highlight,
+        });
     }
 
     // Sort spans by start position
