@@ -71,6 +71,15 @@ fn load_language_impl(language_id: &str) -> Option<tree_sitter::Language> {
                         std::mem::forget(lib);
                         // Print some info about the language
                         println!("DEBUG: Language {} loaded successfully, node count: {}", language_id, language.node_kind_count());
+                        // Print node types for debugging
+                        if language_id == "markdown" {
+                            for i in 0..language.node_kind_count() {
+                                let kind = language.node_kind_for_id(i as u16);
+                                if let Some(kind) = kind {
+                                    println!("DEBUG: Node type {}: {}", i, kind);
+                                }
+                            }
+                        }
                         Some(language)
                     }
                     Err(e) => {
