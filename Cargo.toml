@@ -35,6 +35,7 @@ thiserror = "2"
 rfd = { version = "0.14", default-features = false, features = ["tokio", "xdg-portal"] }
 tree-sitter-rust = "0.24"
 tree-sitter-toml = "0.20"
+tree-sitter = "0.21"
 libloading = "0.8"
 ureq = { version = "2", features = ["json"] }
 tempfile = "3"

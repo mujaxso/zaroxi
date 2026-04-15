@@ -68,6 +68,9 @@ fn load_language_impl(language_id: &str) -> Option<tree_sitter::Language> {
                     Ok(func) => {
                         let language = func();
                         eprintln!("DEBUG: Successfully loaded language: {}", language_id);
+                        // Check if the language version is compatible
+                        // We can't directly check, but we can log the version for debugging
+                        eprintln!("DEBUG: Language ABI version: {}", language.version());
                         // Leak the library to keep it loaded
                         std::mem::forget(lib);
                         Some(language)
