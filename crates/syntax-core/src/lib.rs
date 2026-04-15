@@ -110,26 +110,15 @@ mod tests {
         assert_eq!(map_capture_name("image.description"), Highlight::Variable);
         assert_eq!(map_capture_name("image.marker"), Highlight::Operator);
         assert_eq!(map_capture_name("html_tag"), Highlight::Attribute);
-        assert_eq!(map_capture_name("html.tag"), Highlight::Attribute);
-        assert_eq!(map_capture_name("html.tag.name"), Highlight::Type);
-        assert_eq!(map_capture_name("html.attribute"), Highlight::Property);
-        assert_eq!(map_capture_name("html.attribute.name"), Highlight::Property);
-        assert_eq!(map_capture_name("html.attribute.value"), Highlight::String);
-        assert_eq!(map_capture_name("html.comment"), Highlight::Comment);
         assert_eq!(map_capture_name("hard_line_break"), Highlight::Operator);
         assert_eq!(map_capture_name("line_break"), Highlight::Operator);
-        assert_eq!(map_capture_name("line_break.soft"), Highlight::Operator);
         assert_eq!(map_capture_name("strikethrough"), Highlight::Comment);
-        assert_eq!(map_capture_name("strikethrough.marker"), Highlight::Operator);
         assert_eq!(map_capture_name("uri_autolink"), Highlight::String);
         assert_eq!(map_capture_name("email_autolink"), Highlight::String);
         assert_eq!(map_capture_name("backslash_escape"), Highlight::String);
         assert_eq!(map_capture_name("escape"), Highlight::String);
         assert_eq!(map_capture_name("latex"), Highlight::Constant);
         assert_eq!(map_capture_name("latex.delimiter"), Highlight::Operator);
-        assert_eq!(map_capture_name("text"), Highlight::Plain);
-        assert_eq!(map_capture_name("number"), Highlight::Number);
-        assert_eq!(map_capture_name("whitespace"), Highlight::Plain);
         assert_eq!(map_capture_name("punctuation"), Highlight::Operator);
         
         // Test fallback captures for compatibility

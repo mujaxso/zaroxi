@@ -1,5 +1,6 @@
 ; Markdown highlighting query for tree-sitter-markdown-inline
 ; Enhanced with more specific inline patterns for better highlighting
+; Using only valid node types (no underscore-prefixed nodes)
 
 ; ====== Escape sequences ======
 (backslash_escape) @escape
@@ -8,9 +9,7 @@
 (emphasis) @emphasis
 (strong_emphasis) @strong_emphasis
 
-; Emphasis delimiters (capture the markers separately)
-(_emphasis_open_star) @emphasis.marker
-(_emphasis_open_underscore) @emphasis.marker
+; Emphasis delimiters - use emphasis_delimiter which is valid
 (emphasis_delimiter) @emphasis.marker
 
 ; ====== Code spans ======
@@ -44,21 +43,12 @@
 
 ; ====== HTML ======
 (html_tag) @html
-(_open_tag) @html.tag
-(_closing_tag) @html.tag
-(_tag_name) @html.tag.name
-(_attribute) @html.attribute
-(_attribute_name) @html.attribute.name
-(_attribute_value) @html.attribute.value
-(_html_comment) @html.comment
 
 ; ====== Line breaks ======
 (hard_line_break) @line_break
-(_soft_line_break) @line_break.soft
 
 ; ====== Strikethrough ======
 (strikethrough) @strikethrough
-(_strikethrough_open) @strikethrough.marker
 
 ; ====== Autolinks ======
 (uri_autolink) @link.autolink
@@ -73,46 +63,21 @@
 (latex_span_delimiter) @latex.delimiter
 
 ; ====== Inline content ======
-(_word) @text
-(_word_no_digit) @text
-(_digits) @number
-(_whitespace) @whitespace
-(_whitespace_token1) @whitespace
-(_whitespace_ge_2) @whitespace
+; Note: _word, _digits, etc. start with underscores and can't be captured
+; We'll capture the actual content nodes instead
 
 ; ====== Punctuation ======
-[
-  "!"
-  "\""
-  "#"
-  "$"
-  "%"
-  "&"
-  "'"
-  "*"
-  "+"
-  ","
-  "-"
-  "."
-  "/"
-  ":"
-  ";"
-  "<"
-  "="
-  ">"
-  "?"
-  "@"
-  "\\"
-  "^"
-  "_"
-  "`"
-  "{"
-  "|"
-  "}"
-  "~"
-  "("
-  ")"
-] @punctuation
+; Capture specific punctuation that's part of markdown syntax
+"[" @punctuation
+"]" @punctuation
+"(" @punctuation
+")" @punctuation
+"!" @punctuation
+"*" @punctuation
+"_" @punctuation
+"`" @punctuation
+"~" @punctuation
+"\\" @punctuation
 
 ; ====== Fallback for everything else ======
 (_) @plain
