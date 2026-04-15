@@ -89,29 +89,33 @@ mod tests {
         use crate::highlight::map_capture_name;
         
         // Test that Markdown-specific captures map to appropriate Highlight variants
-        assert_eq!(map_capture_name("heading"), Highlight::Type);
+        // Based on tree-sitter-markdown-inline grammar
         assert_eq!(map_capture_name("emphasis"), Highlight::Comment);
-        assert_eq!(map_capture_name("strong"), Highlight::Keyword);
-        assert_eq!(map_capture_name("link"), Highlight::Variable);
+        assert_eq!(map_capture_name("strong_emphasis"), Highlight::Keyword);
+        assert_eq!(map_capture_name("code_span"), Highlight::Constant);
         assert_eq!(map_capture_name("inline_code"), Highlight::Constant);
-        assert_eq!(map_capture_name("code_fence"), Highlight::Property);
+        assert_eq!(map_capture_name("link_text"), Highlight::Variable);
+        assert_eq!(map_capture_name("link_destination"), Highlight::String);
+        assert_eq!(map_capture_name("link_title"), Highlight::String);
+        assert_eq!(map_capture_name("shortcut_link"), Highlight::Variable);
+        assert_eq!(map_capture_name("full_reference_link"), Highlight::Variable);
+        assert_eq!(map_capture_name("collapsed_reference_link"), Highlight::Variable);
+        assert_eq!(map_capture_name("inline_link"), Highlight::Variable);
+        assert_eq!(map_capture_name("image"), Highlight::Variable);
+        assert_eq!(map_capture_name("image_description"), Highlight::Variable);
+        assert_eq!(map_capture_name("html_tag"), Highlight::Attribute);
+        assert_eq!(map_capture_name("hard_line_break"), Highlight::Operator);
+        assert_eq!(map_capture_name("strikethrough"), Highlight::Comment);
+        assert_eq!(map_capture_name("uri_autolink"), Highlight::String);
+        assert_eq!(map_capture_name("email_autolink"), Highlight::String);
+        assert_eq!(map_capture_name("backslash_escape"), Highlight::String);
+        
+        // Test fallback captures for compatibility
+        assert_eq!(map_capture_name("heading"), Highlight::Type);
+        assert_eq!(map_capture_name("link"), Highlight::Variable);
         assert_eq!(map_capture_name("blockquote"), Highlight::Comment);
         assert_eq!(map_capture_name("list"), Highlight::Property);
         assert_eq!(map_capture_name("thematic_break"), Highlight::Operator);
-        
-        // Test new captures added
-        assert_eq!(map_capture_name("atx_heading"), Highlight::Type);
-        assert_eq!(map_capture_name("setext_heading"), Highlight::Type);
-        assert_eq!(map_capture_name("heading.marker"), Highlight::Operator);
-        assert_eq!(map_capture_name("code_block"), Highlight::Property);
-        assert_eq!(map_capture_name("code_block.delimiter"), Highlight::Operator);
-        assert_eq!(map_capture_name("blockquote.marker"), Highlight::Operator);
-        assert_eq!(map_capture_name("list.marker"), Highlight::Operator);
-        assert_eq!(map_capture_name("table"), Highlight::Property);
-        assert_eq!(map_capture_name("table.header"), Highlight::Type);
-        assert_eq!(map_capture_name("table.delimiter"), Highlight::Operator);
-        assert_eq!(map_capture_name("image"), Highlight::Variable);
-        assert_eq!(map_capture_name("strikethrough"), Highlight::Comment);
         
         // Test that programming language captures still work
         assert_eq!(map_capture_name("comment"), Highlight::Comment);

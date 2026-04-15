@@ -1,15 +1,15 @@
-; Markdown injections for fenced code blocks
-(fenced_code_block
-  (info_string) @injection.language
-  (code_fence_content) @injection.content)
+; Markdown injections for tree-sitter-markdown-inline
+; Note: The inline grammar may not support fenced code blocks
+; For now, we'll keep a minimal injection setup
 
-; HTML injection if html_tag exists
-; ((html_tag) @injection.content
-;   (#set! injection.language "html"))
+; HTML injection
+((html_tag) @injection.content
+  (#set! injection.language "html"))
 
 ; LaTeX injection if latex_block exists  
-; ((latex_block) @injection.content
-;   (#set! injection.language "latex"))
+((latex_block) @injection.content
+  (#set! injection.language "latex"))
 
-; Support for inline code if needed
+; Inline code injection (limited)
 ; (code_span) @injection.content
+;   (#set! injection.language "plaintext")
