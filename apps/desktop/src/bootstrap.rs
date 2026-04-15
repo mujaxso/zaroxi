@@ -32,6 +32,10 @@ fn init_dynamic_grammars() {
             println!("  cargo run --bin build-grammar -- {}", lang);
         }
         println!("Or build all with: cargo run --bin download-grammars -- install-all");
+        println!("Note: Some grammars may require git and SSH keys for GitHub.");
+        println!("If you encounter authentication issues, try:");
+        println!("  1. Setting up SSH keys for GitHub: https://docs.github.com/en/authentication/connecting-to-github-with-ssh");
+        println!("  2. Or using HTTPS with a personal access token");
     }
     
     // Preload available grammars

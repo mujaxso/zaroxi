@@ -25,17 +25,23 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
     fs::create_dir_all(&repo_dir)
         .map_err(|e| format!("Failed to create directory {}: {}", repo_dir.display(), e))?;
     
-    // Use git clone with timeout and no credential helper
-    println!("Cloning {}...", grammar_info.repo_url);
+    // Convert HTTPS GitHub URL to SSH URL to avoid authentication prompts
+    let repo_url = if grammar_info.repo_url.starts_with("https://github.com/") {
+        // Convert https://github.com/user/repo to git@github.com:user/repo.git
+        let url = grammar_info.repo_url.trim_start_matches("https://github.com/");
+        format!("git@github.com:{}.git", url.trim_end_matches(".git"))
+    } else {
+        grammar_info.repo_url.clone()
+    };
     
-    // Set up git command with timeout and no credential helper
+    println!("Cloning {}...", repo_url);
+    
+    // Set up git command with timeout
     let mut cmd = Command::new("timeout");
     cmd.args(["30", "git", "clone", "--depth", "1"]);
     
-    // Disable credential helper to avoid prompts
-    cmd.args(["--config", "credential.helper="]);
-    
-    cmd.args([&grammar_info.repo_url, repo_dir.to_str().unwrap()]);
+    // Use SSH URL which doesn't prompt for username/password for public repos
+    cmd.args([&repo_url, repo_dir.to_str().unwrap()]);
     
     match cmd.status() {
         Ok(status) if status.success() => {
