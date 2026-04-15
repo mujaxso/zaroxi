@@ -191,7 +191,11 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
         // For TypeScript/TSX, we need to build in the repo root, not the subdirectory
         // Determine the directory to run tree-sitter build in
         // Check for grammar.js or grammar.json in repo root
-        let build_dir = if repo_dir.join("grammar.js").exists() || repo_dir.join("grammar.json").exists() {
+        let build_dir = if language_id == "typescript" || language_id == "tsx" {
+            // For TypeScript/TSX, always use repo root
+            println!("DEBUG: TypeScript/TSX detected, using repo root: {:?}", repo_dir);
+            &repo_dir
+        } else if repo_dir.join("grammar.js").exists() || repo_dir.join("grammar.json").exists() {
             println!("DEBUG: Found grammar.js/grammar.json in repo root: {:?}", repo_dir);
             &repo_dir
         } else if source_dir.join("grammar.js").exists() || source_dir.join("grammar.json").exists() {
@@ -263,9 +267,24 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
         
         // Always run tree-sitter build when CLI is available
         println!("Running tree-sitter build for {} in {}...", language_id, build_dir.display());
-        let build_output = Command::new("tree-sitter")
-            .current_dir(build_dir)
-            .arg("build")
+        
+        // For TypeScript/TSX, we need to use --grammar flag and run in repo root
+        let mut cmd = Command::new("tree-sitter");
+        cmd.current_dir(build_dir);
+        
+        if language_id == "typescript" || language_id == "tsx" {
+            // For TypeScript/TSX, use --grammar flag
+            println!("DEBUG: Building TypeScript/TSX with --grammar flag");
+            cmd.arg("build");
+            cmd.arg("--grammar");
+            cmd.arg(language_id);
+        } else {
+            cmd.arg("build");
+        }
+        
+        println!("DEBUG: Running command: {:?} in {:?}", cmd, build_dir);
+        
+        let build_output = cmd
             .output()
             .map_err(|e| format!("Failed to run tree-sitter build: {}", e))?;
         
@@ -278,7 +297,10 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
             // So we should return an error instead of falling back
             if language_id == "typescript" || language_id == "tsx" {
                 return Err(format!(
-                    "Failed to build {} grammar with tree-sitter CLI. Error:\n{}\n{}",
+                    "Failed to build {} grammar with tree-sitter CLI.\n\
+                     This may be because the tree-sitter CLI version doesn't support --grammar flag.\n\
+                     Try updating tree-sitter CLI: npm install -g tree-sitter-cli\n\
+                     Error:\n{}\n{}",
                     language_id, stdout, stderr
                 ));
             }
