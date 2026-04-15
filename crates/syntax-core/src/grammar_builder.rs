@@ -178,7 +178,9 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
         let all_paths: Vec<_> = possible_paths.into_iter().chain(debug_paths.into_iter()).collect();
         
         let mut found = None;
+        println!("Checking possible library paths:");
         for path in &all_paths {
+            println!("  Checking: {}", path.display());
             if path.exists() {
                 println!("Found library at: {}", path.display());
                 found = Some(path.clone());
