@@ -69,6 +69,8 @@ fn load_language_impl(language_id: &str) -> Option<tree_sitter::Language> {
                         let language = func();
                         // Leak the library to keep it loaded
                         std::mem::forget(lib);
+                        // Print some info about the language
+                        println!("DEBUG: Language {} loaded successfully, node count: {}", language_id, language.node_kind_count());
                         Some(language)
                     }
                     Err(e) => {
@@ -83,6 +85,7 @@ fn load_language_impl(language_id: &str) -> Option<tree_sitter::Language> {
                                     println!("DEBUG: Found alternative symbol {}", alt_symbol_name);
                                     let language = func();
                                     std::mem::forget(lib);
+                                    println!("DEBUG: Language {} loaded via alternative symbol, node count: {}", language_id, language.node_kind_count());
                                     return Some(language);
                                 }
                                 Err(e) => {
@@ -98,6 +101,7 @@ fn load_language_impl(language_id: &str) -> Option<tree_sitter::Language> {
                                     println!("DEBUG: Found alternative symbol {}", alt_symbol_name2);
                                     let language = func();
                                     std::mem::forget(lib);
+                                    println!("DEBUG: Language {} loaded via alternative symbol, node count: {}", language_id, language.node_kind_count());
                                     return Some(language);
                                 }
                                 Err(e) => {

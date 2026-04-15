@@ -75,13 +75,29 @@ fn highlight_with_query(
 
     // Try to compile the query
     let query = match Query::new(&ts_lang, query_str) {
-        Ok(q) => q,
+        Ok(q) => {
+            // Log success for debugging
+            eprintln!("DEBUG: Query compiled successfully for {}", language.as_str());
+            if language.as_str() == "markdown" {
+                eprintln!("DEBUG: Markdown query has {} patterns", q.pattern_count());
+                eprintln!("DEBUG: Markdown query captures: {:?}", q.capture_names());
+            }
+            q
+        }
         Err(e) => {
             // Log the error for debugging
             eprintln!("DEBUG: Tree-sitter query error for {}: {}", language.as_str(), e);
             // For markdown, also log the query string to help debug
             if language.as_str() == "markdown" {
                 eprintln!("DEBUG: Markdown query string: {:?}", query_str);
+                eprintln!("DEBUG: Markdown language node count: {}", ts_lang.node_kind_count());
+                // Print first few node types
+                for i in 0..std::cmp::min(20, ts_lang.node_kind_count()) {
+                    let kind = ts_lang.node_kind_for_id(i as u16);
+                    if let Some(kind) = kind {
+                        eprintln!("DEBUG: Node type {}: {}", i, kind);
+                    }
+                }
             }
             // Return empty spans (plaintext) when query compilation fails
             return Ok(Vec::new());
@@ -113,6 +129,13 @@ fn highlight_with_query(
 
     // Sort spans by start position
     spans.sort_by_key(|span| span.start);
+    
+    if language.as_str() == "markdown" {
+        eprintln!("DEBUG: Generated {} highlight spans for markdown", spans.len());
+        for span in spans.iter().take(5) {
+            eprintln!("DEBUG: Span {}..{} -> {:?}", span.start, span.end, span.highlight);
+        }
+    }
     
     Ok(spans)
 }
