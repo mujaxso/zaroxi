@@ -168,6 +168,20 @@ pub fn map_capture_name(name: &str) -> Highlight {
         "table_header" => Highlight::Type,
         "table_row" => Highlight::Property,
         "table_cell" => Highlight::Plain,
+        // Additional captures that might be present
+        "paragraph" => Highlight::Plain,
+        "fenced_code_block" => Highlight::Property,
+        "code_span" => Highlight::Constant,
+        "image" => Highlight::Variable,
+        "reference_link" => Highlight::Variable,
+        "reference_definition" => Highlight::Variable,
+        "footnote_reference" => Highlight::Variable,
+        "footnote_definition" => Highlight::Variable,
+        "task_list_marker" => Highlight::Operator,
+        "strikethrough" => Highlight::Comment,
+        "escape_sequence" => Highlight::String,
+        "hard_line_break" => Highlight::Operator,
+        "soft_line_break" => Highlight::Plain,
         _ => Highlight::Plain,
     }
 }

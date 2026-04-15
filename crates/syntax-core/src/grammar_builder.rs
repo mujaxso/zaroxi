@@ -397,16 +397,28 @@ fn install_library_and_queries(
     
     // Install query files
     // For markdown, queries are in the parent directory (tree-sitter-markdown/queries)
+    // But the markdown grammar uses tree-sitter-markdown-inline subdirectory
+    // So we need to look in multiple possible locations
     let query_source_dir = if language_id == "markdown" {
-        // Look for queries in the parent directory of source_dir
-        let parent_dir = source_dir.parent().unwrap_or(&repo_dir);
-        let queries_dir = parent_dir.join("queries");
-        if queries_dir.exists() {
-            queries_dir
-        } else {
-            // Fall back to source_dir/queries
-            source_dir.join("queries")
+        // Try multiple possible locations
+        let possible_dirs = vec![
+            // Look in the parent directory of source_dir (tree-sitter-markdown/queries)
+            source_dir.parent().unwrap_or(&repo_dir).join("queries"),
+            // Look in the repo root's queries directory
+            repo_dir.join("queries"),
+            // Look in source_dir/queries (unlikely but possible)
+            source_dir.join("queries"),
+        ];
+        
+        // Find the first existing directory
+        for dir in possible_dirs {
+            if dir.exists() {
+                println!("Found markdown queries at: {}", dir.display());
+                return dir;
+            }
         }
+        // If none found, use the parent directory
+        source_dir.parent().unwrap_or(&repo_dir).join("queries")
     } else if let Some(_subdir) = &grammar_info.subdirectory {
         // Try to find queries in the parent directory (repo root)
         let parent_dir = temp_dir.path().join("repo");

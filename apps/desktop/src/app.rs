@@ -90,15 +90,20 @@ impl iced::Application for App {
                 }
             }
             
-            // Create a basic markdown query file if it doesn't exist
+            // Check if markdown queries exist, and if not, try to reinstall the grammar
             {
                 let runtime = syntax_core::runtime::Runtime::new();
                 let query_dir = runtime.language_dir("markdown").join("queries");
-                let _ = std::fs::create_dir_all(&query_dir);
                 let query_path = query_dir.join("highlights.scm");
                 if !query_path.exists() {
-                    // Create a basic query file
-                    let basic_query = r#"
+                    println!("Markdown query file not found, reinstalling markdown grammar...");
+                    match grammar_builder::build_and_install_grammar("markdown") {
+                        Ok(_) => println!("Successfully reinstalled markdown grammar"),
+                        Err(e) => {
+                            eprintln!("Failed to reinstall markdown grammar: {}", e);
+                            // Create a basic query file as fallback
+                            let _ = std::fs::create_dir_all(&query_dir);
+                            let basic_query = r#"
 ; Basic markdown highlighting
 (atx_heading) @heading
 (setext_heading) @heading
@@ -111,10 +116,12 @@ impl iced::Application for App {
 (list) @list
 (thematic_break) @thematic_break
 "#;
-                    if let Err(e) = std::fs::write(&query_path, basic_query) {
-                        eprintln!("Failed to create markdown query file: {}", e);
-                    } else {
-                        println!("Created basic markdown query file");
+                            if let Err(e) = std::fs::write(&query_path, basic_query) {
+                                eprintln!("Failed to create markdown query file: {}", e);
+                            } else {
+                                println!("Created basic markdown query file as fallback");
+                            }
+                        }
                     }
                 }
             }

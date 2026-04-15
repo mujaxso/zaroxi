@@ -90,7 +90,7 @@ impl GrammarRegistry {
             revision: "split_parser".to_string(),
             subdirectory: Some("tree-sitter-markdown-inline".to_string()),
             source_files: vec!["src/parser.c".to_string(), "src/scanner.c".to_string()],
-            query_files: vec!["highlights.scm".to_string(), "injections.scm".to_string()],
+            query_files: vec!["highlights.scm".to_string()],
             has_scanner: true,
             scanner_lang: Some("c".to_string()),
         });
