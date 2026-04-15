@@ -188,13 +188,20 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
         // Use tree-sitter CLI
         println!("Using tree-sitter CLI to build {}...", language_id);
         
-        // For TypeScript/TSX, we need to build in the repo root, not the subdirectory
+        // For TypeScript/TSX, we need to build in the subdirectory (typescript/ or tsx/), not the repo root
         // Determine the directory to run tree-sitter build in
-        // Check for grammar.js or grammar.json in repo root
         let build_dir = if language_id == "typescript" || language_id == "tsx" {
-            // For TypeScript/TSX, always use repo root
-            println!("DEBUG: TypeScript/TSX detected, using repo root: {:?}", repo_dir);
-            &repo_dir
+            // For TypeScript/TSX, use the parent of source_dir (which is repo_dir/typescript or repo_dir/tsx)
+            // because source_dir is repo_dir/typescript/src or repo_dir/tsx/src
+            let parent = source_dir.parent().unwrap_or(&repo_dir);
+            println!("DEBUG: TypeScript/TSX detected, using subdirectory: {:?}", parent);
+            // List files in this directory for debugging
+            if let Ok(entries) = std::fs::read_dir(parent) {
+                for entry in entries.flatten() {
+                    println!("DEBUG: Build dir entry: {:?}", entry.file_name());
+                }
+            }
+            parent
         } else if repo_dir.join("grammar.js").exists() || repo_dir.join("grammar.json").exists() {
             println!("DEBUG: Found grammar.js/grammar.json in repo root: {:?}", repo_dir);
             &repo_dir
@@ -238,7 +245,7 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
                              source_dir.join("src/parser.c").exists();
         
         if !parser_c_exists {
-            // Check if grammar.js or grammar.json exists
+            // Check if grammar.js or grammar.json exists in build_dir
             let grammar_js_exists = build_dir.join("grammar.js").exists();
             let grammar_json_exists = build_dir.join("grammar.json").exists();
             
@@ -268,19 +275,12 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
         // Always run tree-sitter build when CLI is available
         println!("Running tree-sitter build for {} in {}...", language_id, build_dir.display());
         
-        // For TypeScript/TSX, we need to use --grammar flag and run in repo root
+        // For TypeScript/TSX, we need to run tree-sitter build in the subdirectory
         let mut cmd = Command::new("tree-sitter");
         cmd.current_dir(build_dir);
         
-        if language_id == "typescript" || language_id == "tsx" {
-            // For TypeScript/TSX, use --grammar flag
-            println!("DEBUG: Building TypeScript/TSX with --grammar flag");
-            cmd.arg("build");
-            cmd.arg("--grammar");
-            cmd.arg(language_id);
-        } else {
-            cmd.arg("build");
-        }
+        // Always use "build" command without --grammar flag
+        cmd.arg("build");
         
         println!("DEBUG: Running command: {:?} in {:?}", cmd, build_dir);
         
@@ -298,8 +298,7 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
             if language_id == "typescript" || language_id == "tsx" {
                 return Err(format!(
                     "Failed to build {} grammar with tree-sitter CLI.\n\
-                     This may be because the tree-sitter CLI version doesn't support --grammar flag.\n\
-                     Try updating tree-sitter CLI: npm install -g tree-sitter-cli\n\
+                     Make sure tree-sitter CLI is installed and can build the grammar.\n\
                      Error:\n{}\n{}",
                     language_id, stdout, stderr
                 ));
