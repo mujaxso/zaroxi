@@ -53,7 +53,10 @@ impl iced::Application for App {
             
             if !missing.is_empty() {
                 eprintln!("Warning: Missing grammar libraries for: {:?}", missing);
-                eprintln!("Syntax highlighting will be limited. Run: cargo run --bin build-grammar -- <language>");
+                eprintln!("Syntax highlighting will be limited. To build missing grammars:");
+                for lang in &missing {
+                    eprintln!("  cargo run --bin build-grammar -- {}", lang);
+                }
             }
         }
         

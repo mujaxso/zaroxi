@@ -95,25 +95,12 @@ impl LanguageId {
         match self {
             LanguageId::Rust => {
                 eprintln!("DEBUG: tree_sitter_language for Rust");
-                // Try built-in first if feature is enabled
-                #[cfg(feature = "rust")]
-                {
-                    eprintln!("DEBUG: Trying built-in tree-sitter-rust");
-                    // tree_sitter_rust::LANGUAGE is a LanguageFn struct that wraps a function pointer
-                    // We need to extract the function pointer and call it
-                    let func_ptr = tree_sitter_rust::LANGUAGE.0;
-                    unsafe {
-                        return Some(func_ptr());
-                    }
-                }
-                #[cfg(not(feature = "rust"))]
-                {
-                    eprintln!("DEBUG: No built-in rust feature, trying dynamic loading");
-                    let lang = crate::dynamic_loader::load_language("rust");
-                    eprintln!("DEBUG: dynamic_loader::load_language('rust') returned {:?}", 
-                             if lang.is_some() { "Some" } else { "None" });
-                    return lang;
-                }
+                // Always use dynamic loading for Rust to avoid issues with LANGUAGE constant
+                // The grammar must be installed in the runtime directory
+                let lang = crate::dynamic_loader::load_language("rust");
+                eprintln!("DEBUG: dynamic_loader::load_language('rust') returned {:?}", 
+                         if lang.is_some() { "Some" } else { "None" });
+                return lang;
             }
             LanguageId::Toml => {
                 // Use built-in tree-sitter-toml (v0.20) which should match the query file

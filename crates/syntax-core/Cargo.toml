@@ -16,8 +16,8 @@ ureq = { version = "2.9", default-features = false, features = ["tls"] }
 serde = { version = "1", features = ["derive"] }
 
 [features]
-default = ["rust", "toml", "dynamic-loading"]
-rust = ["tree-sitter-rust"]
+default = ["toml", "dynamic-loading"]
+rust = ["tree-sitter-rust"]  # Optional, not used by default
 toml = ["tree-sitter-toml"]
 dynamic-loading = ["libloading"]
 markdown = []

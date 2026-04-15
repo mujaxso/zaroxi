@@ -27,8 +27,11 @@ fn init_dynamic_grammars() {
     
     if !missing.is_empty() {
         println!("Warning: Missing grammar libraries for: {:?}", missing);
-        println!("Run: cargo run --bin build-grammar -- <language>");
-        println!("Or: cargo run --bin download-grammars -- install-all");
+        println!("To build missing grammars, run:");
+        for lang in &missing {
+            println!("  cargo run --bin build-grammar -- {}", lang);
+        }
+        println!("Or build all with: cargo run --bin download-grammars -- install-all");
     }
     
     // Preload available grammars
