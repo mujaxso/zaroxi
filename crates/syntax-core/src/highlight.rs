@@ -67,15 +67,25 @@ fn highlight_with_query(
         .tree_sitter_language()
         .ok_or_else(|| SyntaxError::LanguageNotSupported(language.as_str().to_string()))?;
 
-    // If the query fails (e.g., because of unrecognized node types), we return empty highlights
-    // rather than propagating an error. This allows the editor to keep working without syntax
-    // highlighting for that particular language.
-    let query = match Query::new(ts_lang, query_str) {
+    // Try to compile the query, but if it fails, try to fix common issues
+    let query_result = Query::new(ts_lang, query_str);
+    
+    let query = match query_result {
         Ok(q) => q,
         Err(e) => {
             // Log the error for debugging
             eprintln!("DEBUG: Tree-sitter query error for {}: {}", language.as_str(), e);
-            return Ok(Vec::new());
+            
+            // Try to create a minimal fallback query
+            eprintln!("DEBUG: Creating fallback query for {}", language.as_str());
+            let fallback_query = create_fallback_query(language);
+            match Query::new(ts_lang, fallback_query) {
+                Ok(q) => q,
+                Err(e2) => {
+                    eprintln!("DEBUG: Fallback query also failed: {}", e2);
+                    return Ok(Vec::new());
+                }
+            }
         }
     };
 
@@ -102,6 +112,39 @@ fn highlight_with_query(
     spans.sort_by_key(|span| span.start);
     
     Ok(spans)
+}
+
+fn create_fallback_query(language: LanguageId) -> &'static str {
+    match language {
+        LanguageId::Rust => {
+            r#"
+(comment) @comment
+(string_literal) @string
+(raw_string_literal) @string
+(line_comment) @comment
+(block_comment) @comment
+(identifier) @variable
+(type_identifier) @type
+(primitive_type) @type
+(field_identifier) @property
+"# 
+        }
+        LanguageId::Toml => {
+            r#"
+(comment) @comment
+(string) @string
+(boolean) @constant
+(integer) @number
+(float) @number
+"#
+        }
+        _ => {
+            r#"
+(comment) @comment
+(string) @string
+"#
+        }
+    }
 }
 
 pub fn map_capture_name(name: &str) -> Highlight {

@@ -104,6 +104,25 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
         // Use tree-sitter CLI
         println!("Using tree-sitter CLI to build {}...", language_id);
         
+        // Check if package.json exists and install dependencies if needed
+        if source_dir.join("package.json").exists() {
+            println!("Installing npm dependencies...");
+            let install_output = Command::new("npm")
+                .current_dir(&source_dir)
+                .arg("install")
+                .output()
+                .map_err(|e| format!("Failed to run npm install: {}", e))?;
+            
+            if !install_output.status.success() {
+                let stderr = String::from_utf8_lossy(&install_output.stderr);
+                let stdout = String::from_utf8_lossy(&install_output.stdout);
+                eprintln!("npm install output:\nstdout: {}\nstderr: {}", stdout, stderr);
+                // Continue anyway, maybe dependencies are already installed
+            } else {
+                println!("npm dependencies installed successfully");
+            }
+        }
+        
         // Run tree-sitter generate and capture output
         let generate_output = Command::new("tree-sitter")
             .current_dir(&source_dir)
@@ -114,7 +133,22 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
         if !generate_output.status.success() {
             let stderr = String::from_utf8_lossy(&generate_output.stderr);
             let stdout = String::from_utf8_lossy(&generate_output.stdout);
-            return Err(format!("tree-sitter generate failed:\nstdout: {}\nstderr: {}", stdout, stderr));
+            eprintln!("tree-sitter generate failed, trying with npx...");
+            
+            // Try with npx tree-sitter generate
+            let npx_output = Command::new("npx")
+                .current_dir(&source_dir)
+                .args(["tree-sitter", "generate"])
+                .output()
+                .map_err(|e| format!("Failed to run npx tree-sitter generate: {}", e))?;
+            
+            if !npx_output.status.success() {
+                let npx_stderr = String::from_utf8_lossy(&npx_output.stderr);
+                let npx_stdout = String::from_utf8_lossy(&npx_output.stdout);
+                return Err(format!("tree-sitter generate failed with both tree-sitter CLI and npx:\nFirst error:\nstdout: {}\nstderr: {}\n\nNpx error:\nstdout: {}\nstderr: {}", 
+                    stdout, stderr, npx_stdout, npx_stderr));
+            }
+            println!("tree-sitter generate succeeded with npx");
         }
         
         // Run tree-sitter build and capture output
