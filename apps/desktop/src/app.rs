@@ -182,6 +182,14 @@ impl iced::Application for App {
                                     for span in spans.iter().take(5) {
                                         println!("  Span [{}, {}]: {:?}", span.start, span.end, span.highlight);
                                     }
+                                    
+                                    // Also print the actual text for each span
+                                    for span in spans.iter().take(5) {
+                                        if span.start < test_md.len() && span.end <= test_md.len() {
+                                            let text = &test_md[span.start..span.end];
+                                            println!("    Text: {:?}", text);
+                                        }
+                                    }
                                 }
                                 Err(e) => {
                                     eprintln!("Markdown highlighting error: {:?}", e);
@@ -195,6 +203,26 @@ impl iced::Application for App {
                     }
                 } else {
                     eprintln!("Markdown language not loaded");
+                    
+                    // Debug: check if the library file exists
+                    use syntax_core::runtime::Runtime;
+                    let runtime = Runtime::new();
+                    let lib_path = runtime.grammar_library_path("markdown");
+                    println!("Markdown library path: {}", lib_path.display());
+                    println!("Exists: {}", lib_path.exists());
+                    
+                    // Check query file
+                    let query_dir = runtime.language_dir("markdown").join("queries");
+                    let query_path = query_dir.join("highlights.scm");
+                    println!("Markdown query path: {}", query_path.display());
+                    println!("Exists: {}", query_path.exists());
+                    
+                    if query_path.exists() {
+                        if let Ok(content) = std::fs::read_to_string(&query_path) {
+                            println!("Query file size: {} bytes", content.len());
+                            println!("First 200 chars: {}", &content[..content.len().min(200)]);
+                        }
+                    }
                 }
             }
         }
