@@ -5,7 +5,7 @@ edition = "2024"
 
 [dependencies]
 tree-sitter = "0.20"
-tree-sitter-rust = { version = "0.22", optional = true }
+tree-sitter-rust = { version = "0.24", optional = true }
 tree-sitter-toml = { version = "0.5", optional = true }
 ropey = "1.6"
 thiserror = "1.0"

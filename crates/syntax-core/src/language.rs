@@ -95,10 +95,10 @@ impl LanguageId {
         match self {
             LanguageId::Rust => {
                 eprintln!("DEBUG: tree_sitter_language for Rust");
-                // Use built-in tree-sitter-rust when feature is enabled (to avoid version mismatch)
+                // Use built-in tree-sitter-rust v0.24 which should match the query file
                 #[cfg(feature = "rust")]
                 {
-                    eprintln!("DEBUG: Using built-in tree-sitter-rust");
+                    eprintln!("DEBUG: Using built-in tree-sitter-rust v0.24");
                     return Some(tree_sitter_rust::language());
                 }
                 #[cfg(not(feature = "rust"))]

@@ -57,7 +57,7 @@ impl GrammarRegistry {
             extensions: vec!["rs".to_string()],
             filenames: vec![],
             repo_url: "https://github.com/tree-sitter/tree-sitter-rust".to_string(),
-            revision: "v0.22.0".to_string(),
+            revision: "v0.24.0".to_string(),
             subdirectory: None,
             source_files: vec!["src/parser.c".to_string(), "src/scanner.c".to_string()],
             query_files: vec!["highlights.scm".to_string(), "injections.scm".to_string(), "locals.scm".to_string()],
