@@ -2,7 +2,7 @@
 
 use crate::error::SyntaxError;
 use crate::language::LanguageId;
-use tree_sitter::{Query, QueryCursor, Tree};
+use tree_sitter::{Query, QueryCursor, Tree, StreamingIterator};
 
 /// A highlight span in the document
 #[derive(Debug, Clone)]
@@ -82,10 +82,10 @@ fn highlight_with_query(
     let root_node = tree.root_node();
     let mut spans = Vec::new();
 
-    // In tree-sitter 0.26.8, QueryCursor::matches() returns QueryMatches which doesn't implement Iterator
+    // In tree-sitter 0.26.8, QueryCursor::matches() returns QueryMatches which implements StreamingIterator
     // We need to use a while loop with next()
     let mut matches = cursor.matches(&query, root_node, source.as_bytes());
-    while let Some(match_) = matches.next() {
+    while let Some(match_) = StreamingIterator::next(&mut matches) {
         for capture in match_.captures {
             let node = capture.node;
             let start = node.start_byte();
