@@ -83,7 +83,8 @@ impl SyntaxManager {
             }
             Err(e) => {
                 eprintln!("DEBUG: Failed to set language: {:?}", e);
-                eprintln!("DEBUG: Language version may be incompatible with tree-sitter library");
+                eprintln!("DEBUG: Language ABI version may be incompatible with tree-sitter library (using tree-sitter v0.26.8)");
+                eprintln!("DEBUG: Try rebuilding the grammar with: cargo run --bin build-grammar -- {}", language.as_str());
                 // If setting fails, document will have no tree
                 let doc = SyntaxDocument {
                     text: text.to_string(),

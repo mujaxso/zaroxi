@@ -18,6 +18,9 @@ fn main() {
     
     // Generate grammar manifest for inclusion
     generate_grammar_manifest();
+    
+    // Check tree-sitter version compatibility
+    println!("cargo:rustc-env=TREE_SITTER_VERSION=0.26.8");
 }
 
 fn build_grammars() {

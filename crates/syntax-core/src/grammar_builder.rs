@@ -78,11 +78,22 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
         return Err(format!("Source directory does not exist: {:?}", source_dir));
     }
     
-    // Check if tree-sitter CLI is available
+    // Check if tree-sitter CLI is available and at a compatible version
     let has_tree_sitter_cli = Command::new("tree-sitter")
         .arg("--version")
         .output()
-        .is_ok();
+        .is_ok_and(|output| {
+            if output.status.success() {
+                let version_str = String::from_utf8_lossy(&output.stdout);
+                // Check if version is at least 0.20.0
+                version_str.contains("0.20") || version_str.contains("0.21") || 
+                version_str.contains("0.22") || version_str.contains("0.23") ||
+                version_str.contains("0.24") || version_str.contains("0.25") ||
+                version_str.contains("0.26")
+            } else {
+                false
+            }
+        });
     
     let lib_path;
     
