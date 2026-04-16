@@ -42,7 +42,7 @@ pub fn explorer_panel_professional(app: &App) -> Element<'_, Message> {
     let style = StyleHelpers::new(app.current_theme);
     
     // Check if we have a workspace
-    let content = if app.workspace_path.is_empty() {
+    let content: Element<'_, Message> = if app.workspace_path.is_empty() {
         // No workspace open state
         container(
             column![
@@ -215,12 +215,14 @@ fn render_explorer_tree<'a>(
                 } else {
                     Icon::ChevronRight
                 };
-                button(
-                    chevron_icon.render_with_color(typography, style.colors.text_muted, Some(12))
+                Element::from(
+                    button(
+                        chevron_icon.render_with_color(typography, style.colors.text_muted, Some(12))
+                    )
+                    .on_press(Message::ToggleDirectory(node.path.to_string_lossy().to_string()))
+                    .padding(2)
+                    .style(iced::theme::Button::Text)
                 )
-                .on_press(Message::ToggleDirectory(node.path.to_string_lossy().to_string()))
-                .padding(2)
-                .style(iced::theme::Button::Text)
             } else {
                 // Spacer for files to align with directories
                 Element::from(container(iced::widget::Space::with_width(Length::Fixed(20.0))))
