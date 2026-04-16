@@ -125,6 +125,10 @@ pub fn editor_panel<'a>(
             }
         }
         
+        let tab_scroll_style = TabScrollableStyle {
+            colors: style.colors,
+        };
+        
         let scrollable_tabs: iced::widget::Scrollable<'_, Message, iced::Theme, iced::Renderer> = scrollable(
             tab_row
         )
@@ -133,7 +137,8 @@ pub fn editor_panel<'a>(
                 .width(5)
                 .margin(0)
                 .scroller_width(5)
-        ));
+        ))
+        .style(iced::theme::Scrollable::Custom(Box::new(tab_scroll_style)));
         
         // Always use editor_background for seamless integration with editor area
         let tab_bg_color = style.colors.editor_background;
