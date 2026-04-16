@@ -100,7 +100,9 @@ pub fn editor_panel<'a>(
                             container::Appearance {
                                 background: Some(style.colors.editor_background.into()),
                                 border: iced::Border {
-                                    color: style.colors.border,
+                                    // Use editor_background for the bottom border to make it seamless
+                                    // The left, top, and right borders will still be visible against panel_background
+                                    color: style.colors.editor_background,
                                     width: 1.0,
                                     radius: iced::border::Radius::from(0.0),
                                 },
