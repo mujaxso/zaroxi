@@ -39,7 +39,7 @@ pub fn editor_panel<'a>(
             .width(Length::Fill)
             .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
                 container::Appearance {
-                    background: Some(style.colors.panel_background.into()),
+                    background: Some(style.colors.editor_background.into()),
                     border: iced::Border {
                         color: Color::TRANSPARENT,
                         width: 0.0,
@@ -136,7 +136,13 @@ pub fn editor_panel<'a>(
         let tab_bar_container: iced::widget::Container<'_, Message, iced::Theme, iced::Renderer> = container(scrollable_tabs)
             .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
                 container::Appearance {
-                    background: Some(style.colors.panel_background.into()),
+                    background: Some(
+                        if tab_manager.tabs.is_empty() {
+                            style.colors.editor_background
+                        } else {
+                            style.colors.panel_background
+                        }.into()
+                    ),
                     border: iced::Border {
                         color: Color::TRANSPARENT,
                         width: 0.0,
