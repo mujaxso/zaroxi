@@ -261,12 +261,22 @@ fn handle_file_loaded(app: &mut App, result: Result<(String, String, Document), 
             }
             app.file_cache.insert(path.clone(), (content.clone(), document.clone()));
             
+            // Ensure there's a tab for this file
+            if !app.tab_manager.has_tab_for_path(&path) {
+                println!("DEBUG workspace: Creating tab for {} in handle_file_loaded", path);
+                app.tab_manager.open_or_activate_tab(path.clone());
+            } else {
+                // Activate the existing tab
+                if let Some(tab) = app.tab_manager.find_tab_by_path(&path) {
+                    app.tab_manager.activate_tab(tab.id);
+                }
+            }
+            
             app.active_file_path = Some(path.clone());
             app.file_loading_state = FileLoadingState::Idle;
             
             // Ensure the tab for this file is active and not dirty
             if let Some(tab) = app.tab_manager.find_tab_by_path(&path) {
-                app.tab_manager.activate_tab(tab.id);
                 app.tab_manager.set_tab_dirty(tab.id, false);
             }
             
