@@ -63,8 +63,8 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
 fn handle_workspace_loaded(app: &mut App, result: Result<(String, Vec<core_types::workspace::DirectoryEntry>), String>) -> Command<Message> {
     match result {
         Ok((path, entries)) => {
-            // Clear file cache when workspace changes
-            app.file_cache.clear();
+            // Clear editor buffers when workspace changes
+            app.editor_buffers.clear();
             
             app.workspace_path = path.clone();
             app.file_entries = entries.clone();
@@ -133,12 +133,40 @@ fn handle_file_selected(app: &mut App, index: usize) -> Command<Message> {
 }
 
 fn handle_file_selected_by_path(app: &mut App, path: String) -> Command<Message> {
-    // Find the index of the file in file_entries
-    let index = app.file_entries.iter().position(|entry| entry.path == path);
-    if let Some(index) = index {
-        handle_file_selected(app, index)
-    } else {
+    // Check if the file is already open in a buffer
+    if app.editor_buffers.contains_key(&path) {
+        // File is already open, just activate its tab
+        if let Some(tab) = app.tab_manager.find_tab_by_path(&path) {
+            app.tab_manager.activate_tab(tab.id);
+            app.active_file_path = Some(path.clone());
+            
+            // Update the editor state from the cached buffer
+            if let Some(buffer) = app.editor_buffers.get(&path) {
+                // Update syntax highlighting state
+                app.syntax_highlight_spans = buffer.syntax_highlight_spans.clone();
+                app.syntax_highlight_cache = buffer.syntax_highlight_cache.clone();
+                app.syntax_cache_version = buffer.syntax_cache_version;
+                app.syntax_highlight_span_count = buffer.syntax_highlight_span_count;
+                
+                // Set the editor state
+                app.editor_state = Some(editor_core::EditorState::from_document(buffer.document.clone()));
+                app.is_dirty = buffer.is_dirty;
+                
+                // Update tab dirty state
+                if let Some(tab) = app.tab_manager.find_tab_by_path(&path) {
+                    app.tab_manager.set_tab_dirty(tab.id, buffer.is_dirty);
+                }
+            }
+        }
         Command::none()
+    } else {
+        // Find the index of the file in file_entries
+        let index = app.file_entries.iter().position(|entry| entry.path == path);
+        if let Some(index) = index {
+            handle_file_selected(app, index)
+        } else {
+            Command::none()
+        }
     }
 }
 
@@ -227,15 +255,8 @@ fn handle_file_loaded(app: &mut App, result: Result<(String, String, Document), 
     let start_time = Instant::now();
     match result {
         Ok((path, content, document)) => {
-            // Cache the file for faster reopening (limit to 10 files)
-            if app.file_cache.len() >= 10 {
-                // Remove the first (oldest) entry
-                let first_key = app.file_cache.keys().next().cloned();
-                if let Some(key) = first_key {
-                    app.file_cache.remove(&key);
-                }
-            }
-            app.file_cache.insert(path.clone(), (content.clone(), document.clone()));
+            // Create a new buffer for this file
+            let mut buffer = EditorBuffer::new(path.clone(), content.clone());
             
             // Ensure there's a tab for this file
             if !app.tab_manager.has_tab_for_path(&path) {
@@ -265,10 +286,10 @@ fn handle_file_loaded(app: &mut App, result: Result<(String, String, Document), 
             // Update syntax highlighting flag and clear cache if disabled
             app.syntax_highlighting_enabled = needs_syntax_highlight;
             if !needs_syntax_highlight {
-                app.syntax_highlight_cache.clear();
-                app.syntax_highlight_spans.clear();
-                app.syntax_highlight_span_count = 0;
-                app.syntax_cache_version += 1;
+                buffer.syntax_highlight_cache.clear();
+                buffer.syntax_highlight_spans.clear();
+                buffer.syntax_highlight_span_count = 0;
+                buffer.syntax_cache_version += 1;
             }
             
             // Handle based on size tier
@@ -294,9 +315,7 @@ fn handle_file_loaded(app: &mut App, result: Result<(String, String, Document), 
                     preview_content
                 ));
                 // Create editor state from document for consistency
-                // Clone document since we need to move it
-                let document_clone = document.clone();
-                app.editor_state = Some(editor_core::EditorState::from_document(document_clone));
+                app.editor_state = Some(editor_core::EditorState::from_document(document.clone()));
             } else {
                 // Large or normal files: editing enabled
                 app.is_file_read_only = false;
@@ -315,78 +334,80 @@ fn handle_file_loaded(app: &mut App, result: Result<(String, String, Document), 
                 } else {
                     app.status_message = format!("File loaded: {} ({} bytes)", path, file_size_bytes);
                 }
-                // Don't set editor state here - it will be set in EditorSetDocument
-                // This prevents a flash of unstyled content
             }
             
             app.error_message = None;
             app.is_dirty = false;
             
-            // Clone content for workspace state and syntax highlighting
-            let content_clone = content.clone();
-            
-            // Update workspace state - use the content we already have
+            // Update workspace state
             {
                 let mut state = app.workspace_state.lock().unwrap();
-                state.open_buffer(&path, content_clone);
+                state.open_buffer(&path, content.clone());
             }
             
             // Start syntax highlighting immediately for normal files
             if needs_syntax_highlight {
                 // Update syntax document in the background
-                if let Some(path) = &app.active_file_path {
-                    let doc_id = path.clone();
-                    let text = content.clone();
-                    let theme = app.current_theme;
+                let doc_id = path.clone();
+                let text = content.clone();
+                let theme = app.current_theme;
+                
+                // Update syntax manager and get spans
+                let spans = {
+                    let mut syntax_manager = app.syntax_manager.lock().unwrap();
                     
-                    // Update syntax manager and get spans
-                    let spans = {
-                        let mut syntax_manager = app.syntax_manager.lock().unwrap();
-                        
-                        // Update the document in syntax manager
-                        if let Err(e) = syntax_manager.update_document(&doc_id, &text, std::path::Path::new(path)) {
-                            eprintln!("Failed to update syntax document: {}", e);
-                            None
-                        } else {
-                            // Get highlight spans
-                            match syntax_manager.highlight_spans(&doc_id) {
-                                Ok(spans) => Some(spans),
-                                Err(e) => {
-                                    eprintln!("Failed to get highlight spans: {}", e);
-                                    None
-                                }
+                    // Update the document in syntax manager
+                    if let Err(e) = syntax_manager.update_document(&doc_id, &text, std::path::Path::new(&path)) {
+                        eprintln!("Failed to update syntax document: {}", e);
+                        None
+                    } else {
+                        // Get highlight spans
+                        match syntax_manager.highlight_spans(&doc_id) {
+                            Ok(spans) => Some(spans),
+                            Err(e) => {
+                                eprintln!("Failed to get highlight spans: {}", e);
+                                None
                             }
                         }
-                    };
-                    
-                    // Build cache outside the lock to avoid holding it
-                    if let Some(spans) = spans {
-                        app.syntax_highlight_span_count = spans.len();
-                        app.syntax_highlight_spans = spans.clone();
-                        // Build per‑line cache for the real editor
-                        app.syntax_highlight_cache =
-                            crate::update::editor::build_line_cache(&text, &spans, theme);
-                        app.syntax_cache_version += 1;
                     }
+                };
+                
+                // Build cache outside the lock to avoid holding it
+                if let Some(spans) = spans {
+                    buffer.syntax_highlight_span_count = spans.len();
+                    buffer.syntax_highlight_spans = spans.clone();
+                    // Build per‑line cache for the real editor
+                    buffer.syntax_highlight_cache =
+                        crate::update::editor::build_line_cache(&text, &spans, theme);
+                    buffer.syntax_cache_version += 1;
                 }
+            }
+            
+            // Store the buffer
+            app.editor_buffers.insert(path.clone(), buffer);
+            
+            // Update app state from the buffer
+            if let Some(buffer) = app.editor_buffers.get(&path) {
+                app.syntax_highlight_spans = buffer.syntax_highlight_spans.clone();
+                app.syntax_highlight_cache = buffer.syntax_highlight_cache.clone();
+                app.syntax_cache_version = buffer.syntax_cache_version;
+                app.syntax_highlight_span_count = buffer.syntax_highlight_span_count;
+                app.editor_state = Some(editor_core::EditorState::from_document(buffer.document.clone()));
+                app.is_dirty = buffer.is_dirty;
             }
             
             // Send EditorSetDocument to update editor state for non-very-large files
             let elapsed = start_time.elapsed();
             if elapsed.as_millis() > 50 {
-                eprintln!("File loading took {}ms (highlighting: {})", elapsed.as_millis(), needs_syntax_highlight);
+                eprintln!("File loading took {}ms", elapsed.as_millis());
             }
             
             if is_very_large {
-                // For very large files, we've already set up the editor state
                 Command::none()
             } else {
-                // For normal files, send EditorSetDocument
-                // Clone document here since it hasn't been moved yet
-                let doc = document.clone();
                 Command::perform(
                     async move {
-                        Message::EditorSetDocument(doc)
+                        Message::EditorSetDocument(document)
                     },
                     |msg| msg,
                 )
@@ -433,13 +454,16 @@ fn handle_save_file(app: &mut App) -> Command<Message> {
 fn handle_file_saved(app: &mut App, result: Result<(), String>) -> Command<Message> {
     match result {
         Ok(_) => {
-            if let Some(editor_state) = &mut app.editor_state {
-                editor_state.document_mut().mark_saved();
-                app.is_dirty = editor_state.document().is_dirty();
-            }
-            // Update tab dirty state
-            if let Some(active_tab) = app.tab_manager.get_active_tab() {
-                app.tab_manager.set_tab_dirty(active_tab.id, app.is_dirty);
+            if let Some(active_path) = &app.active_file_path {
+                if let Some(buffer) = app.editor_buffers.get_mut(active_path) {
+                    buffer.mark_saved();
+                    app.is_dirty = buffer.is_dirty;
+                    
+                    // Update tab dirty state
+                    if let Some(active_tab) = app.tab_manager.get_active_tab() {
+                        app.tab_manager.set_tab_dirty(active_tab.id, buffer.is_dirty);
+                    }
+                }
             }
             app.status_message = "File saved successfully".to_string();
             app.error_message = None;

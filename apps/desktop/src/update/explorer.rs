@@ -50,11 +50,25 @@ fn handle_explorer_message(app: &mut App, explorer_msg: ExplorerMessage) -> Comm
                     app.tab_manager.activate_tab(tab_id);
                     app.active_file_path = app.tab_manager.get_active_file_path();
                     
-                    // Always load the file when activating a tab
-                    return Command::perform(
-                        async move { path_string },
-                        |path| Message::FileSelectedByPath(path),
-                    );
+                    // Check if buffer exists - if it does, we don't need to reload from disk
+                    if app.editor_buffers.contains_key(&path_string) {
+                        // Buffer exists, update editor state from buffer
+                        if let Some(buffer) = app.editor_buffers.get(&path_string) {
+                            // Update syntax highlighting state
+                            app.syntax_highlight_spans = buffer.syntax_highlight_spans.clone();
+                            app.syntax_highlight_cache = buffer.syntax_highlight_cache.clone();
+                            app.syntax_cache_version = buffer.syntax_cache_version;
+                            app.syntax_highlight_span_count = buffer.syntax_highlight_span_count;
+                            
+                            // Set the editor state
+                            app.editor_state = Some(editor_core::EditorState::from_document(buffer.document.clone()));
+                            app.is_dirty = buffer.is_dirty;
+                            
+                            // Update tab dirty state
+                            app.tab_manager.set_tab_dirty(tab_id, buffer.is_dirty);
+                        }
+                        return Command::none();
+                    }
                 }
             }
             

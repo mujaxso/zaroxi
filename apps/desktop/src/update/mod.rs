@@ -90,9 +90,70 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
         }
         
         // Tab management messages
-        Message::ActivateTab(_)
-        | Message::CloseTab(_) => {
-            editor::update(app, message)
+        Message::ActivateTab(tab_id) => {
+            if app.tab_manager.activate_tab(tab_id) {
+                // Update active file path
+                if let Some(tab) = app.tab_manager.get_active_tab() {
+                    let path = tab.file_path.clone();
+                    app.active_file_path = Some(path.clone());
+                    
+                    // Load buffer from cache
+                    if let Some(buffer) = app.editor_buffers.get(&path) {
+                        // Update syntax highlighting state
+                        app.syntax_highlight_spans = buffer.syntax_highlight_spans.clone();
+                        app.syntax_highlight_cache = buffer.syntax_highlight_cache.clone();
+                        app.syntax_cache_version = buffer.syntax_cache_version;
+                        app.syntax_highlight_span_count = buffer.syntax_highlight_span_count;
+                        
+                        // Set the editor state
+                        app.editor_state = Some(editor_core::EditorState::from_document(buffer.document.clone()));
+                        app.is_dirty = buffer.is_dirty;
+                        app.is_file_read_only = false;
+                        app.is_file_too_large_for_editor = false;
+                        
+                        // Update status
+                        app.status_message = format!("Switched to {}", tab.display_name);
+                    }
+                }
+            }
+            Command::none()
+        }
+        Message::CloseTab(tab_id) => {
+            if let Some(closed_path) = app.tab_manager.close_tab(tab_id) {
+                // If this was the last tab, clear the editor state
+                if app.tab_manager.tabs.is_empty() {
+                    app.active_file_path = None;
+                    app.editor_state = None;
+                    app.text_editor = iced::widget::text_editor::Content::new();
+                    app.is_dirty = false;
+                    app.status_message = "All tabs closed".to_string();
+                } else {
+                    // Activate the new active tab
+                    if let Some(tab) = app.tab_manager.get_active_tab() {
+                        let path = tab.file_path.clone();
+                        app.active_file_path = Some(path.clone());
+                        
+                        // Load buffer from cache
+                        if let Some(buffer) = app.editor_buffers.get(&path) {
+                            // Update syntax highlighting state
+                            app.syntax_highlight_spans = buffer.syntax_highlight_spans.clone();
+                            app.syntax_highlight_cache = buffer.syntax_highlight_cache.clone();
+                            app.syntax_cache_version = buffer.syntax_cache_version;
+                            app.syntax_highlight_span_count = buffer.syntax_highlight_span_count;
+                            
+                            // Set the editor state
+                            app.editor_state = Some(editor_core::EditorState::from_document(buffer.document.clone()));
+                            app.is_dirty = buffer.is_dirty;
+                            app.is_file_read_only = false;
+                            app.is_file_too_large_for_editor = false;
+                            
+                            // Update status
+                            app.status_message = format!("Switched to {}", tab.display_name);
+                        }
+                    }
+                }
+            }
+            Command::none()
         }
         
         // Key presses and UI state

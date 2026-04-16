@@ -12,6 +12,45 @@ use crate::settings::editor::EditorTypographySettings;
 use syntax_core;
 
 #[derive(Debug, Clone)]
+pub struct EditorBuffer {
+    pub file_path: String,
+    pub content: String,
+    pub is_dirty: bool,
+    pub document: editor_core::Document,
+    pub syntax_highlight_spans: Vec<syntax_core::HighlightSpan>,
+    pub syntax_highlight_cache: Vec<Vec<(std::ops::Range<usize>, iced::Color)>>,
+    pub syntax_cache_version: u32,
+    pub syntax_highlight_span_count: usize,
+}
+
+impl EditorBuffer {
+    pub fn new(file_path: String, content: String) -> Self {
+        let document = editor_core::Document::from_text_with_path(&content, file_path.clone());
+        Self {
+            file_path,
+            content,
+            is_dirty: false,
+            document,
+            syntax_highlight_spans: Vec::new(),
+            syntax_highlight_cache: Vec::new(),
+            syntax_cache_version: 0,
+            syntax_highlight_span_count: 0,
+        }
+    }
+    
+    pub fn update_content(&mut self, content: String) {
+        self.content = content.clone();
+        self.document = editor_core::Document::from_text_with_path(&content, self.file_path.clone());
+        self.is_dirty = true;
+    }
+    
+    pub fn mark_saved(&mut self) {
+        self.is_dirty = false;
+        self.document.mark_saved();
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct EditorTab {
     pub id: usize,
     pub file_path: String,
@@ -386,8 +425,8 @@ pub struct App {
     pub syntax_cache_version: u32,
     // Whether syntax highlighting should be enabled for the current file
     pub syntax_highlighting_enabled: bool,
-    // File cache to speed up reopening files (max 10 files to avoid memory issues)
-    pub file_cache: std::collections::HashMap<String, (String, editor_core::Document)>,
+    // Editor buffers for open files
+    pub editor_buffers: std::collections::HashMap<String, EditorBuffer>,
     // Tab management for editor
     pub tab_manager: TabManager,
 }
@@ -446,7 +485,7 @@ impl App {
             syntax_highlight_cache: Vec::new(),
             syntax_cache_version: 0,
             syntax_highlighting_enabled: true,
-            file_cache: std::collections::HashMap::new(),
+            editor_buffers: std::collections::HashMap::new(),
             tab_manager: TabManager::new(),
         };
         
@@ -498,5 +537,20 @@ impl App {
             ZaroxiTheme::Light => ZaroxiTheme::Light,
             ZaroxiTheme::Dark => ZaroxiTheme::Dark,
         };
+    }
+    
+    /// Update the active buffer with new content
+    pub fn update_active_buffer(&mut self, content: String) {
+        if let Some(active_path) = &self.active_file_path {
+            if let Some(buffer) = self.editor_buffers.get_mut(active_path) {
+                buffer.update_content(content);
+                self.is_dirty = buffer.is_dirty;
+                
+                // Update tab dirty state
+                if let Some(active_tab) = self.tab_manager.get_active_tab() {
+                    self.tab_manager.set_tab_dirty(active_tab.id, buffer.is_dirty);
+                }
+            }
+        }
     }
 }
