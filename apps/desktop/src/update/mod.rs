@@ -111,6 +111,19 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                         app.is_file_read_only = false;
                         app.is_file_too_large_for_editor = false;
                         
+                        // Ensure syntax manager has the document
+                        {
+                            let mut syntax_manager = app.syntax_manager.lock().unwrap();
+                            // Update the document in syntax manager if not present
+                            if !syntax_manager.contains_document(&path) {
+                                let _ = syntax_manager.update_document(
+                                    &path,
+                                    &buffer.content,
+                                    std::path::Path::new(&path),
+                                );
+                            }
+                        }
+                        
                         // Update status
                         app.status_message = format!("Switched to {}", tab.display_name);
                     }
@@ -146,6 +159,19 @@ pub fn update(app: &mut App, message: Message) -> Command<Message> {
                             app.is_dirty = buffer.is_dirty;
                             app.is_file_read_only = false;
                             app.is_file_too_large_for_editor = false;
+                            
+                            // Ensure syntax manager has the document
+                            {
+                                let mut syntax_manager = app.syntax_manager.lock().unwrap();
+                                // Update the document in syntax manager if not present
+                                if !syntax_manager.contains_document(&path) {
+                                    let _ = syntax_manager.update_document(
+                                        &path,
+                                        &buffer.content,
+                                        std::path::Path::new(&path),
+                                    );
+                                }
+                            }
                             
                             // Update status
                             app.status_message = format!("Switched to {}", tab.display_name);

@@ -147,21 +147,34 @@ fn handle_file_selected_by_path(app: &mut App, path: String) -> Command<Message>
                 app.syntax_highlight_cache = buffer.syntax_highlight_cache.clone();
                 app.syntax_cache_version = buffer.syntax_cache_version;
                 app.syntax_highlight_span_count = buffer.syntax_highlight_span_count;
-                
+                    
                 // Set the editor state
                 app.editor_state = Some(editor_core::EditorState::from_document(buffer.document.clone()));
                 app.is_dirty = buffer.is_dirty;
-                
+                    
                 // Update tab dirty state
                 if let Some(tab) = app.tab_manager.find_tab_by_path(&path) {
                     app.tab_manager.set_tab_dirty(tab.id, buffer.is_dirty);
                 }
-                
+                    
+                // Ensure syntax manager has the document
+                {
+                    let mut syntax_manager = app.syntax_manager.lock().unwrap();
+                    // Update the document in syntax manager if not present
+                    if !syntax_manager.contains_document(&path) {
+                        let _ = syntax_manager.update_document(
+                            &path,
+                            &buffer.content,
+                            std::path::Path::new(&path),
+                        );
+                    }
+                }
+                    
                 // Update workspace state to ensure it's in sync
                 {
                     let mut state = app.workspace_state.lock().unwrap();
                     let path_buf = std::path::PathBuf::from(&path);
-                    
+                        
                     // Check if the workspace state already has this buffer
                     if !state.path_to_buffer_id.contains_key(&path_buf) {
                         // If not, open it

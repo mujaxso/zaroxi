@@ -66,6 +66,19 @@ fn handle_explorer_message(app: &mut App, explorer_msg: ExplorerMessage) -> Comm
                             
                             // Update tab dirty state
                             app.tab_manager.set_tab_dirty(tab_id, buffer.is_dirty);
+                            
+                            // Ensure syntax manager has the document
+                            {
+                                let mut syntax_manager = app.syntax_manager.lock().unwrap();
+                                // Update the document in syntax manager if not present
+                                if !syntax_manager.contains_document(&path_string) {
+                                    let _ = syntax_manager.update_document(
+                                        &path_string,
+                                        &buffer.content,
+                                        std::path::Path::new(&path_string),
+                                    );
+                                }
+                            }
                         }
                         return Command::none();
                     }
