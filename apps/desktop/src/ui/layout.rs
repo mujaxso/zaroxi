@@ -155,20 +155,26 @@ fn top_bar<'a>(workspace_path: &'a str, is_dirty: bool) -> Element<'a, Message> 
         if workspace_path.is_empty() {
             // When no workspace is open, show an input field for manual entry
             container(
-                row![
-                    text_input("Enter workspace path manually...", workspace_path)
-                        .on_input(Message::WorkspacePathChanged)
-                        .on_submit(Message::SubmitManualWorkspacePath(workspace_path.to_string()))
-                        .padding([10, 12])
-                        .width(Length::Fill)
-                        .style(iced::theme::TextInput::Default),
-                    button("Open")
-                        .on_press(Message::SubmitManualWorkspacePath(workspace_path.to_string()))
-                        .padding([10, 14])
-                        .style(iced::theme::Button::Secondary),
+                column![
+                    row![
+                        text_input("Enter workspace path manually...", workspace_path)
+                            .on_input(Message::WorkspacePathChanged)
+                            .on_submit(Message::SubmitManualWorkspacePath(workspace_path.to_string()))
+                            .padding([10, 12])
+                            .width(Length::Fill)
+                            .style(iced::theme::TextInput::Default),
+                        button("Open")
+                            .on_press(Message::SubmitManualWorkspacePath(workspace_path.to_string()))
+                            .padding([10, 14])
+                            .style(iced::theme::Button::Secondary),
+                    ]
+                    .spacing(8)
+                    .align_items(Alignment::Center),
+                    text("Or use the file picker (uses system theme)")
+                        .size(10)
+                        .style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150)))
                 ]
-                .spacing(8)
-                .align_items(Alignment::Center)
+                .spacing(4)
             )
             .width(Length::FillPortion(3))
             .into()

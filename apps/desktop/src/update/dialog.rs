@@ -30,7 +30,7 @@ mod file_picker {
         /// Open a folder picker dialog with portal support
         pub async fn pick_folder(title: &str) -> Result<PathBuf, FilePickerError> {
             // Log environment for diagnostics
-            let _wayland = std::env::var("WAYLAND_DISPLAY").is_ok()
+            let wayland = std::env::var("WAYLAND_DISPLAY").is_ok()
                 || std::env::var("XDG_SESSION_TYPE").unwrap_or_default() == "wayland";
             let xdg_current_desktop = std::env::var("XDG_CURRENT_DESKTOP").unwrap_or_default();
             let hyprland = std::env::var("HYPRLAND_INSTANCE_SIGNATURE").is_ok()
@@ -49,7 +49,9 @@ mod file_picker {
             let dialog = rfd::AsyncFileDialog::new()
                 .set_title(title);
             
-            log::debug!("Opening async file picker dialog");
+            // Note: Native file dialogs use the system theme, not our application theme
+            // This is a limitation of native dialogs on all platforms
+            log::debug!("Opening async file picker dialog (uses system theme)");
             match dialog.pick_folder().await {
                 Some(handle) => {
                     let path = handle.path().to_path_buf();
@@ -78,7 +80,7 @@ mod file_picker {
                     // Try synchronous version as fallback
                     // This might work better in some environments
                     match tokio::task::spawn_blocking(move || {
-                        log::debug!("Opening synchronous file picker dialog");
+                        log::debug!("Opening synchronous file picker dialog (uses system theme)");
                         let dialog = rfd::FileDialog::new()
                             .set_title(&title_clone);
                         dialog.pick_folder()
@@ -108,12 +110,12 @@ pub fn open_workspace_dialog() -> Command<Message> {
             // On some window managers (especially Wayland compositors),
             // a small delay can help ensure the window is properly focused
             // before opening the dialog
-            tokio::time::sleep(std::time::Duration::from_millis(150)).await;
+            tokio::time::sleep(std::time::Duration::from_millis(200)).await;
             
-            log::info!("Opening workspace dialog");
+            log::info!("Opening workspace dialog (note: uses system theme)");
             
             // Use our improved file picker service
-            match file_picker::FilePicker::pick_folder_with_fallback("Select Workspace Directory - Neote").await {
+            match file_picker::FilePicker::pick_folder_with_fallback("Select Workspace Directory - Qyzer Studio").await {
                 Ok(path) => {
                     let path_str = path.to_string_lossy().to_string();
                     log::info!("Workspace selected: {}", path_str);
@@ -148,11 +150,11 @@ pub fn open_workspace_dialog() -> Command<Message> {
                         || std::env::var("XDG_CURRENT_DESKTOP").unwrap_or_default().to_lowercase().contains("hyprland");
                     
                     let error_msg = if hyprland && wayland {
-                        format!("File picker failed on Hyprland (Wayland). {}. Try manual entry below, or ensure xdg-desktop-portal and xdg-desktop-portal-hyprland are installed.", e)
+                        format!("File picker failed on Hyprland (Wayland). {}. Try manual entry below, or ensure xdg-desktop-portal and xdg-desktop-portal-hyprland are installed. Note: File picker uses system theme.", e)
                     } else if wayland {
-                        format!("File picker failed on Wayland. {}. Try manual entry below, or ensure xdg-desktop-portal is running.", e)
+                        format!("File picker failed on Wayland. {}. Try manual entry below, or ensure xdg-desktop-portal is running. Note: File picker uses system theme.", e)
                     } else {
-                        format!("File picker failed: {}. Try manual entry below.", e)
+                        format!("File picker failed: {}. Try manual entry below. Note: File picker uses system theme.", e)
                     };
                     
                     Message::WorkspaceLoaded(Err(error_msg))
