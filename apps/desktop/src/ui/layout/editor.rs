@@ -36,26 +36,7 @@ pub fn editor_panel<'a>(
         
         let mut tab_row: iced::widget::Row<'_, Message, iced::Theme, iced::Renderer> = row![].spacing(0);
         
-        // Add debug element first
-        tab_row = tab_row.push(
-            container(
-                text(format!("{} tabs", tab_manager.tabs.len()))
-                    .size(11)
-                    .style(iced::theme::Text::Color(style.colors.text_muted))
-            )
-            .padding([6, 8])
-            .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
-                container::Appearance {
-                    background: Some(style.colors.panel_background.into()),
-                    border: iced::Border {
-                        color: style.colors.border,
-                        width: 1.0,
-                        radius: iced::border::Radius::from(0.0),
-                    },
-                    ..Default::default()
-                }
-            })))
-        );
+        // No debug element - just tabs
         
         for tab in &tab_manager.tabs {
             let is_active = tab.is_active;
@@ -114,7 +95,7 @@ pub fn editor_panel<'a>(
                         }
                     } else {
                         container::Appearance {
-                            background: Some(style.colors.panel_background.into()),
+                            background: Some(style.colors.elevated_panel_background.into()),
                             border: iced::Border {
                                 color: style.colors.border,
                                 width: 1.0,
@@ -141,7 +122,7 @@ pub fn editor_panel<'a>(
         let tab_bar_container: iced::widget::Container<'_, Message, iced::Theme, iced::Renderer> = container(scrollable_tabs)
             .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
                 container::Appearance {
-                    background: Some(style.colors.panel_background.into()),
+                    background: Some(style.colors.shell_background.into()),
                     border: iced::Border {
                         color: style.colors.border,
                         width: 0.0,
@@ -410,22 +391,8 @@ pub fn editor_panel<'a>(
         }
     };
 
-    // Debug: show tab manager state
-    let debug_info = format!("Active tab: {:?}, Total tabs: {}", 
-        app.tab_manager.active_tab_id, 
-        app.tab_manager.tabs.len()
-    );
-    
     let column: iced::widget::Column<'_, Message, iced::Theme, iced::Renderer> = column![
         tab_bar,
-        iced::widget::horizontal_rule(1),
-        // Debug row
-        container(
-            text(debug_info)
-                .size(10)
-                .style(iced::theme::Text::Color(style.colors.text_muted))
-        )
-        .padding([2, 8]),
         iced::widget::horizontal_rule(1),
         header,
         iced::widget::horizontal_rule(1),
