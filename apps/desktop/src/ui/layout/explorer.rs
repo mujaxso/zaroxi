@@ -42,20 +42,22 @@ pub fn explorer_panel_professional(app: &App) -> Element<'_, Message> {
     let style = StyleHelpers::new(app.current_theme);
     
     // Check if we have a workspace
+    // Create a local copy of style for use in the content
+    let content_style = *style;
     let content: Element<'_, Message> = if app.workspace_path.is_empty() {
         // No workspace open state
         container(
             column![
                 text("No workspace open")
                     .size(13)
-                    .style(iced::theme::Text::Color(style.colors.text_muted)),
+                    .style(iced::theme::Text::Color(content_style.colors.text_muted)),
                 button(
                     container(
                         row![
-                            Icon::Folder.render(&app.editor_typography, &style, Some(14)),
+                            Icon::Folder.render(&app.editor_typography, &content_style, Some(14)),
                             text("Open Workspace")
                                 .size(13)
-                                .style(iced::theme::Text::Color(style.colors.text_secondary)),
+                                .style(iced::theme::Text::Color(content_style.colors.text_secondary)),
                         ]
                         .spacing(8)
                         .align_items(Alignment::Center)
@@ -78,14 +80,14 @@ pub fn explorer_panel_professional(app: &App) -> Element<'_, Message> {
             column![
                 text("No files found")
                     .size(13)
-                    .style(iced::theme::Text::Color(style.colors.text_muted)),
+                    .style(iced::theme::Text::Color(content_style.colors.text_muted)),
                 button(
                     container(
                         row![
-                            Icon::Refresh.render(&app.editor_typography, &style, Some(14)),
+                            Icon::Refresh.render(&app.editor_typography, &content_style, Some(14)),
                             text("Refresh")
                                 .size(13)
-                                .style(iced::theme::Text::Color(style.colors.text_secondary)),
+                                .style(iced::theme::Text::Color(content_style.colors.text_secondary)),
                         ]
                         .spacing(8)
                         .align_items(Alignment::Center)
@@ -108,7 +110,7 @@ pub fn explorer_panel_professional(app: &App) -> Element<'_, Message> {
             &app.explorer_state.file_tree,
             &app.explorer_state,
             &app.editor_typography,
-            &style,
+            &content_style,
             0,
         );
         
@@ -123,6 +125,8 @@ pub fn explorer_panel_professional(app: &App) -> Element<'_, Message> {
 
     // Professional header with clean styling
     let header_colors = style.colors;
+    // Create a local copy of style for the icon rendering
+    let icon_style = *style;
     let header = container(
         row![
             text("EXPLORER")
@@ -131,7 +135,7 @@ pub fn explorer_panel_professional(app: &App) -> Element<'_, Message> {
                 .style(iced::theme::Text::Color(header_colors.text_muted)),
             horizontal_space(),
             button(
-                Icon::Refresh.render(&app.editor_typography, &style, Some(14))
+                Icon::Refresh.render(&app.editor_typography, &icon_style, Some(14))
             )
             .on_press(Message::RefreshWorkspace)
             .padding(4)
