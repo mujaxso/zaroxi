@@ -119,9 +119,7 @@ pub fn explorer_panel_professional(app: &App) -> Element<'_, Message> {
                 .padding([4, 0])
         )
         .height(Length::Fill)
-        .style(iced::theme::Scrollable::Custom(Box::new(ExplorerScrollableStyle {
-            colors: style.colors,
-        })));
+        .style(style.subtle_scrollable_style());
 
         scrollable_content.into()
     };
@@ -238,53 +236,6 @@ impl iced::widget::scrollable::StyleSheet for ExplorerScrollableStyle {
     }
 }
 
-// Custom scrollable style for tab bar - matches Explorer scrollbar styling
-struct TabScrollableStyle {
-    colors: crate::theme::SemanticColors,
-}
-
-impl iced::widget::scrollable::StyleSheet for TabScrollableStyle {
-    type Style = iced::Theme;
-
-    fn active(&self, _style: &Self::Style) -> iced::widget::scrollable::Appearance {
-        iced::widget::scrollable::Appearance {
-            container: container::Appearance::default(),
-            scrollbar: iced::widget::scrollable::Scrollbar {
-                background: Some(Color::TRANSPARENT.into()),
-                border: iced::Border {
-                    color: Color::TRANSPARENT,
-                    width: 0.0,
-                    radius: 0.0.into(),
-                },
-                scroller: iced::widget::scrollable::Scroller {
-                    color: Color::from_rgba(
-                        self.colors.border.r,
-                        self.colors.border.g,
-                        self.colors.border.b,
-                        0.3,
-                    ),
-                    border: iced::Border {
-                        color: Color::TRANSPARENT,
-                        width: 0.0,
-                        radius: 3.0.into(),
-                    },
-                },
-            },
-            gap: None,
-        }
-    }
-
-    fn hovered(&self, style: &Self::Style, _is_mouse_over_scrollbar: bool) -> iced::widget::scrollable::Appearance {
-        let mut active = self.active(style);
-        active.scrollbar.scroller.color = Color::from_rgba(
-            self.colors.accent.r,
-            self.colors.accent.g,
-            self.colors.accent.b,
-            0.7,
-        );
-        active
-    }
-}
 
 // Custom button style for explorer rows
 struct ExplorerRowStyle {

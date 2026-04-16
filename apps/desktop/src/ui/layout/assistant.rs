@@ -9,9 +9,8 @@ use crate::settings::editor::EditorTypographySettings;
 
 pub fn ai_panel<'a>(prompt_input: &'a str) -> Element<'a, Message> {
     // For the standalone ai_panel, we need to create a default theme
-    // Since we don't have access to app state here, we'll use the dark theme colors
-    let colors = crate::theme::ZaroxiTheme::Dark.colors();
-    let scroll_style = AssistantScrollableStyle { colors };
+    // Since we don't have access to app state here, we'll use the dark theme
+    let style_helpers = crate::ui::style::StyleHelpers::new(crate::theme::ZaroxiTheme::Dark);
     
     column![
         // Header - refined with subtle styling
@@ -122,7 +121,7 @@ pub fn ai_panel<'a>(prompt_input: &'a str) -> Element<'a, Message> {
             .padding([12, 16])
         )
         .height(Length::Fill)
-        .style(iced::theme::Scrollable::Custom(Box::new(scroll_style))),
+        .style(scroll_style),
         
         // Input area - refined with better spacing
         container(
@@ -150,70 +149,19 @@ pub fn ai_panel<'a>(prompt_input: &'a str) -> Element<'a, Message> {
     .into()
 }
 
-// Custom scrollable style for assistant panel to match explorer
-struct AssistantScrollableStyle {
-    colors: crate::theme::SemanticColors,
-}
-
-impl iced::widget::scrollable::StyleSheet for AssistantScrollableStyle {
-    type Style = iced::Theme;
-
-    fn active(&self, _style: &Self::Style) -> iced::widget::scrollable::Appearance {
-        iced::widget::scrollable::Appearance {
-            container: container::Appearance::default(),
-            scrollbar: iced::widget::scrollable::Scrollbar {
-                background: Some(Color::TRANSPARENT.into()),
-                border: iced::Border {
-                    color: Color::TRANSPARENT,
-                    width: 0.0,
-                    radius: 0.0.into(),
-                },
-                scroller: iced::widget::scrollable::Scroller {
-                    color: Color::from_rgba(
-                        self.colors.border.r,
-                        self.colors.border.g,
-                        self.colors.border.b,
-                        0.3,
-                    ),
-                    border: iced::Border {
-                        color: Color::TRANSPARENT,
-                        width: 0.0,
-                        radius: 3.0.into(),
-                    },
-                },
-            },
-            gap: None,
-        }
-    }
-
-    fn hovered(&self, style: &Self::Style, _is_mouse_over_scrollbar: bool) -> iced::widget::scrollable::Appearance {
-        let mut active = self.active(style);
-        active.scrollbar.scroller.color = Color::from_rgba(
-            self.colors.accent.r,
-            self.colors.accent.g,
-            self.colors.accent.b,
-            0.7,
-        );
-        active
-    }
-}
 
 // Also provide assistant_panel function for compatibility
 pub fn assistant_panel(app: &crate::state::App) -> Element<'_, Message> {
-    // Get the theme colors
-    let colors = app.current_theme.colors();
-    
-    // Create a modified ai_panel that uses theme colors
-    let style = AssistantScrollableStyle { colors };
+    // Create a StyleHelpers instance to get the subtle scrollable style
+    let style_helpers = crate::ui::style::StyleHelpers::new(app.current_theme);
     
     // We need to modify the ai_panel to use the custom scrollable style
-    // For now, we'll use the same implementation but with the custom style
     // Since ai_panel doesn't have access to app, we need to restructure
-    // Let's create a helper function that takes colors
-    ai_panel_with_theme(&app.prompt_input, style)
+    // Let's create a helper function that takes the scrollable style
+    ai_panel_with_style(&app.prompt_input, style_helpers.subtle_scrollable_style())
 }
 
-fn ai_panel_with_theme<'a>(prompt_input: &'a str, scroll_style: AssistantScrollableStyle) -> Element<'a, Message> {
+fn ai_panel_with_style<'a>(prompt_input: &'a str, scroll_style: iced::theme::Scrollable) -> Element<'a, Message> {
     // Same content as ai_panel but with custom scrollable style
     column![
         // Header - refined with subtle styling
@@ -324,7 +272,7 @@ fn ai_panel_with_theme<'a>(prompt_input: &'a str, scroll_style: AssistantScrolla
             .padding([12, 16])
         )
         .height(Length::Fill)
-        .style(iced::theme::Scrollable::Custom(Box::new(scroll_style))),
+        .style(style_helpers.subtle_scrollable_style()),
         
         // Input area - refined with better spacing
         container(
