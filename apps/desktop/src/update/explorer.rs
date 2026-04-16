@@ -65,22 +65,24 @@ fn handle_explorer_message(app: &mut App, explorer_msg: ExplorerMessage) -> Comm
             }
             
             // Create a new tab for this file
-            println!("DEBUG: Creating new tab for {}", path_string);
+            println!("DEBUG explorer: Creating new tab for {}", path_string);
+            println!("DEBUG explorer: Before open_or_activate_tab, tabs count = {}", app.tab_manager.tabs.len());
             let tab_id = app.tab_manager.open_or_activate_tab(path_string.clone());
+            println!("DEBUG explorer: After open_or_activate_tab, returned tab_id = {}", tab_id);
             app.active_file_path = Some(path_string.clone());
             
-            println!("DEBUG: Current tabs after: {}", app.tab_manager.tabs.len());
-            println!("DEBUG: Active tab ID: {:?}", app.tab_manager.active_tab_id);
-            for tab in &app.tab_manager.tabs {
-                println!("  Tab: {} (id: {}, active: {}, path: {})", 
-                         tab.display_name, tab.id, tab.is_active, tab.file_path);
+            println!("DEBUG explorer: Current tabs after: {}", app.tab_manager.tabs.len());
+            println!("DEBUG explorer: Active tab ID: {:?}", app.tab_manager.active_tab_id);
+            for (i, tab) in app.tab_manager.tabs.iter().enumerate() {
+                println!("  Tab {}: {} (id: {}, active: {}, path: {})", 
+                         i, tab.display_name, tab.id, tab.is_active, tab.file_path);
             }
             
             // Debug: Check if the tab is marked as active
             if let Some(active_tab) = app.tab_manager.get_active_tab() {
-                println!("DEBUG: Active tab is: {} (id: {})", active_tab.display_name, active_tab.id);
+                println!("DEBUG explorer: Active tab is: {} (id: {})", active_tab.display_name, active_tab.id);
             } else {
-                println!("DEBUG: No active tab found!");
+                println!("DEBUG explorer: No active tab found!");
             }
             
             // Trigger file loading via workspace module

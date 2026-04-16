@@ -23,6 +23,7 @@ pub struct EditorTab {
 
 impl EditorTab {
     pub fn new(id: usize, file_path: String) -> Self {
+        println!("DEBUG EditorTab::new: id = {}, file_path = {}", id, file_path);
         let file_name = std::path::Path::new(&file_path)
             .file_name()
             .and_then(|n| n.to_str())
@@ -32,7 +33,9 @@ impl EditorTab {
         // For now, use just the file name
         // In a more advanced implementation, we could add parent directory
         // if there are duplicate file names in different directories
-        let display_name = file_name;
+        let display_name = file_name.clone();
+        
+        println!("DEBUG EditorTab::new: display_name = {}", display_name);
         
         Self {
             id,
@@ -70,9 +73,13 @@ impl TabManager {
     }
     
     pub fn open_or_activate_tab(&mut self, file_path: String) -> usize {
+        println!("DEBUG TabManager::open_or_activate_tab: file_path = {}", file_path);
+        println!("DEBUG TabManager::open_or_activate_tab: current tabs count = {}", self.tabs.len());
+        
         // Check if tab already exists for this file
         for tab in &self.tabs {
             if tab.file_path == file_path {
+                println!("DEBUG TabManager::open_or_activate_tab: tab already exists, id = {}", tab.id);
                 // Get the tab id before calling activate_tab which borrows self mutably
                 let tab_id = tab.id;
                 // Activate this tab
@@ -81,12 +88,15 @@ impl TabManager {
             }
         }
         
+        println!("DEBUG TabManager::open_or_activate_tab: creating new tab");
         // Create new tab
         let tab_id = self.next_tab_id;
         self.next_tab_id += 1;
         
-        let mut new_tab = EditorTab::new(tab_id, file_path);
+        let mut new_tab = EditorTab::new(tab_id, file_path.clone());
         new_tab.set_active(true);
+        
+        println!("DEBUG TabManager::open_or_activate_tab: new tab id = {}, path = {}", tab_id, file_path);
         
         // Deactivate all other tabs
         for tab in &mut self.tabs {
@@ -95,6 +105,8 @@ impl TabManager {
         
         self.tabs.push(new_tab);
         self.active_tab_id = Some(tab_id);
+        
+        println!("DEBUG TabManager::open_or_activate_tab: after push, tabs count = {}", self.tabs.len());
         
         // Update display names to handle duplicates
         self.update_tab_display_names();

@@ -27,12 +27,14 @@ pub fn editor_panel<'a>(
     let tab_bar: Element<Message> = {
         // Debug: Always show tab count
         let debug_text = format!("Tabs: {}", tab_manager.tabs.len());
-        println!("DEBUG in UI: {}", debug_text);
+        println!("DEBUG in UI editor_panel: {}", debug_text);
+        println!("DEBUG in UI editor_panel: tab_manager address = {:p}", tab_manager);
         
         let mut tab_row: iced::widget::Row<'_, Message, iced::Theme, iced::Renderer> = row![].spacing(0);
         
         // Show placeholder when no tabs
         if tab_manager.tabs.is_empty() {
+            println!("DEBUG in UI editor_panel: tabs is empty, showing placeholder");
             let placeholder = container(
                 text("No files open")
                     .size(12)
@@ -43,10 +45,11 @@ pub fn editor_panel<'a>(
             .width(Length::Fill);
             tab_row = tab_row.push(placeholder);
         } else {
+            println!("DEBUG in UI editor_panel: rendering {} tabs", tab_manager.tabs.len());
             for tab in &tab_manager.tabs {
                 let is_active = tab.is_active;
                 
-                println!("DEBUG in UI: Rendering tab: {} (active: {})", tab.display_name, is_active);
+                println!("DEBUG in UI: Rendering tab: {} (active: {}) path: {}", tab.display_name, is_active, tab.file_path);
                 
                 // Tab label with dirty indicator
                 let label = if tab.is_dirty {
