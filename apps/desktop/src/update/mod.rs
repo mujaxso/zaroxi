@@ -1,4 +1,4 @@
-//! Modular update architecture for Neote IDE
+//! Modular update architecture for Zaroxi Studio
 //! 
 //! Each domain/feature has its own update module that handles its specific messages.
 //! The top-level update function coordinates between domains and handles cross-cutting concerns.

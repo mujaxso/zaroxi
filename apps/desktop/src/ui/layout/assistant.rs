@@ -10,7 +10,7 @@ use crate::settings::editor::EditorTypographySettings;
 pub fn ai_panel<'a>(prompt_input: &'a str) -> Element<'a, Message> {
     // For the standalone ai_panel, we need to create a default theme
     // Since we don't have access to app state here, we'll use the dark theme colors
-    let colors = crate::theme::QyzerTheme::Dark.colors();
+    let colors = crate::theme::ZaroxiTheme::Dark.colors();
     let scroll_style = AssistantScrollableStyle { colors };
     
     column![

@@ -20,7 +20,7 @@ Zaroxi Studio is an open-source, AI-first integrated development environment bui
 
 ## 🏗️ Architecture
 
-Qyzer Studio follows a modular architecture with clear separation between UI, business logic, and AI capabilities:
+Zaroxi Studio follows a modular architecture with clear separation between UI, business logic, and AI capabilities:
 
 ```
 ┌─────────────────┐    ┌──────────────────┐
@@ -182,7 +182,7 @@ cargo build -p desktop --release
 
 ## 🔧 Configuration
 
-Qyzer Studio can be configured through:
+Zaroxi Studio can be configured through:
 
 1. **Settings UI**: Accessible via the settings activity
 2. **Configuration Files**: JSON-based config files in `~/.config/qyzer-studio/`
@@ -214,7 +214,7 @@ Qyzer Studio can be configured through:
 
 ## 🚀 Performance
 
-Qyzer Studio is built with performance in mind:
+Zaroxi Studio is built with performance in mind:
 
 - **Native Performance**: Built in Rust for maximum speed
 - **Incremental Parsing**: Tree-sitter for fast syntax highlighting
@@ -237,7 +237,7 @@ Check out our [Roadmap](docs/roadmap.md) to see what's planned for future releas
 
 ## 📊 Benchmarks
 
-| Operation | Qyzer Studio | VS Code | Sublime Text |
+| Operation | Zaroxi Studio | VS Code | Sublime Text |
 |-----------|--------------|---------|--------------|
 | Startup Time | ~500ms | ~800ms | ~200ms |
 | File Open (10MB) | ~100ms | ~150ms | ~50ms |
@@ -255,7 +255,7 @@ Check out our [Roadmap](docs/roadmap.md) to see what's planned for future releas
 
 ## 📝 License
 
-Qyzer Studio is open-source software licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+Zaroxi Studio is open-source software licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 ### Third-Party Licenses
 This project uses several open-source libraries. See the `LICENSE-THIRD-PARTY` file for complete details.
@@ -340,7 +340,7 @@ To report a security vulnerability, please email security@qyzer.dev (encrypted c
 
 ## 📄 License
 
-Qyzer Studio is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+Zaroxi Studio is licensed under the MIT License. See [LICENSE](LICENSE) for details.
 
 ## 🙏 Acknowledgments
 

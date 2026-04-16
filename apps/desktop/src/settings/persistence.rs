@@ -7,7 +7,7 @@ use std::path::PathBuf;
 use crate::settings::editor::EditorTypographySettings;
 use crate::theme::ZaroxiTheme;
 
-const SETTINGS_FILE_NAME: &str = "qyzer-studio_settings.json";
+const SETTINGS_FILE_NAME: &str = "zaroxi-studio_settings.json";
 
 /// Settings that can be persisted
 #[derive(serde::Serialize, serde::Deserialize)]

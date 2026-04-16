@@ -1,4 +1,4 @@
-//! Settings UI panels for Neote IDE.
+//! Settings UI panels for Zaroxi Studio.
 
 pub mod editor_font_settings;
 

@@ -1,4 +1,4 @@
-// Common UI primitives and helpers for Qyzer Studio - designed for both core and extensions
+// Common UI primitives and helpers for Zaroxi Studio - designed for both core and extensions
 use iced::{Color, widget::{button, container, text}};
 use crate::theme::SemanticColors;
 use crate::settings::editor::EditorTypographySettings;
