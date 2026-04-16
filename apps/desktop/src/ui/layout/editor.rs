@@ -63,7 +63,7 @@ pub fn editor_panel<'a>(
                     .style(if is_active {
                         iced::theme::Text::Color(style.colors.text_primary)
                     } else {
-                        iced::theme::Text::Color(style.colors.text_secondary)
+                        iced::theme::Text::Color(style.colors.text_muted)
                     });
                 
                 // Create the tab content
@@ -75,12 +75,12 @@ pub fn editor_panel<'a>(
                 if is_active {
                     let close_button: iced::widget::Button<'_, Message, iced::Theme, iced::Renderer> = button(
                         text("×")
-                            .size(14)
+                            .size(12)
                             .style(iced::theme::Text::Color(style.colors.text_muted))
                     )
                     .on_press(Message::CloseTab(tab.id))
                     .style(iced::theme::Button::Text)
-                    .padding(0);
+                    .padding([0, 4]);
                     tab_row_content = tab_row_content.push(close_button);
                 }
                 
@@ -98,8 +98,8 @@ pub fn editor_panel<'a>(
                             container::Appearance {
                                 background: Some(style.colors.editor_background.into()),
                                 border: iced::Border {
-                                    color: style.colors.accent,
-                                    width: 2.0,
+                                    color: style.colors.border,
+                                    width: 1.0,
                                     radius: iced::border::Radius::from(0.0),
                                 },
                                 ..Default::default()
@@ -108,8 +108,8 @@ pub fn editor_panel<'a>(
                             container::Appearance {
                                 background: Some(style.colors.panel_background.into()),
                                 border: iced::Border {
-                                    color: style.colors.border,
-                                    width: 1.0,
+                                    color: Color::TRANSPARENT,
+                                    width: 0.0,
                                     radius: iced::border::Radius::from(0.0),
                                 },
                                 ..Default::default()
@@ -136,8 +136,8 @@ pub fn editor_panel<'a>(
                 container::Appearance {
                     background: Some(style.colors.panel_background.into()),
                     border: iced::Border {
-                        color: style.colors.border,
-                        width: 2.0,
+                        color: Color::TRANSPARENT,
+                        width: 0.0,
                         radius: iced::border::Radius::from(0.0),
                     },
                     ..Default::default()
@@ -158,7 +158,7 @@ pub fn editor_panel<'a>(
             indicators.push(
                 Element::from(text("Read-only")
                     .size(11)
-                    .style(iced::theme::Text::Color(iced::Color::from_rgb8(200, 150, 50))))
+                    .style(iced::theme::Text::Color(style.colors.text_muted)))
             );
         }
         
@@ -173,12 +173,7 @@ pub fn editor_panel<'a>(
         
         if indicators.is_empty() {
             // Show empty header with just horizontal space
-            let header_row: iced::widget::Row<'_, Message, iced::Theme, iced::Renderer> = row![
-                horizontal_space(),
-            ]
-            .align_items(Alignment::Center);
-            
-            Element::from(container(header_row).padding([4, 16]).height(Length::Fixed(1.0)))
+            Element::from(container(horizontal_space()).height(Length::Fixed(0.0)))
         } else {
             let header_row: iced::widget::Row<'_, Message, iced::Theme, iced::Renderer> = row![
                 horizontal_space(),
@@ -188,7 +183,7 @@ pub fn editor_panel<'a>(
             ]
             .align_items(Alignment::Center);
             
-            Element::from(container(header_row).padding([4, 16]))
+            Element::from(container(header_row).padding([2, 16]))
         }
     };
 
@@ -393,9 +388,7 @@ pub fn editor_panel<'a>(
 
     let column: iced::widget::Column<'_, Message, iced::Theme, iced::Renderer> = column![
         tab_bar,
-        iced::widget::horizontal_rule(1),
         header,
-        iced::widget::horizontal_rule(1),
         editor_content,
     ]
     .height(Length::Fill);
