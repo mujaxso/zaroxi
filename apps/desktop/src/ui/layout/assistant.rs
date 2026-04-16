@@ -1,6 +1,6 @@
 use iced::{
     widget::{button, column, container, horizontal_space, row, scrollable, text},
-    Alignment, Color, Element, Length,
+    Alignment, Element, Length,
 };
 
 use crate::message::Message;
@@ -121,7 +121,7 @@ pub fn ai_panel<'a>(prompt_input: &'a str) -> Element<'a, Message> {
             .padding([12, 16])
         )
         .height(Length::Fill)
-        .style(scroll_style),
+        .style(style_helpers.subtle_scrollable_style()),
         
         // Input area - refined with better spacing
         container(
@@ -272,7 +272,7 @@ fn ai_panel_with_style<'a>(prompt_input: &'a str, scroll_style: iced::theme::Scr
             .padding([12, 16])
         )
         .height(Length::Fill)
-        .style(style_helpers.subtle_scrollable_style()),
+        .style(scroll_style),
         
         // Input area - refined with better spacing
         container(
