@@ -1,5 +1,5 @@
 use iced::{
-    widget::{button, container, horizontal_space, row, text, text_input},
+    widget::{button, container, horizontal_space, row, text},
     Alignment, Element, Length,
 };
 
