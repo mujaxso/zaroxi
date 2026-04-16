@@ -22,7 +22,7 @@ pub fn editor_panel<'a>(
 ) -> Element<'a, Message> {
     let style = StyleHelpers::new(theme);
     let header: Element<_> = if let Some(path) = active_file_path {
-        container(
+        Element::from(container(
             row![
                 // File path
                 text(path)
@@ -37,17 +37,15 @@ pub fn editor_panel<'a>(
                     if let Some(document) = editor_document {
                         if document.is_very_large() {
                             indicators.push(
-                                text("⚠ Large file")
+                                Element::from(text("⚠ Large file")
                                     .size(11)
-                                    .style(iced::theme::Text::Color(style.colors.error))
-                                    .into()
+                                    .style(iced::theme::Text::Color(style.colors.error)))
                             );
                         } else if document.is_large() {
                             indicators.push(
-                                text("⚠ Large")
+                                Element::from(text("⚠ Large")
                                     .size(11)
-                                    .style(iced::theme::Text::Color(style.colors.warning))
-                                    .into()
+                                    .style(iced::theme::Text::Color(style.colors.warning)))
                             );
                         }
                     }
@@ -55,25 +53,22 @@ pub fn editor_panel<'a>(
                     // Read-only indicator
                     if is_file_too_large_for_editor {
                         indicators.push(
-                            text("Read-only")
+                            Element::from(text("Read-only")
                                 .size(11)
-                                .style(iced::theme::Text::Color(iced::Color::from_rgb8(200, 150, 50)))
-                                .into()
+                                .style(iced::theme::Text::Color(iced::Color::from_rgb8(200, 150, 50))))
                         );
                     }
                     
                     // Dirty status
                     if !is_file_too_large_for_editor {
                         let status_text: Element<_> = if is_dirty {
-                            text("● Unsaved")
+                            Element::from(text("● Unsaved")
                                 .size(11)
-                                .style(iced::theme::Text::Color(style.colors.warning))
-                                .into()
+                                .style(iced::theme::Text::Color(style.colors.warning)))
                         } else {
-                            text("✓ Saved")
+                            Element::from(text("✓ Saved")
                                 .size(11)
-                                .style(iced::theme::Text::Color(style.colors.success))
-                                .into()
+                                .style(iced::theme::Text::Color(style.colors.success)))
                         };
                         indicators.push(status_text);
                     }
@@ -85,10 +80,9 @@ pub fn editor_panel<'a>(
             ]
             .align_items(Alignment::Center)
         )
-        .padding([12, 16])
-        .into()
+        .padding([12, 16]))
     } else {
-        container(
+        Element::from(container(
             row![
                 text("No file selected")
                     .size(13)
@@ -97,8 +91,7 @@ pub fn editor_panel<'a>(
             ]
             .align_items(Alignment::Center)
         )
-        .padding([12, 16])
-        .into()
+        .padding([12, 16]))
     };
 
     // Check loading state

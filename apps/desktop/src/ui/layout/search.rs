@@ -6,7 +6,7 @@ use crate::message::Message;
 
 pub fn search_panel<'a>() -> Element<'a, Message> {
     column![
-        row![
+        Element::from(row![
             text("SEARCH").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150))),
             horizontal_space(),
             button("⋯")
@@ -14,7 +14,7 @@ pub fn search_panel<'a>() -> Element<'a, Message> {
                 .style(iced::theme::Button::Secondary),
         ]
         .padding([12, 16])
-        .align_items(Alignment::Center),
+        .align_items(Alignment::Center)),
         iced::widget::horizontal_rule(1),
         container(
             column![

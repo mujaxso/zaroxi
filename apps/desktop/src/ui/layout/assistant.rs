@@ -10,7 +10,7 @@ use crate::settings::editor::EditorTypographySettings;
 pub fn ai_panel<'a>(prompt_input: &'a str) -> Element<'a, Message> {
     column![
         // Header - refined with subtle styling
-        container(
+        Element::from(container(
             row![
                 text("AI ASSISTANT").size(11)
                     .style(iced::theme::Text::Color(iced::Color::from_rgb8(160, 160, 170))),
@@ -23,7 +23,7 @@ pub fn ai_panel<'a>(prompt_input: &'a str) -> Element<'a, Message> {
             .align_items(Alignment::Center)
         )
         .padding([12, 16])
-        .width(Length::Fill),
+        .width(Length::Fill)),
         
         // Subtle divider
         container(iced::widget::Space::with_height(1.0))

@@ -164,7 +164,7 @@ pub fn explorer_panel_with_expanded<'a>(
 
     column![
         // Header with refined spacing
-        container(
+        Element::from(container(
             row![
                 text("EXPLORER").size(11)
                     .style(iced::theme::Text::Color(iced::Color::from_rgb8(160, 160, 170))),
@@ -177,7 +177,7 @@ pub fn explorer_panel_with_expanded<'a>(
             .align_items(Alignment::Center)
         )
         .padding([12, 16])
-        .width(Length::Fill),
+        .width(Length::Fill)),
         // Subtle divider
         container(iced::widget::Space::with_height(1.0))
             .style(iced::theme::Container::Custom(Box::new(|_theme: &iced::Theme| {

@@ -7,21 +7,19 @@ use crate::message::Message;
 
 pub fn top_bar<'a>(workspace_path: &'a str, is_dirty: bool) -> Element<'a, Message> {
     let status_indicator: Element<_> = if is_dirty {
-        row![
+        Element::from(row![
             text("●").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(255, 180, 0))),
             text("Unsaved").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(220, 220, 220)))
         ]
         .spacing(4)
-        .align_items(Alignment::Center)
-        .into()
+        .align_items(Alignment::Center))
     } else {
-        row![
+        Element::from(row![
             text("✓").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(0, 200, 100))),
             text("Saved").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(180, 180, 180)))
         ]
         .spacing(4)
-        .align_items(Alignment::Center)
-        .into()
+        .align_items(Alignment::Center))
     };
 
     container(
@@ -50,7 +48,7 @@ pub fn top_bar<'a>(workspace_path: &'a str, is_dirty: bool) -> Element<'a, Messa
             
             // Workspace path area
             if workspace_path.is_empty() {
-                container(
+                Element::from(container(
                     row![
                         {
                             // Create text input with explicit type annotation
@@ -70,16 +68,14 @@ pub fn top_bar<'a>(workspace_path: &'a str, is_dirty: bool) -> Element<'a, Messa
                     ]
                     .spacing(8)
                     .align_items(Alignment::Center)
-                )
-                .into()
+                ))
             } else {
-                container(
+                Element::from(container(
                     text(workspace_path)
                         .size(13)
                         .style(iced::theme::Text::Color(iced::Color::from_rgb8(180, 190, 210)))
                 )
-                .padding([8, 12])
-                .into()
+                .padding([8, 12]))
             },
             
             horizontal_space(),

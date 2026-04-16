@@ -6,7 +6,7 @@ use crate::message::Message;
 
 pub fn settings_panel<'a>() -> Element<'a, Message> {
     column![
-        row![
+        Element::from(row![
             text("SETTINGS").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(150, 150, 150))),
             horizontal_space(),
             button("Save")
@@ -14,7 +14,7 @@ pub fn settings_panel<'a>() -> Element<'a, Message> {
                 .style(iced::theme::Button::Primary),
         ]
         .padding([12, 16])
-        .align_items(Alignment::Center),
+        .align_items(Alignment::Center)),
         iced::widget::horizontal_rule(1),
         scrollable(
             column![
