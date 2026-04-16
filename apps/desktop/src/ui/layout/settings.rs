@@ -23,7 +23,9 @@ pub fn settings_panel<'a>() -> Element<'a, Message> {
                         text("Editor").size(16),
                         text("Font size:").size(14),
                         {
-                            let mut input = iced::widget::text_input("14", "14");
+                            // Create text input with explicit type annotation
+                            let mut input: iced::widget::TextInput<'_, Message, iced::Theme, iced::Renderer> = 
+                                iced::widget::text_input("14", "14");
                             input = input.on_input(|size| Message::PromptInputChanged(format!("Font size: {}", size)));
                             input = input.padding(8);
                             input
@@ -45,14 +47,18 @@ pub fn settings_panel<'a>() -> Element<'a, Message> {
                         text("AI Settings").size(16),
                         text("Model:").size(14),
                         {
-                            let mut input = iced::widget::text_input("gpt-4", "gpt-4");
+                            // Create text input with explicit type annotation
+                            let mut input: iced::widget::TextInput<'_, Message, iced::Theme, iced::Renderer> = 
+                                iced::widget::text_input("gpt-4", "gpt-4");
                             input = input.on_input(|model| Message::PromptInputChanged(format!("AI model: {}", model)));
                             input = input.padding(8);
                             input
                         },
                         text("API Key:").size(14),
                         {
-                            let mut input = iced::widget::text_input("••••••••", "");
+                            // Create text input with explicit type annotation
+                            let mut input: iced::widget::TextInput<'_, Message, iced::Theme, iced::Renderer> = 
+                                iced::widget::text_input("••••••••", "");
                             input = input.on_input(|_| Message::PromptInputChanged("API key updated".to_string()));
                             input = input.padding(8);
                             input

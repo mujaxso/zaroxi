@@ -122,7 +122,9 @@ pub fn ai_panel<'a>(prompt_input: &'a str) -> Element<'a, Message> {
         container(
             row![
                 {
-                    let mut input = iced::widget::text_input("Ask Qyzer Studio AI...", prompt_input);
+                    // Create text input with explicit type annotation
+                    let mut input: iced::widget::TextInput<'_, Message, iced::Theme, iced::Renderer> = 
+                        iced::widget::text_input("Ask Qyzer Studio AI...", prompt_input);
                     input = input.on_input(Message::PromptInputChanged);
                     input = input.padding([10, 12]);
                     input = input.width(Length::Fill);

@@ -19,7 +19,9 @@ pub fn search_panel<'a>() -> Element<'a, Message> {
         container(
             column![
                 {
-                    let mut input = iced::widget::text_input("Search in workspace...", "");
+                    // Create text input with explicit type annotation
+                    let mut input: iced::widget::TextInput<'_, Message, iced::Theme, iced::Renderer> = 
+                        iced::widget::text_input("Search in workspace...", "");
                     input = input.on_input(|query| Message::PromptInputChanged(format!("search: {}", query)));
                     input = input.padding(12);
                     input = input.width(Length::Fill);
