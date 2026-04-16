@@ -2,12 +2,14 @@ use iced::{Element, Length, widget::{container, text}};
 use crate::message::Message;
 use crate::state::{App, LayoutMode, PrimarySidebarView, AuxiliaryView};
 use super::{
-    activity_bar::activity_bar,
-    assistant_panel::assistant_panel,
-    editor_panel::editor_panel,
-    status_bar::status_bar,
-    top_bar::top_bar,
-    explorer_panel::explorer_panel,
+    layout::{
+        top_bar,
+        activity_rail,
+        explorer_panel,
+        editor_panel,
+        assistant_panel,
+        status_bar,
+    },
     settings::editor_font_settings_panel,
     style::StyleHelpers,
 };
@@ -28,7 +30,7 @@ pub fn shell(app: &App) -> Element<'_, Message> {
         .width(Length::Fill)
         .height(Length::Fixed(crate::ui::common::TOP_BAR_HEIGHT));
     
-    let activity_bar = container(activity_bar(app))
+    let activity_bar = container(activity_rail(app))
         .width(Length::Fixed(crate::ui::common::ACTIVITY_BAR_WIDTH))
         .height(Length::Fill);
     
