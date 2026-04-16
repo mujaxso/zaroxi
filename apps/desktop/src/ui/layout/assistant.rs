@@ -121,10 +121,13 @@ pub fn ai_panel<'a>(prompt_input: &'a str) -> Element<'a, Message> {
         // Input area - refined with better spacing
         container(
             row![
-                iced::widget::text_input("Ask Qyzer Studio AI...", prompt_input)
-                    .on_input(Message::PromptInputChanged)
-                    .padding([10, 12])
-                    .width(Length::Fill),
+                {
+                    let mut input = iced::widget::text_input("Ask Qyzer Studio AI...", prompt_input);
+                    input = input.on_input(Message::PromptInputChanged);
+                    input = input.padding([10, 12]);
+                    input = input.width(Length::Fill);
+                    input
+                },
                 button("Send")
                     .on_press(Message::SendPrompt)
                     .padding([10, 16])

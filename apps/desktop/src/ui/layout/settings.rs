@@ -22,9 +22,12 @@ pub fn settings_panel<'a>() -> Element<'a, Message> {
                     column![
                         text("Editor").size(16),
                         text("Font size:").size(14),
-                        iced::widget::text_input("14", "14")
-                            .on_input(|size| Message::PromptInputChanged(format!("Font size: {}", size)))
-                            .padding(8),
+                        {
+                            let mut input = iced::widget::text_input("14", "14");
+                            input = input.on_input(|size| Message::PromptInputChanged(format!("Font size: {}", size)));
+                            input = input.padding(8);
+                            input
+                        },
                         text("Theme:").size(14),
                         button("Dark")
                             .on_press(Message::PromptInputChanged("Theme set to Dark".to_string()))
@@ -41,13 +44,19 @@ pub fn settings_panel<'a>() -> Element<'a, Message> {
                     column![
                         text("AI Settings").size(16),
                         text("Model:").size(14),
-                        iced::widget::text_input("gpt-4", "gpt-4")
-                            .on_input(|model| Message::PromptInputChanged(format!("AI model: {}", model)))
-                            .padding(8),
+                        {
+                            let mut input = iced::widget::text_input("gpt-4", "gpt-4");
+                            input = input.on_input(|model| Message::PromptInputChanged(format!("AI model: {}", model)));
+                            input = input.padding(8);
+                            input
+                        },
                         text("API Key:").size(14),
-                        iced::widget::text_input("••••••••", "")
-                            .on_input(|_| Message::PromptInputChanged("API key updated".to_string()))
-                            .padding(8),
+                        {
+                            let mut input = iced::widget::text_input("••••••••", "");
+                            input = input.on_input(|_| Message::PromptInputChanged("API key updated".to_string()));
+                            input = input.padding(8);
+                            input
+                        },
                     ]
                     .spacing(8)
                     .padding(16)

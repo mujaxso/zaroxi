@@ -18,10 +18,13 @@ pub fn search_panel<'a>() -> Element<'a, Message> {
         iced::widget::horizontal_rule(1),
         container(
             column![
-                iced::widget::text_input("Search in workspace...", "")
-                    .on_input(|query| Message::PromptInputChanged(format!("search: {}", query)))
-                    .padding(12)
-                    .width(Length::Fill),
+                {
+                    let mut input = iced::widget::text_input("Search in workspace...", "");
+                    input = input.on_input(|query| Message::PromptInputChanged(format!("search: {}", query)));
+                    input = input.padding(12);
+                    input = input.width(Length::Fill);
+                    input
+                },
                 button("Find All")
                     .on_press(Message::PromptInputChanged("Find all in workspace".to_string()))
                     .style(iced::theme::Button::Primary)

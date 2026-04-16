@@ -21,7 +21,7 @@ pub fn editor_panel<'a>(
     line_cache: Option<Vec<Vec<(Range<usize>, Color)>>>,
 ) -> Element<'a, Message> {
     let style = StyleHelpers::new(theme);
-    let header = if let Some(path) = active_file_path {
+    let header: Element<_> = if let Some(path) = active_file_path {
         container(
             row![
                 // File path

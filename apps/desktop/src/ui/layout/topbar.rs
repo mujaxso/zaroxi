@@ -52,12 +52,15 @@ pub fn top_bar<'a>(workspace_path: &'a str, is_dirty: bool) -> Element<'a, Messa
             if workspace_path.is_empty() {
                 container(
                     row![
-                        iced::widget::text_input("Enter workspace path...", workspace_path)
-                            .on_input(Message::WorkspacePathChanged)
-                            .on_submit(Message::SubmitManualWorkspacePath(workspace_path.to_string()))
-                            .padding([8, 12])
-                            .width(Length::Fixed(300.0))
-                            .style(iced::theme::TextInput::Default),
+                        {
+                            let mut input = iced::widget::text_input("Enter workspace path...", workspace_path);
+                            input = input.on_input(Message::WorkspacePathChanged);
+                            input = input.on_submit(Message::SubmitManualWorkspacePath(workspace_path.to_string()));
+                            input = input.padding([8, 12]);
+                            input = input.width(Length::Fixed(300.0));
+                            input = input.style(iced::theme::TextInput::Default);
+                            input
+                        },
                         button("Open")
                             .on_press(Message::SubmitManualWorkspacePath(workspace_path.to_string()))
                             .padding([8, 12])
