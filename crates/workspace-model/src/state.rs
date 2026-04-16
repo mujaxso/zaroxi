@@ -47,6 +47,7 @@ impl WorkspaceState {
 
     pub fn open_buffer(&mut self, path: impl Into<PathBuf>, content: String) -> BufferId {
         let path = path.into();
+        // Check if buffer already exists without holding a reference
         if let Some(&buffer_id) = self.path_to_buffer_id.get(&path) {
             // Buffer already open
             self.active_buffer_id = Some(buffer_id);

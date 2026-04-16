@@ -161,15 +161,17 @@ fn handle_file_selected_by_path(app: &mut App, path: String) -> Command<Message>
                 {
                     let mut state = app.workspace_state.lock().unwrap();
                     let path_buf = std::path::PathBuf::from(&path);
+                    
                     // Check if the workspace state already has this buffer
                     if !state.path_to_buffer_id.contains_key(&path_buf) {
                         // If not, open it
-                        let path_buf = std::path::PathBuf::from(&path);
                         state.open_buffer(path_buf, buffer.content.clone());
                     } else {
                         // If it does, make it active
-                        if let Some(buffer_id) = state.path_to_buffer_id.get(&path_buf) {
-                            state.set_active_buffer(*buffer_id);
+                        // Get buffer_id first, then use it
+                        let buffer_id = state.path_to_buffer_id.get(&path_buf).copied();
+                        if let Some(buffer_id) = buffer_id {
+                            state.set_active_buffer(buffer_id);
                         }
                     }
                 }
@@ -487,8 +489,9 @@ fn handle_file_saved(app: &mut App, result: Result<(), String>) -> Command<Messa
                         let mut state = app.workspace_state.lock().unwrap();
                         let path_buf = std::path::PathBuf::from(active_path);
                         // Find the buffer ID for this path
-                        if let Some(buffer_id) = state.path_to_buffer_id.get(&path_buf) {
-                            if let Some(open_buffer) = state.open_buffers.get_mut(buffer_id) {
+                        let buffer_id = state.path_to_buffer_id.get(&path_buf).copied();
+                        if let Some(buffer_id) = buffer_id {
+                            if let Some(open_buffer) = state.open_buffers.get_mut(&buffer_id) {
                                 open_buffer.document = buffer.document.clone();
                                 open_buffer.document.mark_saved();
                             }
