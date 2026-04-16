@@ -95,7 +95,7 @@ mod file_picker {
         /// Open a folder picker dialog with portal support
         pub async fn pick_folder(title: &str) -> Result<PathBuf, FilePickerError> {
             // Log environment for diagnostics
-            let wayland = std::env::var("WAYLAND_DISPLAY").is_ok()
+            let _wayland = std::env::var("WAYLAND_DISPLAY").is_ok()
                 || std::env::var("XDG_SESSION_TYPE").unwrap_or_default() == "wayland";
             let xdg_current_desktop = std::env::var("XDG_CURRENT_DESKTOP").unwrap_or_default();
             let hyprland = std::env::var("HYPRLAND_INSTANCE_SIGNATURE").is_ok()
@@ -248,7 +248,7 @@ pub fn open_workspace_dialog() -> Command<Message> {
                     log::error!("File picker error: {}", e);
                     
                     // Provide helpful error messages based on environment
-                    let wayland = std::env::var("WAYLAND_DISPLAY").is_ok()
+                    let _wayland = std::env::var("WAYLAND_DISPLAY").is_ok()
                         || std::env::var("XDG_SESSION_TYPE").unwrap_or_default() == "wayland";
                     let hyprland = std::env::var("HYPRLAND_INSTANCE_SIGNATURE").is_ok()
                         || std::env::var("XDG_CURRENT_DESKTOP").unwrap_or_default().to_lowercase().contains("hyprland");
