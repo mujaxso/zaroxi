@@ -122,12 +122,13 @@ pub fn explorer_panel_professional(app: &App) -> Element<'_, Message> {
     };
 
     // Professional header with clean styling
+    let header_colors = style.colors;
     let header = container(
         row![
             text("EXPLORER")
                 .size(11)
                 .font(iced::Font::with_name("JetBrains Mono"))
-                .style(iced::theme::Text::Color(style.colors.text_muted)),
+                .style(iced::theme::Text::Color(header_colors.text_muted)),
             horizontal_space(),
             button(
                 Icon::Refresh.render(&app.editor_typography, &style, Some(14))
@@ -142,9 +143,9 @@ pub fn explorer_panel_professional(app: &App) -> Element<'_, Message> {
     .width(Length::Fill)
     .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
         container::Appearance {
-            background: Some(style.colors.panel_background.into()),
+            background: Some(header_colors.panel_background.into()),
             border: iced::Border {
-                color: style.colors.border,
+                color: header_colors.border,
                 width: 0.0,
                 radius: 0.0.into(),
             },
@@ -152,27 +153,86 @@ pub fn explorer_panel_professional(app: &App) -> Element<'_, Message> {
         }
     })));
 
+    // For the divider, also need to capture colors
+    let divider_colors = style.colors;
+    let divider = container(iced::widget::Space::with_height(1.0))
+        .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
+            container::Appearance {
+                background: Some(iced::Color::from_rgba8(
+                    divider_colors.border.r as u8,
+                    divider_colors.border.g as u8,
+                    divider_colors.border.b as u8,
+                    0.3,
+                ).into()),
+                ..Default::default()
+            }
+        })))
+        .width(Length::Fill)
+        .height(Length::Fixed(1.0));
+
     column![
         header,
         // Clean, subtle divider
-        container(iced::widget::Space::with_height(1.0))
-            .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
-                container::Appearance {
-                    background: Some(iced::Color::from_rgba8(
-                        style.colors.border.r as u8,
-                        style.colors.border.g as u8,
-                        style.colors.border.b as u8,
-                        0.3,
-                    ).into()),
-                    ..Default::default()
-                }
-            })))
-            .width(Length::Fill)
-            .height(Length::Fixed(1.0)),
+        divider,
         content,
     ]
     .height(Length::Fill)
     .into()
+}
+
+// Custom button style for explorer rows
+struct ExplorerRowStyle {
+    bg_color: iced::Color,
+    is_selected: bool,
+    accent_color: iced::Color,
+}
+
+impl iced::widget::button::StyleSheet for ExplorerRowStyle {
+    type Style = iced::Theme;
+    
+    fn active(&self, _style: &Self::Style) -> iced::widget::button::Appearance {
+        let mut appearance = iced::widget::button::Appearance::default();
+        appearance.background = Some(self.bg_color.into());
+        if self.is_selected {
+            appearance.border = iced::Border {
+                color: self.accent_color,
+                width: 1.0,
+                radius: 0.0.into(),
+            };
+        } else {
+            appearance.border = iced::Border {
+                color: iced::Color::TRANSPARENT,
+                width: 0.0,
+                radius: 0.0.into(),
+            };
+        }
+        appearance
+    }
+    
+    fn hovered(&self, style: &Self::Style) -> iced::widget::button::Appearance {
+        let mut appearance = self.active(style);
+        if !self.is_selected {
+            // Add a subtle hover effect
+            appearance.background = Some(iced::Color::from_rgba(1.0, 1.0, 1.0, 0.05).into());
+        }
+        appearance
+    }
+    
+    fn disabled(&self, style: &Self::Style) -> iced::widget::button::Appearance {
+        self.active(style)
+    }
+    
+    fn pressed(&self, style: &Self::Style) -> iced::widget::button::Appearance {
+        let mut appearance = self.active(style);
+        // Make it slightly darker when pressed
+        if let Some(iced::Background::Color(color)) = appearance.background {
+            appearance.background = Some(iced::Color {
+                a: color.a * 0.8,
+                ..color
+            }.into());
+        }
+        appearance
+    }
 }
 
 // Recursive function to render the explorer tree with proper hierarchy
@@ -250,60 +310,12 @@ fn render_explorer_tree<'a>(
         .align_items(Alignment::Center)
         .height(Length::Fixed(28.0));
         
-        // Create a custom button style
-        struct ExplorerRowStyle {
-            bg_color: iced::Color,
-            is_selected: bool,
-            accent_color: iced::Color,
-        }
-        
-        impl iced::widget::button::StyleSheet for ExplorerRowStyle {
-            type Style = iced::Theme;
-            
-            fn active(&self, _style: &Self::Style) -> iced::widget::button::Appearance {
-                let mut appearance = iced::widget::button::Appearance::default();
-                appearance.background = Some(self.bg_color.into());
-                if self.is_selected {
-                    appearance.border = iced::Border {
-                        color: self.accent_color,
-                        width: 1.0,
-                        radius: 0.0.into(),
-                    };
-                } else {
-                    appearance.border = iced::Border {
-                        color: iced::Color::TRANSPARENT,
-                        width: 0.0,
-                        radius: 0.0.into(),
-                    };
-                }
-                appearance
-            }
-            
-            fn hovered(&self, style: &Self::Style) -> iced::widget::button::Appearance {
-                let mut appearance = self.active(style);
-                if !self.is_selected {
-                    // Add a subtle hover effect
-                    appearance.background = Some(iced::Color::from_rgba(1.0, 1.0, 1.0, 0.05).into());
-                }
-                appearance
-            }
-            
-            fn disabled(&self, style: &Self::Style) -> iced::widget::button::Appearance {
-                self.active(style)
-            }
-            
-            fn pressed(&self, style: &Self::Style) -> iced::widget::button::Appearance {
-                let mut appearance = self.active(style);
-                // Make it slightly darker when pressed
-                if let Some(iced::Background::Color(color)) = appearance.background {
-                    appearance.background = Some(iced::Color {
-                        a: color.a * 0.8,
-                        ..color
-                    }.into());
-                }
-                appearance
-            }
-        }
+        // Create a custom button style using a proper struct
+        let explorer_row_style = ExplorerRowStyle {
+            bg_color,
+            is_selected,
+            accent_color: style.colors.accent,
+        };
         
         // Wrap in a button for the entire row
         let row_button = button(
@@ -318,11 +330,7 @@ fn render_explorer_tree<'a>(
             Message::FileSelectedByPath(node.path.to_string_lossy().to_string())
         })
         .width(Length::Fill)
-        .style(iced::theme::Button::Custom(Box::new(ExplorerRowStyle {
-            bg_color,
-            is_selected,
-            accent_color: style.colors.accent,
-        })));
+        .style(iced::theme::Button::Custom(Box::new(explorer_row_style)));
         
         elements.push(row_button.into());
         
