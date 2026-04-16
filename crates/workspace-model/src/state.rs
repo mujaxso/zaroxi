@@ -10,8 +10,8 @@ use editor_core::Document;
 pub struct WorkspaceState {
     root_path: PathBuf,
     file_tree: Vec<DirectoryEntry>,
-    open_buffers: HashMap<BufferId, OpenBuffer>,
-    path_to_buffer_id: HashMap<PathBuf, BufferId>,
+    pub open_buffers: HashMap<BufferId, OpenBuffer>,
+    pub path_to_buffer_id: HashMap<PathBuf, BufferId>,
     active_buffer_id: Option<BufferId>,
 }
 

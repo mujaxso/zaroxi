@@ -160,13 +160,15 @@ fn handle_file_selected_by_path(app: &mut App, path: String) -> Command<Message>
                 // Update workspace state to ensure it's in sync
                 {
                     let mut state = app.workspace_state.lock().unwrap();
+                    let path_buf = std::path::PathBuf::from(&path);
                     // Check if the workspace state already has this buffer
-                    if !state.path_to_buffer_id.contains_key(&std::path::PathBuf::from(&path)) {
+                    if !state.path_to_buffer_id.contains_key(&path_buf) {
                         // If not, open it
-                        state.open_buffer(&path, buffer.content.clone());
+                        let path_buf = std::path::PathBuf::from(&path);
+                        state.open_buffer(path_buf, buffer.content.clone());
                     } else {
                         // If it does, make it active
-                        if let Some(buffer_id) = state.path_to_buffer_id.get(&std::path::PathBuf::from(&path)) {
+                        if let Some(buffer_id) = state.path_to_buffer_id.get(&path_buf) {
                             state.set_active_buffer(*buffer_id);
                         }
                     }
@@ -357,7 +359,8 @@ fn handle_file_loaded(app: &mut App, result: Result<(String, String, Document), 
             // Update workspace state
             {
                 let mut state = app.workspace_state.lock().unwrap();
-                state.open_buffer(&path, content.clone());
+                let path_buf = std::path::PathBuf::from(&path);
+                state.open_buffer(path_buf, content.clone());
             }
             
             // Start syntax highlighting immediately for normal files
@@ -482,8 +485,9 @@ fn handle_file_saved(app: &mut App, result: Result<(), String>) -> Command<Messa
                     // Update workspace state
                     {
                         let mut state = app.workspace_state.lock().unwrap();
+                        let path_buf = std::path::PathBuf::from(active_path);
                         // Find the buffer ID for this path
-                        if let Some(buffer_id) = state.path_to_buffer_id.get(active_path) {
+                        if let Some(buffer_id) = state.path_to_buffer_id.get(&path_buf) {
                             if let Some(open_buffer) = state.open_buffers.get_mut(buffer_id) {
                                 open_buffer.document = buffer.document.clone();
                                 open_buffer.document.mark_saved();
