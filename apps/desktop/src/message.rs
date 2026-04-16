@@ -73,4 +73,7 @@ pub enum Message {
     SubmitManualWorkspacePath(String),
     // Theme changed
     ThemeChanged(crate::theme::ZaroxiTheme),
+    // Tab management messages
+    ActivateTab(usize),
+    CloseTab(usize),
 }

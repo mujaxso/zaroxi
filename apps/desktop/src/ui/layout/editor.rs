@@ -294,6 +294,8 @@ pub fn editor_panel<'a>(
     };
 
     column![
+        tab_bar,
+        iced::widget::horizontal_rule(1),
         header,
         iced::widget::horizontal_rule(1),
         editor_content,
