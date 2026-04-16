@@ -23,9 +23,39 @@ pub fn editor_panel<'a>(
 ) -> Element<'a, Message> {
     let style = StyleHelpers::new(theme);
     
-    // Build tab bar
-    let tab_bar: Element<Message> = if !tab_manager.tabs.is_empty() {
+    // Build tab bar - always show for debugging
+    let tab_bar: Element<Message> = {
+        // Debug: show tab count
+        let debug_text = format!("Tabs: {}", tab_manager.tabs.len());
+        let debug_row = row![
+            text(debug_text)
+                .size(12)
+                .style(iced::theme::Text::Color(style.colors.text_primary)),
+            horizontal_space(),
+        ];
+        
         let mut tab_row: iced::widget::Row<'_, Message, iced::Theme, iced::Renderer> = row![].spacing(0);
+        
+        // Add debug element first
+        tab_row = tab_row.push(
+            container(
+                text(format!("{} tabs", tab_manager.tabs.len()))
+                    .size(11)
+                    .style(iced::theme::Text::Color(style.colors.text_muted))
+            )
+            .padding([6, 8])
+            .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
+                container::Appearance {
+                    background: Some(style.colors.panel_background.into()),
+                    border: iced::Border {
+                        color: style.colors.border,
+                        width: 1.0,
+                        radius: iced::border::Radius::from(0.0),
+                    },
+                    ..Default::default()
+                }
+            })))
+        );
         
         for tab in &tab_manager.tabs {
             let is_active = tab.is_active;
@@ -70,7 +100,7 @@ pub fn editor_panel<'a>(
                 .padding(0);
             
             let tab_element: iced::widget::Container<'_, Message, iced::Theme, iced::Renderer> = container(tab_button)
-                .padding(0)
+                .padding([6, 12])
                 .style(iced::theme::Container::Custom(Box::new(move |_theme: &iced::Theme| {
                     if is_active {
                         container::Appearance {
@@ -124,12 +154,6 @@ pub fn editor_panel<'a>(
             .height(Length::Fixed(32.0));
         
         tab_bar_container.into()
-    } else {
-        let empty_container: iced::widget::Container<'_, Message, iced::Theme, iced::Renderer> = 
-            container(text(""))
-                .width(Length::Fill)
-                .height(Length::Fixed(0.0));
-        empty_container.into()
     };
     
     // Status header (simplified since tabs show file info)
@@ -386,8 +410,22 @@ pub fn editor_panel<'a>(
         }
     };
 
+    // Debug: show tab manager state
+    let debug_info = format!("Active tab: {:?}, Total tabs: {}", 
+        app.tab_manager.active_tab_id, 
+        app.tab_manager.tabs.len()
+    );
+    
     let column: iced::widget::Column<'_, Message, iced::Theme, iced::Renderer> = column![
         tab_bar,
+        iced::widget::horizontal_rule(1),
+        // Debug row
+        container(
+            text(debug_info)
+                .size(10)
+                .style(iced::theme::Text::Color(style.colors.text_muted))
+        )
+        .padding([2, 8]),
         iced::widget::horizontal_rule(1),
         header,
         iced::widget::horizontal_rule(1),

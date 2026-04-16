@@ -42,8 +42,12 @@ fn handle_explorer_message(app: &mut App, explorer_msg: ExplorerMessage) -> Comm
             // Convert to string and trigger file loading
             let path_string = path.to_string_lossy().to_string();
             
+            println!("DEBUG: File selected: {}", path_string);
+            println!("DEBUG: Current tabs before: {}", app.tab_manager.tabs.len());
+            
             // Check if this file already has a tab
             if app.tab_manager.has_tab_for_path(&path_string) {
+                println!("DEBUG: Tab already exists for {}", path_string);
                 // File already has a tab, activate it
                 if let Some(existing_tab) = app.tab_manager.find_tab_by_path(&path_string) {
                     let tab_id = existing_tab.id;
@@ -55,11 +59,13 @@ fn handle_explorer_message(app: &mut App, explorer_msg: ExplorerMessage) -> Comm
                     if let Some(current_path) = &app.active_file_path {
                         if current_path == &path_string {
                             // The file is already loaded and active
+                            println!("DEBUG: File already loaded and active");
                             return Command::none();
                         }
                     }
                     
                     // The file needs to be loaded
+                    println!("DEBUG: Loading existing tab file");
                     return Command::perform(
                         async move { path_string },
                         |path| Message::FileSelectedByPath(path),
@@ -68,8 +74,14 @@ fn handle_explorer_message(app: &mut App, explorer_msg: ExplorerMessage) -> Comm
             }
             
             // Create a new tab for this file
+            println!("DEBUG: Creating new tab for {}", path_string);
             let _tab_id = app.tab_manager.open_or_activate_tab(path_string.clone());
             app.active_file_path = Some(path_string.clone());
+            
+            println!("DEBUG: Current tabs after: {}", app.tab_manager.tabs.len());
+            for tab in &app.tab_manager.tabs {
+                println!("  Tab: {} (active: {})", tab.display_name, tab.is_active);
+            }
             
             // Trigger file loading via workspace module
             Command::perform(
