@@ -23,7 +23,7 @@ fn normalize_path(path: &str) -> String {
 pub fn left_panel_with_expanded<'a>(
     file_entries: &'a [DirectoryEntry],
     active_activity: Activity,
-    _expanded_directories: &'a std::collections::HashSet<String>,
+    _expanded_directories: &'a std::collections::HashSet<std::path::PathBuf>,
     workspace_path: &'a str,
 ) -> Element<'a, Message> {
     match active_activity {
@@ -41,7 +41,7 @@ pub fn left_panel_with_expanded<'a>(
 
 pub fn explorer_panel_with_expanded<'a>(
     file_entries: &'a [DirectoryEntry],
-    expanded_directories: &'a std::collections::HashSet<String>,
+    expanded_directories: &'a std::collections::HashSet<std::path::PathBuf>,
     workspace_path: &'a str,
 ) -> Element<'a, Message> {
     // Always show at least a flat list
@@ -79,7 +79,8 @@ pub fn explorer_panel_with_expanded<'a>(
         
         for entry in &sorted_entries {
             let normalized_path = normalize_path(&entry.path);
-            let is_expanded = expanded_directories.contains(&normalized_path);
+            let path_buf = std::path::PathBuf::from(&normalized_path);
+            let is_expanded = expanded_directories.contains(&path_buf);
             
             let icon = if entry.is_dir {
                 if is_expanded { "📂" } else { "📁" }
