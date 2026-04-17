@@ -15,9 +15,8 @@ use iced::Element;
 
 pub fn top_bar(app: &App) -> Element<'_, Message> {
     let workspace_path = &app.workspace_path;
-    let is_dirty = app.is_dirty;
     
-    topbar::top_bar(workspace_path, is_dirty)
+    topbar::top_bar(workspace_path)
 }
 
 pub fn activity_rail(app: &App) -> Element<'_, Message> {

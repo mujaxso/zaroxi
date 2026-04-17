@@ -1,30 +1,14 @@
 use iced::{
-    widget::{button, container, horizontal_space, row, text},
+    widget::{container, horizontal_space, row, text},
     Alignment, Element, Length,
 };
 
 use crate::message::Message;
 
-pub fn top_bar<'a>(workspace_path: &'a str, is_dirty: bool) -> Element<'a, Message> {
-    let status_indicator: Element<_> = if is_dirty {
-        Element::from(row![
-            text("●").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(255, 180, 0))),
-            text("Unsaved").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(220, 220, 220)))
-        ]
-        .spacing(4)
-        .align_items(Alignment::Center))
-    } else {
-        Element::from(row![
-            text("✓").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(0, 200, 100))),
-            text("Saved").size(12).style(iced::theme::Text::Color(iced::Color::from_rgb8(180, 180, 180)))
-        ]
-        .spacing(4)
-        .align_items(Alignment::Center))
-    };
-
+pub fn top_bar<'a>(workspace_path: &'a str) -> Element<'a, Message> {
     container(
         row![
-            // Logo/brand - refined
+            // Branding - minimal and elegant
             container(
                 row![
                     text("Z").size(18).style(iced::theme::Text::Color(iced::Color::from_rgb8(100, 160, 255))),
@@ -35,7 +19,7 @@ pub fn top_bar<'a>(workspace_path: &'a str, is_dirty: bool) -> Element<'a, Messa
             )
             .padding([0, 16]),
             
-            // Divider
+            // Subtle divider
             container(iced::widget::Space::with_width(1.0))
                 .style(iced::theme::Container::Custom(Box::new(|_theme: &iced::Theme| {
                     container::Appearance {
@@ -46,86 +30,33 @@ pub fn top_bar<'a>(workspace_path: &'a str, is_dirty: bool) -> Element<'a, Messa
                 .height(Length::Fixed(20.0))
                 .width(Length::Fixed(1.0)),
             
-            // Workspace path area
-            if workspace_path.is_empty() {
-                Element::from(container(
-                    row![
-                        {
-                            // Create text input with explicit type annotation
-                            let mut input: iced::widget::TextInput<'_, Message, iced::Theme, iced::Renderer> = 
-                                iced::widget::text_input("Enter workspace path...", workspace_path);
-                            input = input.on_input(Message::WorkspacePathChanged);
-                            input = input.on_submit(Message::SubmitManualWorkspacePath(workspace_path.to_string()));
-                            input = input.padding([8, 12]);
-                            input = input.width(Length::Fixed(300.0));
-                            input = input.style(iced::theme::TextInput::Default);
-                            input
-                        },
-                        button("Open")
-                            .on_press(Message::SubmitManualWorkspacePath(workspace_path.to_string()))
-                            .padding([8, 12])
-                            .style(iced::theme::Button::Secondary),
-                    ]
-                    .spacing(8)
-                    .align_items(Alignment::Center)
-                ))
-            } else {
+            // Workspace path display - clean and non-interactive
+            if !workspace_path.is_empty() {
                 Element::from(container(
                     text(workspace_path)
                         .size(13)
                         .style(iced::theme::Text::Color(iced::Color::from_rgb8(180, 190, 210)))
                 )
                 .padding([8, 12]))
+            } else {
+                Element::from(container(
+                    text("No workspace open")
+                        .size(13)
+                        .style(iced::theme::Text::Color(iced::Color::from_rgb8(120, 130, 150)))
+                )
+                .padding([8, 12]))
             },
             
             horizontal_space(),
             
-            // Action buttons - refined
-            row![
-                button(
-                    container(
-                        row![
-                            text("📂").size(12),
-                            text("Open...").size(13),
-                        ]
-                        .spacing(6)
-                        .align_items(Alignment::Center)
-                    )
-                    .padding([6, 10])
-                )
-                .on_press(Message::OpenWorkspace)
-                .style(iced::theme::Button::Secondary),
-                button(
-                    container(
-                        text("⟳").size(13)
-                    )
-                    .padding([6, 8])
-                )
-                .on_press(Message::RefreshWorkspace)
-                .style(iced::theme::Button::Text),
-            ]
-            .spacing(4),
-            
-            // Status indicator
-            container(status_indicator)
-                .padding([6, 12]),
-            
-            // Save button - refined
-            button(
-                container(
-                    text("Save")
-                        .size(13)
-                )
-                .padding([8, 16])
-            )
-            .on_press(Message::SaveFile)
-            .style(iced::theme::Button::Primary),
+            // Right side reserved for potential window controls or other premium IDE elements
+            // Currently kept empty for a clean, professional look
         ]
         .align_items(Alignment::Center)
     )
     .padding([8, 16])
     .width(Length::Fill)
-    .height(Length::Fixed(48.0))
+    .height(Length::Fixed(40.0)) // More compact height
     .style(iced::theme::Container::Custom(Box::new(|_theme: &iced::Theme| {
         container::Appearance {
             background: Some(iced::Color::from_rgb8(30, 33, 45).into()),

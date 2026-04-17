@@ -63,10 +63,10 @@ pub fn status_bar(app: &App) -> Element<'_, Message> {
         // Saved/unsaved status indicator
         if app.is_dirty {
             row![
-                Icon::CircleFilled.render_with_color(
+                Icon::Warning.render_with_color(
                     &app.editor_typography,
                     style.colors.warning,
-                    Some(8),
+                    Some(11),
                 ),
                 text("Unsaved")
                     .size(11)
@@ -80,7 +80,7 @@ pub fn status_bar(app: &App) -> Element<'_, Message> {
                 Icon::Success.render_with_color(
                     &app.editor_typography,
                     style.colors.success,
-                    Some(8),
+                    Some(11),
                 ),
                 text("Saved")
                     .size(11)
