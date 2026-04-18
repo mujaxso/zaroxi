@@ -41,3 +41,5 @@ temp/
 
 # GitHub Actions custom actions
 .github/actions/
+
+runtime/treesitter/grammars/*

@@ -1,42 +1,56 @@
-; Markdown highlighting query for tree-sitter-markdown-inline
-; Based on actual node types from debug output
-; Using only nodes that exist in the inline grammar
+; From nvim-treesitter/nvim-treesitter
+[
+  (code_span)
+  (link_title)
+] @text.literal
 
-; Escape sequences
-(backslash_escape) @escape
+[
+  (emphasis_delimiter)
+  (code_span_delimiter)
+] @punctuation.delimiter
 
-; Emphasis
-(emphasis) @emphasis
-(strong_emphasis) @strong_emphasis
+(emphasis) @text.emphasis
 
-; Code
-(code_span) @inline_code
+(strong_emphasis) @text.strong
 
-; Links
-(link_text) @link.text
-(link_destination) @link.destination
-(link_title) @link.title
-(shortcut_link) @link
-(full_reference_link) @link
-(collapsed_reference_link) @link
-(inline_link) @link
+[
+  (link_destination)
+  (uri_autolink)
+] @text.uri
 
-; Images
-(image) @image
-(image_description) @image.description
+[
+  (link_label)
+  (link_text)
+  (image_description)
+] @text.reference
 
-; HTML
-(html_tag) @html
+[
+  (backslash_escape)
+  (hard_line_break)
+] @string.escape
 
-; Line breaks
-(hard_line_break) @line_break
+(image
+  [
+    "!"
+    "["
+    "]"
+    "("
+    ")"
+  ] @punctuation.delimiter)
 
-; Strikethrough
-(strikethrough) @strikethrough
+(inline_link
+  [
+    "["
+    "]"
+    "("
+    ")"
+  ] @punctuation.delimiter)
 
-; Autolinks
-(uri_autolink) @link.autolink
-(email_autolink) @link.autolink
+(shortcut_link
+  [
+    "["
+    "]"
+  ] @punctuation.delimiter)
 
-; Fallback for everything else
-(_) @plain
+; NOTE: extension not enabled by default
+; (wiki_link ["[" "|" "]"] @punctuation.delimiter)

@@ -1,36 +1,53 @@
-; TOML highlight query (compatible with tree-sitter-toml 0.20.0)
+; Properties
+;-----------
 
-; Comments
-(comment) @comment
+(bare_key) @type
 
-; Strings
-(string) @string
-(escape_sequence) @escape
+(quoted_key) @string
 
-; Numbers
-(integer) @number
-(float) @number
+(pair
+  (bare_key)) @property
 
-; Booleans
+(pair
+  (dotted_key
+    (bare_key) @property))
+
+; Literals
+;---------
+
 (boolean) @boolean
 
-; Tables
-(table) @type
-(table_array) @type
-(inline_table) @type
+(comment) @comment
 
-; Keys
-(bare_key) @property
-(quoted_key) @property
-(dotted_key) @property
+(string) @string
+
+[
+  (integer)
+  (float)
+] @number
+
+[
+  (offset_date_time)
+  (local_date_time)
+  (local_date)
+  (local_time)
+] @string.special
 
 ; Punctuation
-"[" @punctuation.bracket
-"]" @punctuation.bracket
-"{" @punctuation.bracket
-"}" @punctuation.bracket
+;------------
+
+[
+  "."
+  ","
+] @punctuation.delimiter
+
 "=" @operator
-"," @punctuation.delimiter
-"." @punctuation.delimiter
-"+" @operator
-"-" @operator
+
+[
+  "["
+  "]"
+  "[["
+  "]]"
+  "{"
+  "}"
+] @punctuation.bracket

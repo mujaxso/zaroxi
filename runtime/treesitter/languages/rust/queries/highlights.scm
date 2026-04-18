@@ -70,9 +70,8 @@
 (line_comment) @comment
 (block_comment) @comment
 
-; Removed doc_comment patterns which cause query compilation errors
-; (line_comment (doc_comment)) @comment.documentation
-; (block_comment (doc_comment)) @comment.documentation
+(line_comment (doc_comment)) @comment.documentation
+(block_comment (doc_comment)) @comment.documentation
 
 "(" @punctuation.bracket
 ")" @punctuation.bracket
@@ -111,13 +110,13 @@
 "extern" @keyword
 "fn" @keyword
 "for" @keyword
-; "gen" @keyword - not supported in this grammar version
+"gen" @keyword
 "if" @keyword
 "impl" @keyword
 "in" @keyword
 "let" @keyword
 "loop" @keyword
-; "macro_rules!" @keyword - not supported in this grammar version
+"macro_rules!" @keyword
 "match" @keyword
 "mod" @keyword
 "move" @keyword
