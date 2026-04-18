@@ -99,8 +99,17 @@ fn highlight_with_query(
                     }
                 }
             }
-            // Return empty spans (plaintext) when query compilation fails
-            return Ok(Vec::new());
+            // Try to create an empty query as a fallback
+            match Query::new(&ts_lang, "") {
+                Ok(empty_query) => {
+                    eprintln!("DEBUG: Using empty query as fallback for {}", language.as_str());
+                    empty_query
+                }
+                Err(_) => {
+                    // If even an empty query fails, return empty spans
+                    return Ok(Vec::new());
+                }
+            }
         }
     };
 

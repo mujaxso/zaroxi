@@ -56,6 +56,7 @@ pub fn get_query(language_id: &str, query_type: &str) -> Option<&'static Query> 
             Some(query_ptr)
         }
         Err(e) => {
+            eprintln!("DEBUG: Query loading failed for {}:{}: {}", language_id, query_type, e);
             // Store error in cache
             let mut cache_guard = cache.lock().unwrap();
             cache_guard.insert(cache_key, Err(e));
@@ -75,12 +76,24 @@ fn load_query_from_file(language_id: &str, query_type: &str) -> Result<Query, St
     let query_path = query_dir.join(format!("{}.scm", query_type));
     
     // Read query file
-    let query_text = std::fs::read_to_string(&query_path)
-        .map_err(|e| format!("Failed to read query file {}: {}", query_path.display(), e))?;
+    let query_text = match std::fs::read_to_string(&query_path) {
+        Ok(text) => text,
+        Err(e) => {
+            // If we can't read the query file, return an empty query
+            eprintln!("DEBUG: Failed to read query file {}: {}", query_path.display(), e);
+            return Ok(Query::new(&language, "").map_err(|e| format!("Empty query compilation failed: {}", e))?);
+        }
+    };
     
-    // Compile query
-    Query::new(&language, &query_text)
-        .map_err(|e| format!("Failed to compile query for {}: {}", language_id, e))
+    // Try to compile query, but if it fails, return an empty query
+    match Query::new(&language, &query_text) {
+        Ok(query) => Ok(query),
+        Err(e) => {
+            eprintln!("DEBUG: Query compilation failed for {} ({}): {}", language_id, query_type, e);
+            // Return an empty query instead of failing
+            Query::new(&language, "").map_err(|e| format!("Empty query compilation failed: {}", e))
+        }
+    }
 }
 
 /// Preload common queries for all available languages
