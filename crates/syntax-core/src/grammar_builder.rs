@@ -435,18 +435,43 @@ fn install_library_and_queries(
         }
         // If none found, use the parent directory
         found_dir.unwrap_or_else(|| source_dir.parent().unwrap_or(repo_dir).join("queries"))
-    } else if let Some(_subdir) = &grammar_info.subdirectory {
-        // Try to find queries in the parent directory (repo root)
-        let parent_dir = temp_dir.path().join("repo");
-        let queries_in_parent = parent_dir.join("queries");
-        if queries_in_parent.exists() {
-            queries_in_parent
-        } else {
-            // Fall back to source_dir/queries
-            source_dir.join("queries")
-        }
     } else {
-        source_dir.join("queries")
+        // For all languages, try multiple possible query locations
+        let mut possible_dirs = Vec::new();
+        
+        // 1. Check source_dir/queries (most common)
+        possible_dirs.push(source_dir.join("queries"));
+        
+        // 2. Check parent directory queries (for languages in subdirectories)
+        if let Some(parent) = source_dir.parent() {
+            possible_dirs.push(parent.join("queries"));
+        }
+        
+        // 3. Check repo root queries
+        possible_dirs.push(repo_dir.join("queries"));
+        
+        // 4. For TypeScript/TSX, also check the specific structure
+        if language_id == "typescript" || language_id == "tsx" {
+            // In tree-sitter-typescript, queries might be in the language subdirectory directly
+            possible_dirs.push(source_dir.clone());
+            // Or in a sibling queries directory
+            if let Some(parent) = source_dir.parent() {
+                possible_dirs.push(parent.join("queries"));
+            }
+        }
+        
+        // Find the first existing directory
+        let mut found_dir = None;
+        for dir in &possible_dirs {
+            if dir.exists() {
+                println!("Found query directory for {} at: {}", language_id, dir.display());
+                found_dir = Some(dir.clone());
+                break;
+            }
+        }
+        
+        // If none found, use source_dir/queries as default (even if it doesn't exist)
+        found_dir.unwrap_or_else(|| source_dir.join("queries"))
     };
     
     // Always create the query target directory

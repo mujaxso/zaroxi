@@ -287,7 +287,7 @@ impl GrammarRegistry {
             revision: "master".to_string(),
             subdirectory: Some("typescript".to_string()),
             source_files: vec!["src/parser.c".to_string(), "src/scanner.c".to_string()],
-            query_files: vec!["highlights.scm".to_string()],
+            query_files: vec!["highlights.scm".to_string(), "locals.scm".to_string(), "injections.scm".to_string()],
             has_scanner: true,
             scanner_lang: Some("c".to_string()),
         });
@@ -302,7 +302,7 @@ impl GrammarRegistry {
             revision: "master".to_string(),
             subdirectory: Some("tsx".to_string()),
             source_files: vec!["src/parser.c".to_string(), "src/scanner.c".to_string()],
-            query_files: vec!["highlights.scm".to_string()],
+            query_files: vec!["highlights.scm".to_string(), "locals.scm".to_string(), "injections.scm".to_string()],
             has_scanner: true,
             scanner_lang: Some("c".to_string()),
         });
