@@ -22,7 +22,7 @@ use iced::Color;
 use iced::widget::text_editor;
 use iced::{Length, widget::{container, row, column, vertical_rule, Space}};
 use iced::widget::horizontal_rule;
-use crate::theme::QyzerTheme;
+use crate::theme::ZaroxiTheme;
 use crate::settings::editor::EditorTypographySettings;
 use crate::state::FileLoadingState;
 use crate::ui::style::StyleHelpers;
@@ -97,14 +97,14 @@ pub fn ide_layout<'a>(
     editor_document: Option<&'a editor_core::Document>,
     is_file_too_large_for_editor: bool,
     file_loading_state: &'a FileLoadingState,
-    theme: QyzerTheme,
+    theme: ZaroxiTheme,
     editor_typography: &'a EditorTypographySettings,
     syntax_highlight_cache: Option<Vec<Vec<(Range<usize>, Color)>>>,
 ) -> Element<'a, Message> {
     let style = StyleHelpers::new(theme);
     
     // Top bar
-    let top_bar = topbar::top_bar(workspace_path, is_dirty);
+    let top_bar = topbar::top_bar(workspace_path, theme);
 
     // Activity rail - now uses the consolidated implementation from layout/activity_rail.rs
     let activity_rail = activity_rail::activity_rail(app);
@@ -121,19 +121,34 @@ pub fn ide_layout<'a>(
             .into()
     };
 
+    let left_panel = container(explorer::explorer_panel(app))
+        .width(Length::FillPortion(2))
+        .height(Length::Fill);
+    
+    let editor_panel = container(editor::editor_panel(
+        active_file_path,
+        text_editor,
+        is_dirty,
+        editor_document,
+        is_file_too_large_for_editor,
+        file_loading_state,
+        editor_typography,
+        theme,
+        syntax_highlight_cache,
+        &app.tab_manager,
+    ))
+    .width(Length::FillPortion(5))
+    .height(Length::Fill);
+
     let main_content = row![
         // Activity rail
         activity_rail,
         vertical_rule(1),
         // Left panel (explorer) - flexible width
-        container(explorer::left_panel_with_expanded(file_entries, app.active_activity, _expanded_directories, workspace_path))
-            .width(Length::FillPortion(2))
-            .height(Length::Fill),
+        left_panel,
         vertical_rule(1),
         // Editor area - takes most space
-        container(editor::editor_panel(active_file_path, text_editor, is_dirty, editor_document, is_file_too_large_for_editor, file_loading_state, editor_typography, theme, syntax_highlight_cache))
-            .width(Length::FillPortion(5))
-            .height(Length::Fill),
+        editor_panel,
         // AI panel (conditionally visible) - flexible width
         ai_panel_widget,
     ]
