@@ -453,10 +453,13 @@ fn install_library_and_queries(
         // 4. For TypeScript/TSX, also check the specific structure
         if language_id == "typescript" || language_id == "tsx" {
             // In tree-sitter-typescript, queries might be in the language subdirectory directly
-            possible_dirs.push(source_dir.clone());
+            possible_dirs.push(source_dir.to_path_buf());
             // Or in a sibling queries directory
             if let Some(parent) = source_dir.parent() {
                 possible_dirs.push(parent.join("queries"));
+                // Also check for queries/typescript or queries/tsx in the repo root
+                let repo_queries_subdir = parent.join("queries").join(language_id);
+                possible_dirs.push(repo_queries_subdir);
             }
         }
         
