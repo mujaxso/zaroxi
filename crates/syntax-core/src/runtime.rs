@@ -164,7 +164,7 @@ impl Runtime {
         let library_path = self.grammar_library_path(language_id);
         if !library_path.exists() {
             return Err(format!(
-                "Grammar library not found at {}\nRun: cargo run --bin download-grammars -- install {}",
+                "Grammar library not found at {}\nRun: cargo run --bin download_grammars -- install {}",
                 library_path.display(),
                 language_id
             ));

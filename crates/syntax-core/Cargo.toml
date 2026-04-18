@@ -23,3 +23,7 @@ dynamic-loading = ["libloading"]
 [[bin]]
 name = "build-grammar"
 path = "src/bin/build_grammar.rs"
+
+[[bin]]
+name = "download_grammars"
+path = "src/bin/download_grammars.rs"
