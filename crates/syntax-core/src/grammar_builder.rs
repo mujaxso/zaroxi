@@ -191,14 +191,28 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
         // Use tree-sitter CLI
         println!("Using tree-sitter CLI to build {}...", language_id);
         
+        // For TypeScript/TSX, the grammar.json is in the source_dir itself, not in a further src subdirectory
         // Determine the directory to run tree-sitter build in
         let build_dir = if repo_dir.join("grammar.js").exists() || repo_dir.join("grammar.json").exists() {
             &repo_dir
         } else if source_dir.join("grammar.js").exists() || source_dir.join("grammar.json").exists() {
             &source_dir
         } else {
-            // No grammar file found, but we can still try to build in source_dir
-            &source_dir
+            // For TypeScript/TSX, check if grammar.json exists in the parent directory
+            // This handles the case where source_dir is "typescript/src" but grammar.json is in "typescript/"
+            if language_id == "typescript" || language_id == "tsx" {
+                if let Some(parent) = source_dir.parent() {
+                    if parent.join("grammar.js").exists() || parent.join("grammar.json").exists() {
+                        parent
+                    } else {
+                        &source_dir
+                    }
+                } else {
+                    &source_dir
+                }
+            } else {
+                &source_dir
+            }
         };
         
         // Check if package.json exists and install dependencies if needed
@@ -523,22 +537,39 @@ fn manual_compile(
             println!("Warning: Source file {} does not exist, skipping", source_file);
             continue; // Skip missing files (some grammars don't have scanner.c)
         }
-        
+            
         let object_file = temp_dir.path().join(format!("{}.o", source_file.replace('/', "_")));
-        
+            
         println!("Compiling {}...", source_file);
         // Try to find tree-sitter include path
-        let mut include_args = vec!["-c", "-fPIC", "-I./src"];
-        
+        let mut include_args = vec!["-c", "-fPIC"];
+            
+        // Add include path for the source directory
+        include_args.push("-I");
+        include_args.push(source_dir.to_str().unwrap());
+            
+        // For TypeScript/TSX, we need to include the common directory which is two levels up
+        if language_id == "typescript" || language_id == "tsx" {
+            if let Some(parent) = source_dir.parent() {
+                if let Some(grandparent) = parent.parent() {
+                    let common_dir = grandparent.join("common");
+                    if common_dir.exists() {
+                        include_args.push("-I");
+                        include_args.push(grandparent.to_str().unwrap());
+                    }
+                }
+            }
+        }
+            
         // Store tree-sitter include path in a variable that lives long enough
         let tree_sitter_include = find_tree_sitter_include_path().ok();
-        
+            
         // Add include path for tree-sitter headers if available
         if let Some(tree_sitter_include) = &tree_sitter_include {
             include_args.push("-I");
             include_args.push(tree_sitter_include);
         }
-        
+            
         // Add include path for the repo root (for common/ directory)
         if let Some(repo_root) = source_dir.parent() {
             if repo_root.join("common").exists() {
@@ -546,21 +577,21 @@ fn manual_compile(
                 include_args.push(repo_root.to_str().unwrap());
             }
         }
-        
+            
         include_args.extend_from_slice(&["-o", object_file.to_str().unwrap()]);
-        
+            
         let output = std::process::Command::new("cc")
             .args(&include_args)
             .arg(&source_path)
             .current_dir(&source_dir)
             .output()
             .map_err(|e| format!("Failed to compile {}: {}", source_file, e))?;
-        
+            
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
             return Err(format!("Failed to compile {}: {}", source_file, stderr));
         }
-        
+            
         object_files.push(object_file);
     }
     
