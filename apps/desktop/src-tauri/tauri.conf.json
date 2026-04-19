@@ -10,6 +10,7 @@
     "beforeBuildCommand": "npm run build"
   },
   "app": {
+    "withGlobalTauri": false,
     "windows": [
       {
         "title": "Zaroxi",
@@ -19,8 +20,7 @@
         "minHeight": 600,
         "center": true,
         "resizable": true,
-        "fullscreen": false,
-        "fileDropEnabled": true
+        "fullscreen": false
       }
     ],
     "security": {
@@ -28,32 +28,6 @@
     }
   },
   "bundle": {
-    "active": false,
-    "targets": "all",
-    "copyright": "Copyright © 2026 Zaroxi Team",
-    "category": "DeveloperTool",
-    "shortDescription": "AI-first IDE",
-    "longDescription": "An AI-first IDE for modern development",
-    "deb": {
-      "depends": []
-    },
-    "macOS": {
-      "frameworks": [],
-      "minimumSystemVersion": "",
-      "exceptionDomain": "",
-      "signingIdentity": null,
-      "providerShortName": null,
-      "entitlements": null
-    },
-    "windows": {
-      "certificateThumbprint": null,
-      "digestAlgorithm": "sha256",
-      "timestampUrl": ""
-    }
-  },
-  "plugins": {
-    "updater": {
-      "active": false
-    }
+    "active": false
   }
 }
