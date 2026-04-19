@@ -1,7 +1,7 @@
 [workspace]
 resolver = "3"
 members = [
-  "apps/desktop",
+  "apps/desktop/src-tauri",
   "crates/core-types",
   "crates/editor-core",
   "crates/workspace-model",
@@ -14,6 +14,7 @@ members = [
   "crates/permissions",
   "crates/file-ops",
   "crates/syntax-core",
+  "crates/theme",
   "services/workspace-daemon",
   "services/ai-daemon",
 ]
@@ -22,7 +23,6 @@ members = [
 edition = "2024"
 version = "0.1.0"
 license = "MIT"
-# name = "zaroxi-studio"  # Commented out to avoid warning
 
 [workspace.dependencies]
 anyhow = "1"
@@ -43,4 +43,4 @@ cc = "1.0"
 parking_lot = "0.12"
 log = "0.4"
 env_logger = "0.11"
-# All other grammars will be loaded dynamically from runtime directory
+tauri = { version = "2", features = [] }
