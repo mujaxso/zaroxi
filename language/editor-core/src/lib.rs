@@ -8,7 +8,6 @@ pub mod commands;
 pub mod events;
 
 use ropey::Rope;
-use serde::{Deserialize, Serialize};
 
 /// Main editor structure
 #[derive(Debug)]
