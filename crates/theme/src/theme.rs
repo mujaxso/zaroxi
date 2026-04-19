@@ -1,4 +1,5 @@
-//! Theme definitions for Zaroxi Studio
+//! Theme definitions for Zaroxi
+//! This module provides theme variants, design tokens, and semantic colors
 
 use serde::{Deserialize, Serialize};
 use crate::colors::Color;
@@ -38,10 +39,23 @@ impl ZaroxiTheme {
             ZaroxiTheme::Dark => "Dark",
         }
     }
+    
+    /// Get the semantic colors for this theme
+    pub fn colors(&self) -> SemanticColors {
+        match self {
+            ZaroxiTheme::Dark => SemanticColors::dark(),
+            ZaroxiTheme::Light => SemanticColors::light(),
+            ZaroxiTheme::System => {
+                // TODO: Detect system preference
+                // For now, default to dark theme
+                SemanticColors::dark()
+            }
+        }
+    }
 }
 
-/// Design system tokens for Zaroxi Studio
-#[derive(Debug, Clone, Copy)]
+/// Design system tokens for Zaroxi
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct DesignTokens {
     // Spacing scale (in pixels)
     pub spacing_xxs: f32,
@@ -60,6 +74,13 @@ pub struct DesignTokens {
     // Border widths
     pub border_width: f32,
     pub border_width_thick: f32,
+    
+    // Typography
+    pub font_size_sm: f32,
+    pub font_size_md: f32,
+    pub font_size_lg: f32,
+    pub font_size_xl: f32,
+    pub font_size_xxl: f32,
 }
 
 impl Default for DesignTokens {
@@ -79,12 +100,18 @@ impl Default for DesignTokens {
             
             border_width: 1.0,
             border_width_thick: 2.0,
+            
+            font_size_sm: 12.0,
+            font_size_md: 14.0,
+            font_size_lg: 16.0,
+            font_size_xl: 20.0,
+            font_size_xxl: 24.0,
         }
     }
 }
 
-/// Semantic color roles for Zaroxi Studio
-#[derive(Debug, Clone, Copy)]
+/// Semantic color roles for Zaroxi
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct SemanticColors {
     // Background surfaces
     pub app_background: Color,
@@ -123,22 +150,6 @@ pub struct SemanticColors {
     
     // Focus
     pub focus_ring: Color,
-    
-    // Syntax highlighting colors
-    pub syntax_comment: Color,
-    pub syntax_string: Color,
-    pub syntax_keyword: Color,
-    pub syntax_function: Color,
-    pub syntax_type: Color,
-    pub syntax_variable: Color,
-    pub syntax_constant: Color,
-    pub syntax_number: Color,
-    pub syntax_operator: Color,
-    pub syntax_punctuation: Color,
-    pub syntax_attribute: Color,
-    pub syntax_macro: Color,
-    pub syntax_builtin: Color,
-    pub syntax_plain: Color,
 }
 
 impl SemanticColors {
@@ -176,21 +187,6 @@ impl SemanticColors {
             info: Color::from_rgb(0.329, 0.584, 0.988),
             
             focus_ring: Color::from_rgba(0.329, 0.584, 0.988, 0.25),
-            
-            syntax_comment: Color::from_rgb(0.627, 0.647, 0.678),
-            syntax_string: Color::from_rgb(0.298, 0.843, 0.596),
-            syntax_keyword: Color::from_rgb(0.788, 0.435, 0.949),
-            syntax_function: Color::from_rgb(0.329, 0.584, 0.988),
-            syntax_type: Color::from_rgb(0.988, 0.729, 0.298),
-            syntax_variable: Color::from_rgb(0.941, 0.949, 0.961),
-            syntax_constant: Color::from_rgb(0.949, 0.518, 0.659),
-            syntax_number: Color::from_rgb(0.949, 0.518, 0.659),
-            syntax_operator: Color::from_rgb(0.784, 0.800, 0.824),
-            syntax_punctuation: Color::from_rgb(0.784, 0.800, 0.824),
-            syntax_attribute: Color::from_rgb(0.788, 0.435, 0.949),
-            syntax_macro: Color::from_rgb(0.329, 0.584, 0.988),
-            syntax_builtin: Color::from_rgb(0.988, 0.729, 0.298),
-            syntax_plain: Color::from_rgb(0.941, 0.949, 0.961),
         }
     }
     
@@ -228,35 +224,6 @@ impl SemanticColors {
             info: Color::from_rgb(0.06, 0.53, 0.98),
             
             focus_ring: Color::from_rgba(0.06, 0.53, 0.98, 0.25),
-            
-            syntax_comment: Color::from_rgb(0.45, 0.52, 0.60),
-            syntax_string: Color::from_rgb(0.75, 0.12, 0.12),
-            syntax_keyword: Color::from_rgb(0.62, 0.12, 0.68),
-            syntax_function: Color::from_rgb(0.00, 0.40, 0.70),
-            syntax_type: Color::from_rgb(0.80, 0.35, 0.00),
-            syntax_variable: Color::from_rgb(0.20, 0.22, 0.25),
-            syntax_constant: Color::from_rgb(0.62, 0.12, 0.68),
-            syntax_number: Color::from_rgb(0.12, 0.58, 0.25),
-            syntax_operator: Color::from_rgb(0.40, 0.43, 0.47),
-            syntax_punctuation: Color::from_rgb(0.55, 0.58, 0.62),
-            syntax_attribute: Color::from_rgb(0.62, 0.12, 0.68),
-            syntax_macro: Color::from_rgb(0.80, 0.35, 0.00),
-            syntax_builtin: Color::from_rgb(0.00, 0.40, 0.70),
-            syntax_plain: Color::from_rgb(0.20, 0.22, 0.25),
-        }
-    }
-}
-
-impl ZaroxiTheme {
-    /// Get the semantic colors for this theme
-    pub fn colors(&self) -> SemanticColors {
-        match self {
-            ZaroxiTheme::Dark => SemanticColors::dark(),
-            ZaroxiTheme::Light => SemanticColors::light(),
-            ZaroxiTheme::System => {
-                // For now, default to dark theme
-                SemanticColors::dark()
-            }
         }
     }
 }
