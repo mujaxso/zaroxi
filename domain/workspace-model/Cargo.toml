@@ -1,0 +1,11 @@
+[package]
+name = "workspace-model"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+core-types = { path = "../../core-types" }
+editor-core = { path = "../../language/editor-core" }
+serde = { workspace = true, features = ["derive"] }
+uuid = { workspace = true }
