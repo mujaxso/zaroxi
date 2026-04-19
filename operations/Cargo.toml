@@ -1,17 +1,2 @@
-[workspace]
-resolver = "3"
-members = [
-    "patch-engine",
-    "file-ops",
-]
-
-[workspace.package]
-edition = "2024"
-version = "0.1.0"
-license = "MIT"
-
-[workspace.dependencies]
-anyhow = "1"
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-tokio = { version = "1", features = ["rt-multi-thread", "macros", "process", "sync", "io-util", "time"] }
+# Virtual manifest - operations is not a workspace, just a directory
+# The actual crates are in operations/patch-engine and operations/file-ops
