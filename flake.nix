@@ -82,6 +82,29 @@
             # Additional GTK environment variables
             XDG_DATA_DIRS = "${pkgs.gtk3}/share:${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}";
             GI_TYPELIB_PATH = "${pkgs.gtk3}/lib/girepository-1.0";
+            # Ensure pkg-config can find .pc files
+            PKG_CONFIG_PATH = with pkgs; lib.makeSearchPathOutput "dev" "lib/pkgconfig" [
+              webkitgtk_4_1
+              glib
+              gtk3
+              pango
+              atk
+              gdk-pixbuf
+              dbus
+              libxkbcommon
+              fontconfig
+              freetype
+              expat
+              libglvnd
+              libX11
+              libXcursor
+              libXi
+              libXrandr
+              vulkan-loader
+              wayland
+              openssl
+              xdg-desktop-portal-hyprland
+            ];
             # Ensure linker can find libraries
             LD_LIBRARY_PATH = with pkgs; lib.makeLibraryPath [
               libxkbcommon
