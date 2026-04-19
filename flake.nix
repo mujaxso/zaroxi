@@ -64,6 +64,9 @@
 
             # Tree-sitter for syntax highlighting
             tree-sitter
+
+            # WebKitGTK for Tauri (includes javascriptcoregtk-4.1)
+            webkitgtk
           ];
 
           # Environment variables
@@ -105,6 +108,8 @@
               xdg-desktop-portal-hyprland
               # Tree-sitter
               tree-sitter
+              # WebKitGTK for Tauri
+              webkitgtk
             ];
           };
 
@@ -156,6 +161,8 @@
             xdg-desktop-portal-hyprland
             # Tree-sitter
             tree-sitter
+            # WebKitGTK for Tauri (includes javascriptcoregtk-4.1)
+            webkitgtk
           ];
 
         };
