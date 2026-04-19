@@ -1,26 +1,45 @@
-use tauri::menu::{Menu, MenuItem, Submenu, CustomMenuItem};
+use tauri::menu::{Menu, Submenu, PredefinedMenuItem, CustomMenuItem};
 
-pub fn create_app_menu() -> Menu {
-    let file_menu = Submenu::new(
+pub fn create_app_menu<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> tauri::Result<Menu<R>> {
+    let open_item = CustomMenuItem::new("open_workspace".to_string(), "Open Workspace")
+        .accelerator("CmdOrCtrl+O");
+    let quit_item = CustomMenuItem::new("quit".to_string(), "Quit")
+        .accelerator("CmdOrCtrl+Q");
+    
+    let file_menu = Submenu::with_items(
+        app,
         "File",
-        Menu::new()
-            .add_item(CustomMenuItem::new("open_workspace", "Open Workspace").accelerator("CmdOrCtrl+O"))
-            .add_native_item(MenuItem::Separator)
-            .add_item(CustomMenuItem::new("quit", "Quit").accelerator("CmdOrCtrl+Q")),
-    );
+        true,
+        &[
+            &open_item,
+            &PredefinedMenuItem::separator(app)?,
+            &quit_item,
+        ],
+    )?;
     
-    let edit_menu = Submenu::new(
+    let undo_item = PredefinedMenuItem::undo(app, None)?;
+    let redo_item = PredefinedMenuItem::redo(app, None)?;
+    let cut_item = PredefinedMenuItem::cut(app, None)?;
+    let copy_item = PredefinedMenuItem::copy(app, None)?;
+    let paste_item = PredefinedMenuItem::paste(app, None)?;
+    
+    let edit_menu = Submenu::with_items(
+        app,
         "Edit",
-        Menu::new()
-            .add_native_item(MenuItem::Undo)
-            .add_native_item(MenuItem::Redo)
-            .add_native_item(MenuItem::Separator)
-            .add_native_item(MenuItem::Cut)
-            .add_native_item(MenuItem::Copy)
-            .add_native_item(MenuItem::Paste),
-    );
+        true,
+        &[
+            &undo_item,
+            &redo_item,
+            &PredefinedMenuItem::separator(app)?,
+            &cut_item,
+            &copy_item,
+            &paste_item,
+        ],
+    )?;
     
-    Menu::new()
-        .add_submenu(file_menu)
-        .add_submenu(edit_menu)
+    let menu = Menu::new(app)?
+        .add_submenu(file_menu)?
+        .add_submenu(edit_menu)?;
+    
+    Ok(menu)
 }
