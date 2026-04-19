@@ -1,4 +1,4 @@
-use tauri::{CustomMenuItem, Menu, MenuItem, Submenu};
+use tauri::menu::{Menu, MenuItem, Submenu, CustomMenuItem};
 
 pub fn create_app_menu() -> Menu {
     let file_menu = Submenu::new(

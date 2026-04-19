@@ -14,7 +14,7 @@ mod services;
 mod windows;
 
 use app_state::AppState;
-use tauri::{Manager, RunEvent, Runtime};
+use tauri::{Manager, RunEvent};
 
 /// Main entry point for Tauri application
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -38,8 +38,8 @@ pub fn run() {
             commands::settings::save_settings,
         ])
         .menu(menu::create_app_menu())
-        .on_window_event(|app, event| {
-            windows::handle_window_event(app, event);
+        .on_window_event(|window, event| {
+            windows::handle_window_event(&window, event);
         })
         .build(tauri::generate_context!())
         .expect("Failed to build Tauri application")

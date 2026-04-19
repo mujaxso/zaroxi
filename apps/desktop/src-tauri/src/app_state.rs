@@ -1,5 +1,3 @@
-use std::sync::{Arc, Mutex};
-
 #[derive(Default)]
 pub struct AppState {
     // Add your app state here
