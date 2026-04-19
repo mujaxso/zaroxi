@@ -114,9 +114,14 @@ cargo clippy --workspace --all-targets -- -D warnings
 
 ### Running the Desktop Application
 
+**Important**: You must navigate to the `apps/desktop` directory first!
+
 ```bash
 # Navigate to the desktop app
 cd apps/desktop
+
+# Install dependencies (first time only)
+npm install
 
 # Development mode (with hot reload)
 npm run tauri dev
@@ -142,6 +147,22 @@ cargo build -p desktop --release
 # Frontend development
 cd apps/desktop
 npm run dev  # Frontend only on http://localhost:1420
+```
+
+### Quick Start
+
+If you're getting "package.json not found" errors, make sure you're in the correct directory:
+
+```bash
+# From the repository root
+pwd  # Should show: /home/yourname/Work/zaroxi
+
+# Navigate to desktop app
+cd apps/desktop
+
+# Now run npm commands
+npm install
+npm run tauri dev
 ```
 
 ## 📁 Project Structure Deep Dive
