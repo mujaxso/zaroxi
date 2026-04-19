@@ -482,6 +482,8 @@ Zaroxi Studio is licensed under the MIT License. See [LICENSE](LICENSE) for deta
 
 ## 📞 Contact
 
+- **Website**: [https://www.zaroxi.com](https://www.zaroxi.com)
+- **Documentation**: [https://docs.zaroxi.com](https://docs.zaroxi.com)
 - **GitHub Issues**: [Bug reports and feature requests](https://github.com/mujaxso/zaroxi/issues)
 - **Discussions**: [Community discussions](https://github.com/mujaxso/zaroxi/discussions)
 - **Email**: contact@zaroxi.com
