@@ -1,13 +1,9 @@
 # Aider
 .aider*
 
-# Compiled files
+# Rust
 target/
 **/*.rs.bk
-
-# Cargo.lock is generated for applications, not libraries
-# This workspace contains binaries, so we commit Cargo.lock
-# Cargo.lock
 
 # IDE specific files
 .vscode/
@@ -31,24 +27,17 @@ coverage/
 # Environment files
 .env
 .env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*.local
 
 # Temporary files
 tmp/
 temp/
 
-# GitHub Actions custom actions
-.github/actions/
-
 # Runtime directory - contains downloaded and compiled Tree-sitter grammars
-# Keep the directory structure but ignore all contents
 runtime/treesitter/grammars/**
 runtime/treesitter/languages/**
 !runtime/treesitter/grammars/
 !runtime/treesitter/languages/
-# Also ignore any files directly in runtime/treesitter
 runtime/treesitter/*
 !runtime/treesitter/grammars
 !runtime/treesitter/languages
@@ -59,14 +48,15 @@ runtime/treesitter/*
 
 # Frontend
 node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
 dist/
 dist-ssr/
 *.local
-.env.*.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
 # Editor
 .idea/
