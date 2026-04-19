@@ -66,7 +66,7 @@
             tree-sitter
 
             # WebKitGTK for Tauri (includes javascriptcoregtk-4.1)
-            webkitgtk
+            webkitgtk_4_1
           ];
 
           # Environment variables
@@ -109,7 +109,7 @@
               # Tree-sitter
               tree-sitter
               # WebKitGTK for Tauri
-              webkitgtk
+              webkitgtk_4_1
             ];
           };
 
@@ -162,7 +162,7 @@
             # Tree-sitter
             tree-sitter
             # WebKitGTK for Tauri (includes javascriptcoregtk-4.1)
-            webkitgtk
+            webkitgtk_4_1
           ];
 
         };
