@@ -13,7 +13,7 @@ rust-version = "1.85.0"
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { workspace = true, features = ["shell-open", "updater"] }
+tauri = { workspace = true, features = [] }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true, features = ["rt", "macros", "sync", "time", "io-util"] }
