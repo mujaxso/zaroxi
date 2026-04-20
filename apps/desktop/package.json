@@ -11,7 +11,7 @@
     "type-check": "tsc --noEmit",
     "setup": "echo 'Make sure you are in apps/desktop directory! Running npm install...' && npm install && echo 'Run npm run tauri to start the app'",
     "postinstall": "echo 'Dependencies installed. Run ./run.sh to start the app.'",
-    "fix:tauri": "rm -rf node_modules/@tauri-apps/cli node_modules/.bin/tauri* && npm install @tauri-apps/cli --no-save"
+    "fix:tauri": "cd $(dirname \"$0\") && rm -rf node_modules/@tauri-apps/cli node_modules/.bin/tauri* 2>/dev/null; npm install @tauri-apps/cli --no-save"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",
