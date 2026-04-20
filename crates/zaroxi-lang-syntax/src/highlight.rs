@@ -220,7 +220,6 @@ pub fn map_capture_name(name: &str) -> Highlight {
         "uri_autolink" => Highlight::String,
         "email_autolink" => Highlight::String,
         "backslash_escape" => Highlight::String,
-        "escape" => Highlight::String,
         "latex" => Highlight::Constant,
         // Additional captures that might be present
         "link" => Highlight::Variable,

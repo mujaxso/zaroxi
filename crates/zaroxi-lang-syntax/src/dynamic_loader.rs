@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 use std::sync::{OnceLock, Mutex};
 use tree_sitter;
-use libloading::{Library, Symbol};
+use libloading::Library;
 
 use crate::runtime::Runtime;
 use crate::grammar_registry::GrammarRegistry;

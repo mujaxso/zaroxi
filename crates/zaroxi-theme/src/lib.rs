@@ -2,7 +2,7 @@
 //! This crate provides color themes, design tokens, and styling utilities
 
 mod colors;
-mod zaroxi_theme;
+mod theme;
 
 pub use colors::*;
-pub use zaroxi_theme::{ZaroxiTheme, SemanticColors, DesignTokens};
+pub use theme::{ZaroxiTheme, SemanticColors, DesignTokens};
