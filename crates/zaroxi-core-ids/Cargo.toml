@@ -1,11 +1,22 @@
 [package]
 name = "zaroxi-core-ids"
-version = "0.1.0"
-edition = "2024"
-license = "MIT"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
 description = "Strongly-typed identifiers for Zaroxi Studio"
+authors = ["Zaroxi Team"]
+repository = "https://github.com/zaroxi/zaroxi"
+readme = "README.md"
+rust-version = "1.85.0"
+
+[lib]
+name = "zaroxi_core_ids"
+path = "src/lib.rs"
 
 [dependencies]
 uuid = { workspace = true, features = ["v4", "serde"] }
 serde = { workspace = true, features = ["derive"] }
 thiserror = { workspace = true }
+
+[features]
+default = []
