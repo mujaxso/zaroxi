@@ -205,13 +205,13 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
                     if parent.join("grammar.js").exists() || parent.join("grammar.json").exists() {
                         parent
                     } else {
-                        source_dir
+                        &source_dir
                     }
                 } else {
-                    source_dir
+                    &source_dir
                 }
             } else {
-                source_dir
+                &source_dir
             }
         };
         
