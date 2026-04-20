@@ -1,7 +1,6 @@
 use std::path::Path;
 use std::fs;
 use thiserror::Error;
-use zaroxi_protocol::workspace::DirectoryEntry;
 
 #[derive(Debug, Error)]
 pub enum WorkspaceError {
@@ -11,6 +10,17 @@ pub enum WorkspaceError {
     NotFound(String),
     #[error("Path is not a directory: {0}")]
     NotDirectory(String),
+}
+
+/// A directory entry for workspace operations.
+#[derive(Debug, Clone)]
+pub struct DirectoryEntry {
+    /// Path to the entry.
+    pub path: String,
+    /// Name of the entry.
+    pub name: String,
+    /// Whether this entry is a directory.
+    pub is_dir: bool,
 }
 
 pub struct WorkspaceLoader;

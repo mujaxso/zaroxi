@@ -1,7 +1,6 @@
 use std::fs;
 use std::io::Read;
 use thiserror::Error;
-use zaroxi_domain_editor::Document;
 
 use crate::metadata::FileMetadata;
 
@@ -11,6 +10,21 @@ pub enum FileLoadError {
     Io(#[from] std::io::Error),
     #[error("File too large: {0}")]
     TooLarge(String),
+}
+
+/// A simple document structure for file loading.
+pub struct Document {
+    /// The text content.
+    pub text: String,
+}
+
+impl Document {
+    /// Create a document from text.
+    pub fn from_text(text: &str) -> Self {
+        Self {
+            text: text.to_string(),
+        }
+    }
 }
 
 pub struct FileLoader;
