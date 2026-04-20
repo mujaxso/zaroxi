@@ -50,7 +50,7 @@ export function ExplorerContainer() {
         }
       } else {
         console.log('[ExplorerContainer] No path selected - dialog was cancelled or failed');
-        setError('No directory selected. Please select a valid directory.');
+        setError('No directory selected. The file dialog may have been cancelled or encountered an issue. If you\'re using Wayland (Hyprland), ensure your desktop environment supports file dialogs.');
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Failed to open workspace';
