@@ -1,29 +1,22 @@
 [package]
 name = "zaroxi-lang-syntax"
-version = "0.1.0"
-edition = "2024"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Syntax highlighting and parsing for Zaroxi"
+authors = ["Zaroxi Team"]
+repository = "https://github.com/zaroxi/zaroxi"
+readme = "README.md"
+rust-version = "1.85.0"
+
+[lib]
+name = "zaroxi_lang_syntax"
+path = "src/lib.rs"
 
 [dependencies]
-tree-sitter = "0.26.8"
-tree-sitter-rust = { version = "0.24", optional = true }
-tree-sitter-toml = { version = "0.20", optional = true }
-ropey = "1.6"
-thiserror = "1.0"
-libloading = { version = "0.8", optional = true }
-tempfile = "3.10"
-clap = { version = "4.4", features = ["derive"] }
-ureq = { version = "2.9", default-features = false, features = ["tls"] }
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+tree-sitter = { workspace = true }
+serde = { workspace = true }
+thiserror = { workspace = true }
 
 [features]
-default = ["dynamic-loading"]
-dynamic-loading = ["libloading"]
-
-[[bin]]
-name = "build-grammar"
-path = "src/bin/build_grammar.rs"
-
-[[bin]]
-name = "download_grammars"
-path = "src/bin/download_grammars.rs"
+default = []
