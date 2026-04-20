@@ -157,8 +157,10 @@ pub async fn get_workspace_tree(
         }
     }
     
-    // Build workspace tree
-    match workspace_service.build_workspace_tree(path).await {
+    // Build workspace tree with better error handling
+    let tree_result = workspace_service.build_workspace_tree(path).await;
+    
+    match tree_result {
         Ok(tree) => {
             info!("Successfully built tree with {} nodes", tree.len());
             if tree.is_empty() {
@@ -178,10 +180,22 @@ pub async fn get_workspace_tree(
             })
         }
         Err(e) => {
-            let error_msg = format!("Failed to build workspace tree: {}", e);
-            error!("{}", error_msg);
-            // Return a more detailed error
-            Err(format!("Failed to build workspace tree: {}. Please check permissions and ensure the directory is accessible.", e))
+            // Log the full error chain
+            error!("Failed to build workspace tree: {:?}", e);
+            
+            // Create a user-friendly error message
+            let error_msg = e.to_string();
+            let user_msg = if error_msg.contains("Permission denied") {
+                format!("Permission denied accessing '{}'. Check file permissions.", request.root_path)
+            } else if error_msg.contains("No such file") {
+                format!("Directory '{}' does not exist.", request.root_path)
+            } else if error_msg.contains("Not a directory") {
+                format!("'{}' is not a directory.", request.root_path)
+            } else {
+                format!("Failed to load directory contents: {}", error_msg)
+            };
+            
+            Err(user_msg)
         }
     }
 }

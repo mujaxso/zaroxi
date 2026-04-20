@@ -256,8 +256,21 @@ export class WorkspaceService {
       console.error('[WorkspaceService] getWorkspaceTree error:', error);
       // Extract error message from BridgeError
       const errorMessage = error?.message || error?.toString() || 'Unknown error building workspace tree';
-      console.error('[WorkspaceService] Error details:', errorMessage);
-      throw new Error(`Failed to load workspace tree: ${errorMessage}`);
+      console.error('[WorkspaceService] Error details:', error);
+      console.error('[WorkspaceService] Error string:', String(error));
+      console.error('[WorkspaceService] Error keys:', Object.keys(error));
+      
+      // Try to get more details
+      let detailedMessage = 'Unknown error loading workspace tree';
+      if (typeof error === 'string') {
+        detailedMessage = error;
+      } else if (error?.message) {
+        detailedMessage = error.message;
+      } else if (error?.toString) {
+        detailedMessage = error.toString();
+      }
+      
+      throw new Error(`Failed to load workspace tree: ${detailedMessage}`);
     }
   }
 

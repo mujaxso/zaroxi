@@ -149,9 +149,13 @@ impl WorkspaceService {
             info!("Processing entry {}: {} (is_dir: {})", i, entry.name, entry.is_dir);
             
             let modified_str = entry.modified.and_then(|t| {
-                let duration = t.duration_since(std::time::UNIX_EPOCH).ok()?;
-                chrono::DateTime::from_timestamp(duration.as_secs() as i64, 0)
-                    .map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string())
+                match t.duration_since(std::time::UNIX_EPOCH) {
+                    Ok(duration) => {
+                        chrono::DateTime::from_timestamp(duration.as_secs() as i64, 0)
+                            .map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string())
+                    }
+                    Err(_) => None,
+                }
             });
             
             let node = ExplorerTreeNode {
