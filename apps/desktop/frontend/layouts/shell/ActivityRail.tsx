@@ -1,5 +1,7 @@
 import { Icon } from '@/components/ui/Icon';
 import { cn } from '@/lib/utils';
+import { useWorkspaceStore } from '@/features/workspace/stores/useWorkspaceStore';
+import { WorkspaceService } from '@/features/workspace/services/workspaceService';
 
 interface ActivityRailProps {
   activePanel: string;
@@ -8,6 +10,8 @@ interface ActivityRailProps {
 }
 
 export function ActivityRail({ activePanel, onPanelChange, onAssistantToggle }: ActivityRailProps) {
+  const { setCurrentWorkspace, setWorkspaceTree, setLoading, setError } = useWorkspaceStore();
+  
   const items = [
     { id: 'explorer', icon: 'folder', label: 'Explorer' },
     { id: 'search', icon: 'search', label: 'Search' },
@@ -15,10 +19,36 @@ export function ActivityRail({ activePanel, onPanelChange, onAssistantToggle }: 
     { id: 'debug', icon: 'bug', label: 'Debug' },
   ] as const;
 
+  const handleOpenWorkspace = async () => {
+    try {
+      setLoading(true);
+      const dialogResult = await WorkspaceService.openFileDialog();
+      
+      if (dialogResult.selectedPath) {
+        const result = await WorkspaceService.openWorkspaceAndLoadTree(dialogResult.selectedPath);
+        setCurrentWorkspace(result.workspace);
+        setWorkspaceTree(result.tree.tree);
+      }
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to open workspace');
+      console.error('Failed to open workspace:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="w-12 flex flex-col items-center py-4 border-r border-border bg-sidebar">
       {/* Main activity items */}
       <div className="flex flex-col items-center space-y-4">
+        <button
+          onClick={handleOpenWorkspace}
+          className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-muted text-muted-foreground"
+          title="Open Workspace"
+        >
+          <Icon name="folder-plus" size={20} />
+        </button>
+        
         {items.map((item) => (
           <button
             key={item.id}
