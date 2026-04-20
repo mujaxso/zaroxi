@@ -17,6 +17,10 @@ path = "src/lib.rs"
 tree-sitter = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }
+libloading = { workspace = true }
+serde_json = { workspace = true }
+tempfile = { workspace = true }
 
 [features]
 default = []
+dynamic-loading = []

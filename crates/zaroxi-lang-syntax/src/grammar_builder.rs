@@ -30,11 +30,11 @@ fn find_tree_sitter_include_path() -> Result<String, String> {
         if output.status.success() {
             let metadata: serde_json::Value = serde_json::from_slice(&output.stdout)
                 .map_err(|e| format!("Failed to parse cargo metadata: {}", e))?;
-            if let Some(packages) = metadata.get("packages").and_then(|p| p.as_array()) {
+            if let Some(packages) = metadata.get("packages").and_then(|p: &serde_json::Value| p.as_array()) {
                 for package in packages {
-                    if let Some(name) = package.get("name").and_then(|n| n.as_str()) {
+                    if let Some(name) = package.get("name").and_then(|n: &serde_json::Value| n.as_str()) {
                         if name == "tree-sitter" {
-                            if let Some(manifest_path) = package.get("manifest_path").and_then(|m| m.as_str()) {
+                            if let Some(manifest_path) = package.get("manifest_path").and_then(|m: &serde_json::Value| m.as_str()) {
                                 let manifest = std::path::Path::new(manifest_path);
                                 if let Some(root) = manifest.parent() {
                                     let include_path = root.join("lib").join("include");
@@ -205,13 +205,13 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
                     if parent.join("grammar.js").exists() || parent.join("grammar.json").exists() {
                         parent
                     } else {
-                        &source_dir
+                        source_dir
                     }
                 } else {
-                    &source_dir
+                    source_dir
                 }
             } else {
-                &source_dir
+                source_dir
             }
         };
         
