@@ -13,14 +13,17 @@ pub enum WorkspaceEvent {
         root_path: String,
     },
     /// Emitted when a workspace is closed
+    #[allow(dead_code)]
     WorkspaceClosed {
         workspace_id: String,
     },
     /// Emitted when directory contents change
+    #[allow(dead_code)]
     DirectoryChanged {
         path: String,
     },
     /// Emitted when a file is created/modified/deleted
+    #[allow(dead_code)]
     FileSystemChanged {
         path: String,
         change_type: FileSystemChangeType,
@@ -30,9 +33,13 @@ pub enum WorkspaceEvent {
 /// Type of file system change
 #[derive(Debug, Clone, Serialize)]
 pub enum FileSystemChangeType {
+    #[allow(dead_code)]
     Created,
+    #[allow(dead_code)]
     Modified,
+    #[allow(dead_code)]
     Deleted,
+    #[allow(dead_code)]
     Renamed { old_path: String },
 }
 
@@ -56,6 +63,7 @@ impl<'a> WorkspaceEventEmitter<'a> {
         )
     }
 
+    #[allow(dead_code)]
     pub fn emit_directory_changed(&self, path: &str) -> tauri::Result<()> {
         self.app_handle.emit(
             "workspace:directory_changed",

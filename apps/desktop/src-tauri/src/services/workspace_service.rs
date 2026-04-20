@@ -109,6 +109,16 @@ impl WorkspaceService {
         let entries = self.list_directory(current_path.clone()).await?;
         
         for entry in entries {
+            let mut children = if entry.is_dir {
+                // Recursively build children for directories
+                let mut child_nodes = Vec::new();
+                let child_path = PathBuf::from(&entry.path);
+                self.build_tree_recursive(&child_path, &mut child_nodes, depth + 1).await?;
+                Some(child_nodes)
+            } else {
+                None
+            };
+            
             let node = ExplorerTreeNode {
                 id: entry.path.clone(),
                 path: entry.path.clone(),
@@ -123,12 +133,7 @@ impl WorkspaceService {
                     )
                     .map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string())
                 }),
-                children: if entry.is_dir {
-                    // For directories, we'll load children lazily
-                    Some(Vec::new())
-                } else {
-                    None
-                },
+                children,
                 parent_path: current_path.to_string_lossy().to_string(),
             };
             tree.push(node);
@@ -138,6 +143,7 @@ impl WorkspaceService {
     }
 
     /// Get active workspace
+    #[allow(dead_code)]
     pub async fn get_active_workspace(&self) -> Option<zaroxi_domain_workspace::workspace::Workspace> {
         let active = self.active_workspace.lock().await;
         active.clone()

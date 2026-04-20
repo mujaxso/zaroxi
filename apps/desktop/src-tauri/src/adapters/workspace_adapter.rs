@@ -34,6 +34,7 @@ pub fn file_entry_to_dto(entry: &FileEntry) -> crate::commands::workspace::Direc
 }
 
 /// Convert file entry to explorer tree node
+#[allow(dead_code)]
 pub fn file_entry_to_tree_node(entry: &FileEntry) -> ExplorerTreeNode {
     let modified_str = entry.modified.and_then(|time| {
         let datetime: DateTime<Utc> = time.into();
@@ -62,6 +63,7 @@ pub fn file_entry_to_tree_node(entry: &FileEntry) -> ExplorerTreeNode {
 }
 
 /// Convert DTO to domain workspace (if needed)
+#[allow(dead_code)]
 pub fn dto_to_domain_workspace(
     dto: &crate::commands::workspace::OpenWorkspaceResponse,
 ) -> zaroxi_domain_workspace::workspace::Workspace {

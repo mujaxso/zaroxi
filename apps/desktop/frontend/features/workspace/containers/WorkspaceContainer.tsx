@@ -11,7 +11,8 @@ export function WorkspaceContainer() {
     setCurrentWorkspace, 
     setWorkspaceTree, 
     setLoading, 
-    setError 
+    setError,
+    toggleExpanded
   } = useWorkspaceStore();
 
   // Subscribe to workspace events
@@ -54,6 +55,8 @@ export function WorkspaceContainer() {
         const result = await WorkspaceService.openWorkspaceAndLoadTree(dialogResult.selectedPath);
         setCurrentWorkspace(result.workspace);
         setWorkspaceTree(result.tree.tree);
+        // Expand the root path by default
+        toggleExpanded(result.workspace.rootPath);
       }
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to open workspace');

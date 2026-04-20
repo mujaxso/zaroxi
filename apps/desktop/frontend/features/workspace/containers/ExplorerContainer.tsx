@@ -16,7 +16,7 @@ export function ExplorerContainer() {
     setError,
   } = useWorkspaceStore();
 
-  const handleNodeClick = async (node: any) => {
+  const handleNodeClick = async (node: ExplorerTreeNode) => {
     setSelectedPath(node.path);
     
     if (node.isDir) {
@@ -38,8 +38,35 @@ export function ExplorerContainer() {
     try {
       const children = await WorkspaceService.loadDirectoryChildren(path);
       // Update the tree with loaded children
-      // This is a simplified implementation - in a real app, we'd update the specific node
-      console.log('Loaded children for', path, children);
+      const updateTree = (nodes: ExplorerTreeNode[]): ExplorerTreeNode[] => {
+        return nodes.map(node => {
+          if (node.path === path && node.isDir) {
+            return {
+              ...node,
+              children: children.map(child => ({
+                id: child.path,
+                path: child.path,
+                name: child.name,
+                isDir: child.isDir,
+                fileType: child.fileType,
+                size: child.size,
+                modified: child.modified,
+                children: child.isDir ? [] : undefined,
+                parentPath: path,
+              }))
+            };
+          }
+          if (node.children) {
+            return {
+              ...node,
+              children: updateTree(node.children)
+            };
+          }
+          return node;
+        });
+      };
+      
+      setWorkspaceTree(prevTree => updateTree(prevTree));
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to load directory children');
       console.error('Failed to load directory children:', error);
