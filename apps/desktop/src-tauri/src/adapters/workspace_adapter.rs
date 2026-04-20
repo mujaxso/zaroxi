@@ -5,7 +5,7 @@ use chrono::{DateTime, Utc};
 pub fn domain_workspace_to_dto(
     workspace: &zaroxi_domain_workspace::workspace::Workspace,
 ) -> crate::commands::workspace::OpenWorkspaceResponse {
-    use tracing::{info, warn, error};
+    use tracing::{info, error};
     
     // Count files in the workspace directory
     let file_count = match std::fs::read_dir(&workspace.root_path) {

@@ -16,8 +16,15 @@ export function TauriProvider({ children }: TauriProviderProps) {
     
     if (isTauri) {
       console.log('Running in Tauri environment');
+      // Initialize Tauri-specific features
+      import('@tauri-apps/api').then(({ invoke }) => {
+        console.log('Tauri API loaded successfully');
+      }).catch(err => {
+        console.error('Failed to load Tauri API:', err);
+      });
     } else {
-      console.warn('Running in browser environment - some features may be limited');
+      console.warn('Running in browser environment - using mock data for development');
+      console.warn('To use full features, run the app through Tauri with: npm run tauri dev');
     }
     
     // Simulate initialization delay

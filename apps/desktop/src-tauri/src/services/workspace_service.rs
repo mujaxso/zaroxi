@@ -92,23 +92,32 @@ impl WorkspaceService {
 
     /// Build workspace tree starting from root path
     pub async fn build_workspace_tree(&self, root_path: PathBuf) -> Result<Vec<ExplorerTreeNode>> {
+        use tracing::{info, warn, error};
+        
         info!("Building workspace tree from root: {:?}", root_path);
         
         // Ensure the path exists and is a directory
         if !root_path.exists() {
+            error!("Path does not exist: {:?}", root_path);
             return Err(anyhow::anyhow!("Path does not exist: {:?}", root_path));
         }
         if !root_path.is_dir() {
+            error!("Path is not a directory: {:?}", root_path);
             return Err(anyhow::anyhow!("Path is not a directory: {:?}", root_path));
         }
+        
+        info!("Path exists and is a directory");
         
         let mut tree = Vec::new();
         
         // Get immediate children of the root directory
         let entries = match self.list_directory(root_path.clone()).await {
-            Ok(entries) => entries,
+            Ok(entries) => {
+                info!("Successfully listed directory, found {} entries", entries.len());
+                entries
+            },
             Err(e) => {
-                eprintln!("Failed to list root directory {:?}: {}", root_path, e);
+                error!("Failed to list root directory {:?}: {}", root_path, e);
                 return Err(anyhow::anyhow!("Failed to list directory: {}", e));
             }
         };
@@ -127,7 +136,9 @@ impl WorkspaceService {
             }
         });
         
-        for entry in entries {
+        for (i, entry) in entries.iter().enumerate() {
+            info!("Processing entry {}: {} (is_dir: {})", i, entry.name, entry.is_dir);
+            
             let modified_str = entry.modified.and_then(|t| {
                 let duration = t.duration_since(std::time::UNIX_EPOCH).ok()?;
                 chrono::DateTime::from_timestamp(duration.as_secs() as i64, 0)
@@ -155,7 +166,17 @@ impl WorkspaceService {
         
         info!("Built tree with {} nodes", tree.len());
         if tree.is_empty() {
-            info!("Tree is empty - directory might be empty or inaccessible");
+            warn!("Tree is empty - directory might be empty or inaccessible");
+            // Let's check if we can read the directory
+            match std::fs::read_dir(&root_path) {
+                Ok(entries) => {
+                    let count = entries.count();
+                    info!("Directory actually has {} entries according to std::fs::read_dir", count);
+                },
+                Err(e) => {
+                    error!("Cannot read directory with std::fs::read_dir: {}", e);
+                }
+            }
         } else {
             info!("Sample node: path={}, name={}, is_dir={}", tree[0].path, tree[0].name, tree[0].is_dir);
         }

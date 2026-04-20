@@ -37,7 +37,7 @@ pub async fn open_workspace(
     workspace_service: State<'_, Arc<WorkspaceService>>,
     app_handle: AppHandle,
 ) -> Result<OpenWorkspaceResponse, String> {
-    use tracing::{info, warn, error};
+    use tracing::{info, error};
     
     info!("Opening workspace at path: {}", request.path);
     
