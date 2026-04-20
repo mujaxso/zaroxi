@@ -9,6 +9,10 @@ repository = "https://github.com/zaroxi/zaroxi"
 readme = "README.md"
 rust-version = "1.85.0"
 
+[lib]
+name = "desktop"
+path = "src/lib.rs"
+
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
