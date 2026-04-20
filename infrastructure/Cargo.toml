@@ -1,2 +1,0 @@
-# Virtual manifest - infrastructure is not a workspace, just a directory
-# The actual crates are in infrastructure/rpc, infrastructure/settings, and infrastructure/permissions

@@ -1,2 +1,0 @@
-# Virtual manifest - language is not a workspace, just a directory
-# The actual crates are in language/editor-core and language/syntax-core

@@ -1,2 +1,0 @@
-# Virtual manifest - operations is not a workspace, just a directory
-# The actual crates are in operations/patch-engine and operations/file-ops
