@@ -72,7 +72,7 @@ fn load_language_impl(language_id: &str) -> Option<tree_sitter::Language> {
                 for symbol_name in symbol_names {
                     println!("DEBUG: Looking for symbol: {}", symbol_name);
                     
-                    let language_fn: Result<Symbol<unsafe extern "C" fn() -> tree_sitter::Language>, _> = 
+                    let language_fn: Result<libloading::Symbol<unsafe extern "C" fn() -> tree_sitter::Language>, _> = 
                         lib.get(symbol_name.as_bytes());
                     
                     match language_fn {

@@ -288,9 +288,11 @@ pub fn map_capture_name(name: &str) -> Highlight {
         "definition" => Highlight::Variable,
         // Additional markdown captures from the query file
         "atx_heading_marker" => Highlight::Operator,
-        "string.escape" => Highlight::String,
-        "strong_emphasis" => Highlight::Keyword,
-        "operator" => Highlight::Operator,
+        // Note: "string.escape", "strong_emphasis", and "operator" are already handled above
+        // So we comment them out to avoid duplicate patterns
+        // "string.escape" => Highlight::String,
+        // "strong_emphasis" => Highlight::Keyword,
+        // "operator" => Highlight::Operator,
         "plain" => Highlight::Plain,
         _ => Highlight::Plain,
     }

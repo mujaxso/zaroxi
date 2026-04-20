@@ -30,11 +30,11 @@ fn find_tree_sitter_include_path() -> Result<String, String> {
         if output.status.success() {
             let metadata: serde_json::Value = serde_json::from_slice(&output.stdout)
                 .map_err(|e| format!("Failed to parse cargo metadata: {}", e))?;
-            if let Some(packages) = metadata.get("packages").and_then(|p: &serde_json::Value| p.as_array()) {
+            if let Some(packages) = metadata.get("packages").and_then(|p| p.as_array()) {
                 for package in packages {
-                    if let Some(name) = package.get("name").and_then(|n: &serde_json::Value| n.as_str()) {
+                    if let Some(name) = package.get("name").and_then(|n| n.as_str()) {
                         if name == "tree-sitter" {
-                            if let Some(manifest_path) = package.get("manifest_path").and_then(|m: &serde_json::Value| m.as_str()) {
+                            if let Some(manifest_path) = package.get("manifest_path").and_then(|m| m.as_str()) {
                                 let manifest = std::path::Path::new(manifest_path);
                                 if let Some(root) = manifest.parent() {
                                     let include_path = root.join("lib").join("include");
@@ -193,7 +193,7 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
         
         // For TypeScript/TSX, the grammar.json is in the source_dir itself, not in a further src subdirectory
         // Determine the directory to run tree-sitter build in
-        let build_dir = if repo_dir.join("grammar.js").exists() || repo_dir.join("grammar.json").exists() {
+        let build_dir: &std::path::Path = if repo_dir.join("grammar.js").exists() || repo_dir.join("grammar.json").exists() {
             &repo_dir
         } else if source_dir.join("grammar.js").exists() || source_dir.join("grammar.json").exists() {
             &source_dir
@@ -343,7 +343,7 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
             vec![]
         };
         
-        let all_paths: Vec<_> = possible_paths.into_iter().chain(markdown_paths.into_iter()).collect();
+        let all_paths: Vec<std::path::PathBuf> = possible_paths.into_iter().chain(markdown_paths.into_iter()).collect();
         
         let mut found = None;
         for path in &all_paths {
