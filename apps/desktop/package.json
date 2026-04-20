@@ -7,12 +7,8 @@
     "dev": "vite --port 1420",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "tauri": "npx tauri",
-    "type-check": "tsc --noEmit",
-    "setup": "echo 'Make sure you are in apps/desktop directory! Running npm install...' && npm install && echo 'Run npm run tauri to start the app'",
-    "postinstall": "echo 'Dependencies installed. Run ./run.sh to start the app.'",
-    "fix:tauri": "if [ ! -f package.json ] || [ ! -f src-tauri/tauri.conf.json ]; then echo 'Please run this command from the apps/desktop directory'; echo 'Current directory:'; pwd; exit 1; fi; echo 'Removing corrupted Tauri CLI...'; rm -rf node_modules/@tauri-apps/cli node_modules/.bin/tauri* 2>/dev/null; echo 'Reinstalling Tauri CLI...'; npm install @tauri-apps/cli --no-save",
-    "fix:shebang": "if [ -f node_modules/.bin/tauri ]; then sed -i '1s|^.*$|#!/usr/bin/env node|' node_modules/.bin/tauri && chmod +x node_modules/.bin/tauri; fi"
+    "tauri": "tauri",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",
