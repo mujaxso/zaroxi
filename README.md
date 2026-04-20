@@ -38,8 +38,11 @@ Zaroxi Studio follows a modern desktop application architecture built with Tauri
 - ✅ **AI Agent**: Task planning, execution, and tool system with patch generation
 - ✅ **Background Services**: Workspace and AI daemons for background operations
 - ✅ **Frontend Components**: React-based UI with error boundaries, keyboard shortcuts, and responsive layout
+- ✅ **Workspace Integration**: Real workspace opening and file listing using domain crates
+- ✅ **File Operations**: Real file opening, editing, and saving
 - 🔄 **LSP Integration**: Language Server Protocol client in development
 - 🔄 **Preview System**: Planned preview architecture for mobile/desktop simulations
+- 🔄 **Settings Integration**: Theme and settings management using infrastructure crates
 
 ```
 ┌─────────────────┐    ┌──────────────────┐

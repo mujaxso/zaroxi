@@ -95,3 +95,7 @@ console.log('   cd apps/desktop');
 console.log('   npm install');
 console.log('   cd ../.. && cargo build --workspace');
 console.log('   cd apps/desktop && npm run tauri dev');
+console.log('\n🔧 If you encounter build errors:');
+console.log('   - Make sure all workspace dependencies are built: cargo build --workspace');
+console.log('   - Check Rust version: rustc --version (should be 1.85+)');
+console.log('   - Clear build cache if needed: cargo clean');
