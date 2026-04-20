@@ -104,8 +104,8 @@ impl WorkspaceService {
 /// Workspace metadata
 #[derive(Debug, Clone)]
 pub struct WorkspaceMetadata {
-    pub id: uuid::Uuid,
+    pub id: Uuid,
     pub file_count: usize,
     pub total_size: u64,
-    pub last_indexed: Option<chrono::DateTime<chrono::Utc>>,
+    pub last_indexed: Option<DateTime<Utc>>,
 }
