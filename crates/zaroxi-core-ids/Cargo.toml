@@ -9,14 +9,3 @@ description = "Strongly-typed identifiers for Zaroxi Studio"
 uuid = { workspace = true, features = ["v4", "serde"] }
 serde = { workspace = true, features = ["derive"] }
 thiserror = { workspace = true }
-[package]
-name = "zaroxi-core-ids"
-version = "0.1.0"
-edition = "2024"
-license = "MIT"
-description = "Strongly-typed identifiers for Zaroxi Studio"
-
-[dependencies]
-uuid = { workspace = true, features = ["v4", "serde"] }
-serde = { workspace = true, features = ["derive"] }
-thiserror = { workspace = true }
