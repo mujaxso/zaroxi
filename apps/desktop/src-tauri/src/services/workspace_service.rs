@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use anyhow::Result;
 use tokio::sync::Mutex;
-use tracing::{info, error};
+use tracing::info;
 
 /// App-specific workspace service that orchestrates domain workspace logic
 pub struct WorkspaceService {

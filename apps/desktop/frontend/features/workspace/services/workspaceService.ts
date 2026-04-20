@@ -20,6 +20,8 @@ export interface DirectoryEntryDto {
   name: string;
   isDir: boolean;
   fileType?: string;
+  size?: number;
+  modified?: string;
 }
 
 export interface OpenFileRequest {

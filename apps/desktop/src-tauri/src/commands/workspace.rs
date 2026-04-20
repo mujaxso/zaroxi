@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use serde::{Deserialize, Serialize};
 use tauri::command;
-use tauri::State;
+use tauri::{AppHandle, State};
 
 use crate::services::workspace_service::WorkspaceService;
 
@@ -59,6 +59,8 @@ pub struct DirectoryEntryDto {
     pub name: String,
     pub is_dir: bool,
     pub file_type: Option<String>,
+    pub size: Option<u64>,
+    pub modified: Option<String>,
 }
 
 #[command]
