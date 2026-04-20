@@ -27,14 +27,25 @@ export function ExplorerContainer() {
       
       if (dialogResult.selectedPath) {
         console.log('Selected path:', dialogResult.selectedPath);
-        const result = await WorkspaceService.openWorkspaceAndLoadTree(dialogResult.selectedPath);
-        console.log('Workspace opened:', result.workspace);
-        console.log('Tree data:', result.tree.tree);
-        
-        setCurrentWorkspace(result.workspace);
-        setWorkspaceTree(result.tree.tree);
-        // Expand the root path by default
-        toggleExpanded(result.workspace.rootPath);
+        try {
+          const workspace = await WorkspaceService.openWorkspace({ path: dialogResult.selectedPath });
+          console.log('Workspace opened:', workspace);
+          
+          const tree = await WorkspaceService.getWorkspaceTree({
+            workspaceId: workspace.workspaceId,
+            rootPath: workspace.rootPath
+          });
+          console.log('Tree data:', tree.tree);
+          console.log('Tree length:', tree.tree.length);
+          
+          setCurrentWorkspace(workspace);
+          setWorkspaceTree(tree.tree);
+          // Expand the root path by default
+          toggleExpanded(workspace.rootPath);
+        } catch (error) {
+          console.error('Error in openWorkspaceAndLoadTree:', error);
+          throw error;
+        }
       } else {
         console.log('No path selected');
       }

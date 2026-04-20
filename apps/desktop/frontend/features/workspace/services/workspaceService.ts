@@ -128,13 +128,23 @@ export class WorkspaceService {
   static async openWorkspaceAndLoadTree(
     path: string
   ): Promise<{ workspace: OpenWorkspaceResponse; tree: WorkspaceTreeResponse }> {
-    const workspace = await this.openWorkspace({ path });
-    const tree = await this.getWorkspaceTree({
-      workspaceId: workspace.workspaceId,
-      rootPath: workspace.rootPath
-    });
-    
-    return { workspace, tree };
+    try {
+      console.log('openWorkspaceAndLoadTree: opening workspace at', path);
+      const workspace = await this.openWorkspace({ path });
+      console.log('openWorkspaceAndLoadTree: workspace opened', workspace);
+      
+      console.log('openWorkspaceAndLoadTree: getting tree for', workspace.workspaceId, workspace.rootPath);
+      const tree = await this.getWorkspaceTree({
+        workspaceId: workspace.workspaceId,
+        rootPath: workspace.rootPath
+      });
+      console.log('openWorkspaceAndLoadTree: tree received with', tree.tree.length, 'nodes');
+      
+      return { workspace, tree };
+    } catch (error) {
+      console.error('openWorkspaceAndLoadTree failed:', error);
+      throw error;
+    }
   }
 
   static async openFileInEditor(path: string): Promise<OpenFileResponse> {

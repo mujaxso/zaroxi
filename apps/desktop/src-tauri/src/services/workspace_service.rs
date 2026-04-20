@@ -1,5 +1,7 @@
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::pin::Pin;
+use std::future::Future;
 use anyhow::Result;
 use tokio::sync::Mutex;
 use tracing::info;
@@ -100,62 +102,62 @@ impl WorkspaceService {
         Ok(tree)
     }
     
-    async fn build_tree_recursive(
-        &self,
-        current_path: &PathBuf,
-        tree: &mut Vec<ExplorerTreeNode>,
+    fn build_tree_recursive<'a>(
+        &'a self,
+        current_path: &'a PathBuf,
+        tree: &'a mut Vec<ExplorerTreeNode>,
         depth: usize,
-    ) -> Result<()> {
-        // Limit recursion depth to prevent infinite loops
-        if depth > 5 {
-            return Ok(());
-        }
-        
-        let entries = match self.list_directory(current_path.clone()).await {
-            Ok(entries) => entries,
-            Err(e) => {
-                eprintln!("Failed to list directory {:?}: {}", current_path, e);
+    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<()>> + 'a + Send>> {
+        Box::pin(async move {
+            // Limit recursion depth to prevent infinite loops
+            if depth > 10 {
                 return Ok(());
             }
-        };
-        
-        for entry in entries {
-            let children = if entry.is_dir && depth < 3 {
-                // Recursively build children for directories, but limit depth
-                let mut child_nodes = Vec::new();
-                let child_path = PathBuf::from(&entry.path);
-                
-                // Use a simple async call without boxing
-                if let Err(e) = self.build_tree_recursive(&child_path, &mut child_nodes, depth + 1).await {
-                    eprintln!("Failed to build subtree for {:?}: {}", child_path, e);
+            
+            let entries = match self.list_directory(current_path.clone()).await {
+                Ok(entries) => entries,
+                Err(e) => {
+                    eprintln!("Failed to list directory {:?}: {}", current_path, e);
+                    return Ok(());
                 }
-                
-                Some(child_nodes)
-            } else {
-                None
             };
             
-            let node = ExplorerTreeNode {
-                id: entry.path.clone(),
-                path: entry.path.clone(),
-                name: entry.name.clone(),
-                is_dir: entry.is_dir,
-                file_type: entry.file_type.clone(),
-                size: entry.size,
-                modified: entry.modified.and_then(|t| {
-                    chrono::DateTime::from_timestamp(
-                        t.duration_since(std::time::UNIX_EPOCH).ok()?.as_secs() as i64,
-                        0
-                    )
-                    .map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string())
-                }),
-                children,
-                parent_path: current_path.to_string_lossy().to_string(),
-            };
-            tree.push(node);
-        }
-        
-        Ok(())
+            for entry in entries {
+                let children = if entry.is_dir {
+                    // Recursively build children for directories
+                    let mut child_nodes = Vec::new();
+                    let child_path = PathBuf::from(&entry.path);
+                    
+                    // Box the recursive call
+                    self.build_tree_recursive(&child_path, &mut child_nodes, depth + 1).await?;
+                    
+                    Some(child_nodes)
+                } else {
+                    None
+                };
+                
+                let node = ExplorerTreeNode {
+                    id: entry.path.clone(),
+                    path: entry.path.clone(),
+                    name: entry.name.clone(),
+                    is_dir: entry.is_dir,
+                    file_type: entry.file_type.clone(),
+                    size: entry.size,
+                    modified: entry.modified.and_then(|t| {
+                        chrono::DateTime::from_timestamp(
+                            t.duration_since(std::time::UNIX_EPOCH).ok()?.as_secs() as i64,
+                            0
+                        )
+                        .map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string())
+                    }),
+                    children,
+                    parent_path: current_path.to_string_lossy().to_string(),
+                };
+                tree.push(node);
+            }
+            
+            Ok(())
+        })
     }
 
     /// Get active workspace

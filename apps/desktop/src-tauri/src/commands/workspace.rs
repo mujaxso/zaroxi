@@ -114,7 +114,7 @@ pub async fn get_workspace_tree(
     request: WorkspaceTreeRequest,
     workspace_service: State<'_, Arc<WorkspaceService>>,
 ) -> Result<WorkspaceTreeResponse, String> {
-    use tracing::info;
+    use tracing::{info, error};
     
     info!("Building workspace tree for path: {}", request.root_path);
     
@@ -122,25 +122,31 @@ pub async fn get_workspace_tree(
     
     // Validate path exists
     if !path.exists() {
+        error!("Path does not exist: {}", request.root_path);
         return Err(format!("Path does not exist: {}", request.root_path));
     }
     
+    info!("Path exists, building tree...");
+    
     // Build workspace tree
-    let tree = workspace_service.build_workspace_tree(path)
-        .await
-        .map_err(|e| {
+    match workspace_service.build_workspace_tree(path).await {
+        Ok(tree) => {
+            info!("Successfully built tree with {} nodes", tree.len());
+            if tree.is_empty() {
+                info!("Tree is empty - this might be expected for an empty directory");
+            }
+            Ok(WorkspaceTreeResponse {
+                workspace_id: request.workspace_id,
+                root_path: request.root_path,
+                tree,
+            })
+        }
+        Err(e) => {
             let error_msg = format!("Failed to build workspace tree: {}", e);
-            info!("{}", error_msg);
-            error_msg
-        })?;
-    
-    info!("Built tree with {} nodes", tree.len());
-    
-    Ok(WorkspaceTreeResponse {
-        workspace_id: request.workspace_id,
-        root_path: request.root_path,
-        tree,
-    })
+            error!("{}", error_msg);
+            Err(error_msg)
+        }
+    }
 }
 
 #[derive(Debug, Deserialize)]
