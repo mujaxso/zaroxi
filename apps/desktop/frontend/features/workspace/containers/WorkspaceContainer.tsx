@@ -51,7 +51,13 @@ export function WorkspaceContainer() {
       const dialogResult = await WorkspaceService.openFileDialog();
       
       if (dialogResult.selectedPath) {
+        console.log('WorkspaceContainer: Opening workspace at:', dialogResult.selectedPath);
         const result = await WorkspaceService.openWorkspaceAndLoadTree(dialogResult.selectedPath);
+        console.log('WorkspaceContainer: Workspace opened:', result.workspace);
+        console.log('WorkspaceContainer: Tree received:', result.tree);
+        console.log('WorkspaceContainer: Tree nodes:', result.tree.tree);
+        console.log('WorkspaceContainer: Tree length:', result.tree.tree.length);
+        
         setCurrentWorkspace(result.workspace);
         setWorkspaceTree(result.tree.tree);
         // Expand the root path by default

@@ -24,11 +24,17 @@ export function ExplorerContainer() {
       const dialogResult = await WorkspaceService.openFileDialog();
       
       if (dialogResult.selectedPath) {
+        console.log('Opening workspace at:', dialogResult.selectedPath);
         const workspace = await WorkspaceService.openWorkspace({ path: dialogResult.selectedPath });
+        console.log('Workspace opened:', workspace);
+        
         const tree = await WorkspaceService.getWorkspaceTree({
           workspaceId: workspace.workspaceId,
           rootPath: workspace.rootPath
         });
+        console.log('Tree received:', tree);
+        console.log('Tree nodes:', tree.tree);
+        console.log('Tree length:', tree.tree.length);
         
         setCurrentWorkspace(workspace);
         setWorkspaceTree(tree.tree);
@@ -131,6 +137,11 @@ export function ExplorerContainer() {
     );
   }
 
+  console.log('ExplorerContainer: currentWorkspace:', currentWorkspace);
+  console.log('ExplorerContainer: workspaceTree:', workspaceTree);
+  console.log('ExplorerContainer: workspaceTree length:', workspaceTree.length);
+  console.log('ExplorerContainer: isLoading:', isLoading);
+
   if (isLoading && workspaceTree.length === 0) {
     return (
       <div className="p-4">
@@ -151,6 +162,7 @@ export function ExplorerContainer() {
       <div className="p-8 text-center text-muted-foreground">
         <p>No files found in workspace.</p>
         <p className="text-sm mt-2">Path: {currentWorkspace.rootPath}</p>
+        <p className="text-xs mt-1">File count: {currentWorkspace.fileCount}</p>
         <button
           onClick={handleOpenWorkspace}
           className="mt-4 px-4 py-2 text-sm bg-muted hover:bg-muted/80 rounded-md transition-colors"

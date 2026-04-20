@@ -105,6 +105,8 @@ impl WorkspaceService {
             }
         };
         
+        info!("Found {} entries in root directory", entries.len());
+        
         for entry in entries {
             let node = ExplorerTreeNode {
                 id: entry.path.clone(),

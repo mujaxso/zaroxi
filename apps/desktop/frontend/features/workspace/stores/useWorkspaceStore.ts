@@ -100,8 +100,15 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
         })),
         
         // Backend state setters
-        setCurrentWorkspace: (workspace) => set({ currentWorkspace: workspace }),
-        setWorkspaceTree: (tree) => set({ workspaceTree: tree }),
+        setCurrentWorkspace: (workspace) => {
+          console.log('setCurrentWorkspace called with:', workspace);
+          set({ currentWorkspace: workspace });
+        },
+        setWorkspaceTree: (tree) => {
+          console.log('setWorkspaceTree called with:', tree);
+          console.log('Tree length:', tree.length);
+          set({ workspaceTree: tree });
+        },
         
         // Utility
         setLoading: (loading) => set({ isLoading: loading }),

@@ -114,7 +114,7 @@ pub async fn get_workspace_tree(
     request: WorkspaceTreeRequest,
     workspace_service: State<'_, Arc<WorkspaceService>>,
 ) -> Result<WorkspaceTreeResponse, String> {
-    use tracing::{info, error};
+    use tracing::{info, error, warn};
     
     info!("Building workspace tree for path: {}", request.root_path);
     
@@ -133,7 +133,9 @@ pub async fn get_workspace_tree(
         Ok(tree) => {
             info!("Successfully built tree with {} nodes", tree.len());
             if tree.is_empty() {
-                info!("Tree is empty - this might be expected for an empty directory");
+                warn!("Tree is empty - this might be expected for an empty directory");
+            } else {
+                info!("First few nodes: {:?}", tree.iter().take(3).map(|n| &n.name).collect::<Vec<_>>());
             }
             Ok(WorkspaceTreeResponse {
                 workspace_id: request.workspace_id,
