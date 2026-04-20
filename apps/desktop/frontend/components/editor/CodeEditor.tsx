@@ -43,10 +43,10 @@ export function CodeEditor({
 
   return (
     <div className={cn('relative h-full', className)}>
-      <div className="absolute inset-0 bg-editor font-mono text-sm">
-        <div className="absolute left-0 top-0 bottom-0 w-8 bg-editor border-r border-border flex flex-col items-center pt-4">
+      <div className="absolute inset-0 bg-editor code-editor-font">
+        <div className="absolute left-0 top-0 bottom-0 w-8 bg-editor border-r border-border flex flex-col items-center pt-4 font-mono text-xs text-muted-foreground">
           {Array.from({ length: Math.ceil(value.split('\n').length) }).map((_, i) => (
-            <div key={i} className="text-xs text-muted-foreground py-0.5">
+            <div key={i} className="py-0.5">
               {i + 1}
             </div>
           ))}
@@ -56,9 +56,15 @@ export function CodeEditor({
           value={value}
           onChange={handleChange}
           readOnly={readOnly}
-          className="w-full h-full bg-transparent text-editor-foreground resize-none outline-none pl-12 pr-4 py-4 leading-relaxed whitespace-pre overflow-auto scrollbar-ide"
+          className="w-full h-full bg-transparent text-editor-foreground resize-none outline-none pl-12 pr-4 py-4 leading-relaxed whitespace-pre overflow-auto scrollbar-ide font-mono"
           spellCheck="false"
-          style={{ tabSize: 2 }}
+          style={{ 
+            tabSize: 2,
+            fontFamily: 'var(--font-mono)',
+            fontSize: '14px',
+            lineHeight: '1.6',
+            letterSpacing: '0',
+          }}
           placeholder="Start typing..."
         />
       </div>

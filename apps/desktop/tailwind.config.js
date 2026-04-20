@@ -6,6 +6,11 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: "var(--font-sans)",
+        mono: "var(--font-mono)",
+        icon: "var(--font-icon)",
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -40,6 +45,9 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        sidebar: "hsl(var(--sidebar))",
+        editor: "hsl(var(--editor))",
+        "editor-foreground": "hsl(var(--editor-foreground))",
       },
       borderRadius: {
         lg: "var(--radius)",

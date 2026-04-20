@@ -1,20 +1,33 @@
 import { cn } from '@/lib/utils';
+import { nerdFontIcons } from '@/lib/theme/nerd-font-icons';
 
 interface IconProps {
-  name: string;
+  name: keyof typeof nerdFontIcons;
   size?: number;
   className?: string;
+  label?: string;
 }
 
-// Simple icon component - in production, you'd use Lucide or similar
-export function Icon({ name, size = 16, className }: IconProps) {
-  // This is a placeholder - you should install a proper icon library
+export function Icon({ name, size = 16, className, label }: IconProps) {
+  const iconGlyph = nerdFontIcons[name] || '?';
+  
   return (
-    <div 
-      className={cn('flex items-center justify-center', className)}
-      style={{ width: size, height: size }}
+    <span 
+      className={cn(
+        'font-icon inline-flex items-center justify-center antialiased',
+        'leading-none tracking-normal',
+        className
+      )}
+      style={{ 
+        fontSize: size,
+        width: size,
+        height: size,
+      }}
+      role="img"
+      aria-label={label || name}
+      title={label || name}
     >
-      <span className="text-xs font-mono">{name.charAt(0).toUpperCase()}</span>
-    </div>
+      {iconGlyph}
+    </span>
   );
 }

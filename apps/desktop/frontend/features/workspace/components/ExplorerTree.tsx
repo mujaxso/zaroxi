@@ -30,19 +30,23 @@ export function ExplorerTree({
     }
   };
 
-  const getFileIcon = (node: ExplorerTreeNode) => {
+  const getFileIcon = (node: ExplorerTreeNode): keyof typeof import('@/lib/theme/nerd-font-icons').nerdFontIcons => {
     if (node.isDir) {
       return expandedPaths.has(node.path) ? 'folder-open' : 'folder';
     }
     
     // File type based icons
     const ext = node.fileType?.toLowerCase();
-    if (ext === 'rs') return 'file-code';
-    if (ext === 'ts' || ext === 'tsx' || ext === 'js' || ext === 'jsx') return 'file-code';
+    if (ext === 'rs') return 'rust';
+    if (ext === 'ts' || ext === 'tsx') return 'typescript';
+    if (ext === 'js' || ext === 'jsx') return 'javascript';
     if (ext === 'json') return 'file-json';
     if (ext === 'md') return 'file-markdown';
     if (ext === 'toml' || ext === 'yaml' || ext === 'yml') return 'file-config';
-    if (ext === 'png' || ext === 'jpg' || ext === 'jpeg' || ext === 'gif') return 'file-image';
+    if (ext === 'png' || ext === 'jpg' || ext === 'jpeg' || ext === 'gif' || ext === 'svg') return 'file-image';
+    if (ext === 'py') return 'python';
+    if (ext === 'go') return 'go';
+    if (ext === 'java') return 'java';
     
     return 'file';
   };
@@ -75,9 +79,10 @@ export function ExplorerTree({
                     'mr-2 flex-shrink-0',
                     node.isDir ? 'text-blue-500' : 'text-muted-foreground'
                   )}
+                  label={node.isDir ? 'Folder' : 'File'}
                 />
                 <span className={cn(
-                  'truncate text-sm',
+                  'truncate text-sm font-sans',
                   isSelected ? 'text-accent-foreground font-medium' : 'text-foreground',
                   isActive && 'text-primary'
                 )}>
@@ -89,6 +94,7 @@ export function ExplorerTree({
                   name={isExpanded ? 'chevron-down' : 'chevron-right'}
                   size={12}
                   className="text-muted-foreground ml-1 flex-shrink-0"
+                  label={isExpanded ? 'Expanded' : 'Collapsed'}
                 />
               )}
             </div>
