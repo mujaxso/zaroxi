@@ -7,13 +7,8 @@
     "dev": "vite --port 1420",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "tauri": "node node_modules/@tauri-apps/cli/tauri.js",
-    "tauri:test": "node node_modules/@tauri-apps/cli/tauri.js --version",
-    "type-check": "tsc --noEmit",
-    "fix:tauri-binary": "rm -f node_modules/.bin/tauri && echo '#!/usr/bin/env node' > node_modules/.bin/tauri && cat node_modules/@tauri-apps/cli/tauri.js >> node_modules/.bin/tauri && chmod +x node_modules/.bin/tauri",
-    "fix:vite-binary": "rm -f node_modules/.bin/vite && echo '#!/usr/bin/env node' > node_modules/.bin/vite && cat node_modules/vite/bin/vite.js >> node_modules/.bin/vite && chmod +x node_modules/.bin/vite",
-    "fix:binaries": "npm run fix:tauri-binary && npm run fix:vite-binary",
-    "fix:all-binaries": "for bin in node_modules/.bin/*; do if [ -f \"$bin\" ]; then head -1 \"$bin\" | grep -q '^#!' && sed -i '1s|^.*$|#!/usr/bin/env node|' \"$bin\"; fi; done"
+    "tauri": "tauri",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",
