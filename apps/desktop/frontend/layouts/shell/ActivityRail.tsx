@@ -25,13 +25,17 @@ export function ActivityRail({ activePanel, onPanelChange, onAssistantToggle }: 
       const dialogResult = await WorkspaceService.openFileDialog();
       
       if (dialogResult.selectedPath) {
-        const result = await WorkspaceService.openWorkspaceAndLoadTree(dialogResult.selectedPath);
-        setCurrentWorkspace(result.workspace);
-        setWorkspaceTree(result.tree.tree);
+        const workspace = await WorkspaceService.openWorkspace({ path: dialogResult.selectedPath });
+        const tree = await WorkspaceService.getWorkspaceTree({
+          workspaceId: workspace.workspaceId,
+          rootPath: workspace.rootPath
+        });
+        
+        setCurrentWorkspace(workspace);
+        setWorkspaceTree(tree.tree);
       }
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to open workspace');
-      console.error('Failed to open workspace:', error);
     } finally {
       setLoading(false);
     }

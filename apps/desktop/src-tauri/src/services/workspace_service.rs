@@ -1,7 +1,5 @@
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::pin::Pin;
-use std::future::Future;
 use anyhow::Result;
 use tokio::sync::Mutex;
 use tracing::info;
@@ -97,67 +95,44 @@ impl WorkspaceService {
         info!("Building workspace tree from root: {:?}", root_path);
         
         let mut tree = Vec::new();
-        self.build_tree_recursive(&root_path, &mut tree, 0).await?;
         
-        Ok(tree)
-    }
-    
-    fn build_tree_recursive<'a>(
-        &'a self,
-        current_path: &'a PathBuf,
-        tree: &'a mut Vec<ExplorerTreeNode>,
-        depth: usize,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<()>> + 'a + Send>> {
-        Box::pin(async move {
-            // Limit recursion depth to prevent infinite loops
-            if depth > 10 {
-                return Ok(());
+        // Get immediate children of the root directory
+        let entries = match self.list_directory(root_path.clone()).await {
+            Ok(entries) => entries,
+            Err(e) => {
+                eprintln!("Failed to list root directory {:?}: {}", root_path, e);
+                return Ok(Vec::new());
             }
-            
-            let entries = match self.list_directory(current_path.clone()).await {
-                Ok(entries) => entries,
-                Err(e) => {
-                    eprintln!("Failed to list directory {:?}: {}", current_path, e);
-                    return Ok(());
-                }
-            };
-            
-            for entry in entries {
-                let children = if entry.is_dir {
-                    // Recursively build children for directories
-                    let mut child_nodes = Vec::new();
-                    let child_path = PathBuf::from(&entry.path);
-                    
-                    // Box the recursive call
-                    self.build_tree_recursive(&child_path, &mut child_nodes, depth + 1).await?;
-                    
-                    Some(child_nodes)
+        };
+        
+        for entry in entries {
+            let node = ExplorerTreeNode {
+                id: entry.path.clone(),
+                path: entry.path.clone(),
+                name: entry.name.clone(),
+                is_dir: entry.is_dir,
+                file_type: entry.file_type.clone(),
+                size: entry.size,
+                modified: entry.modified.and_then(|t| {
+                    chrono::DateTime::from_timestamp(
+                        t.duration_since(std::time::UNIX_EPOCH).ok()?.as_secs() as i64,
+                        0
+                    )
+                    .map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string())
+                }),
+                children: if entry.is_dir {
+                    // For directories, we'll load children lazily
+                    Some(Vec::new())
                 } else {
                     None
-                };
-                
-                let node = ExplorerTreeNode {
-                    id: entry.path.clone(),
-                    path: entry.path.clone(),
-                    name: entry.name.clone(),
-                    is_dir: entry.is_dir,
-                    file_type: entry.file_type.clone(),
-                    size: entry.size,
-                    modified: entry.modified.and_then(|t| {
-                        chrono::DateTime::from_timestamp(
-                            t.duration_since(std::time::UNIX_EPOCH).ok()?.as_secs() as i64,
-                            0
-                        )
-                        .map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string())
-                    }),
-                    children,
-                    parent_path: current_path.to_string_lossy().to_string(),
-                };
-                tree.push(node);
-            }
-            
-            Ok(())
-        })
+                },
+                parent_path: root_path.to_string_lossy().to_string(),
+            };
+            tree.push(node);
+        }
+        
+        info!("Built tree with {} nodes", tree.len());
+        Ok(tree)
     }
 
     /// Get active workspace

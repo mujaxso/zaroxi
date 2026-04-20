@@ -18,13 +18,9 @@ export function WorkspaceContainer() {
   // Subscribe to workspace events
   useEffect(() => {
     const unsubscribe = WorkspaceService.onWorkspaceOpened((workspaceId, rootPath) => {
-      console.log('Workspace opened event received:', workspaceId, rootPath);
       // Load workspace tree when workspace is opened
       if (currentWorkspace?.workspaceId === workspaceId) {
-        console.log('Loading workspace tree for current workspace');
         loadWorkspaceTree(workspaceId, rootPath);
-      } else {
-        console.log('Current workspace ID mismatch or not set');
       }
     });
 

@@ -21,38 +21,23 @@ export function ExplorerContainer() {
   const handleOpenWorkspace = async () => {
     try {
       setLoading(true);
-      console.log('Opening file dialog...');
       const dialogResult = await WorkspaceService.openFileDialog();
-      console.log('Dialog result:', dialogResult);
       
       if (dialogResult.selectedPath) {
-        console.log('Selected path:', dialogResult.selectedPath);
-        try {
-          const workspace = await WorkspaceService.openWorkspace({ path: dialogResult.selectedPath });
-          console.log('Workspace opened:', workspace);
-          
-          const tree = await WorkspaceService.getWorkspaceTree({
-            workspaceId: workspace.workspaceId,
-            rootPath: workspace.rootPath
-          });
-          console.log('Tree data:', tree.tree);
-          console.log('Tree length:', tree.tree.length);
-          
-          setCurrentWorkspace(workspace);
-          setWorkspaceTree(tree.tree);
-          // Expand the root path by default
-          toggleExpanded(workspace.rootPath);
-        } catch (error) {
-          console.error('Error in openWorkspaceAndLoadTree:', error);
-          throw error;
-        }
-      } else {
-        console.log('No path selected');
+        const workspace = await WorkspaceService.openWorkspace({ path: dialogResult.selectedPath });
+        const tree = await WorkspaceService.getWorkspaceTree({
+          workspaceId: workspace.workspaceId,
+          rootPath: workspace.rootPath
+        });
+        
+        setCurrentWorkspace(workspace);
+        setWorkspaceTree(tree.tree);
+        // Expand the root path by default
+        toggleExpanded(workspace.rootPath);
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Failed to open workspace';
       setError(errorMsg);
-      console.error('Failed to open workspace:', error);
     } finally {
       setLoading(false);
     }
