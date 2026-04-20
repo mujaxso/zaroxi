@@ -108,6 +108,15 @@ impl WorkspaceService {
         
         info!("Path exists and is a directory");
         
+        // Try to read directory to check permissions
+        match std::fs::read_dir(&root_path) {
+            Ok(_) => info!("Directory is readable"),
+            Err(e) => {
+                error!("Cannot read directory {:?}: {}", root_path, e);
+                return Err(anyhow::anyhow!("Cannot read directory: {}", e));
+            }
+        }
+        
         let mut tree = Vec::new();
         
         // Get immediate children of the root directory

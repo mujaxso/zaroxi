@@ -242,16 +242,22 @@ export class WorkspaceService {
     }
     
     try {
+      console.log('[WorkspaceService] Invoking get_workspace_tree command...');
       const result = await bridge.invoke<WorkspaceTreeResponse>('get_workspace_tree', { request });
       console.log('[WorkspaceService] getWorkspaceTree result:', result);
       console.log('[WorkspaceService] Tree length:', result.tree.length);
       if (result.tree.length > 0) {
         console.log('[WorkspaceService] First few nodes:', result.tree.slice(0, 3));
+      } else {
+        console.warn('[WorkspaceService] Tree is empty');
       }
       return result;
-    } catch (error) {
+    } catch (error: any) {
       console.error('[WorkspaceService] getWorkspaceTree error:', error);
-      throw error;
+      // Extract error message from BridgeError
+      const errorMessage = error?.message || error?.toString() || 'Unknown error building workspace tree';
+      console.error('[WorkspaceService] Error details:', errorMessage);
+      throw new Error(`Failed to load workspace tree: ${errorMessage}`);
     }
   }
 

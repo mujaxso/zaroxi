@@ -148,6 +148,15 @@ pub async fn get_workspace_tree(
     
     info!("Path exists and is a directory, building tree...");
     
+    // Check if we can read the directory
+    match std::fs::read_dir(&path) {
+        Ok(_) => info!("Directory is readable"),
+        Err(e) => {
+            error!("Cannot read directory {}: {}", request.root_path, e);
+            return Err(format!("Cannot read directory: {}", e));
+        }
+    }
+    
     // Build workspace tree
     match workspace_service.build_workspace_tree(path).await {
         Ok(tree) => {
@@ -171,7 +180,8 @@ pub async fn get_workspace_tree(
         Err(e) => {
             let error_msg = format!("Failed to build workspace tree: {}", e);
             error!("{}", error_msg);
-            Err(error_msg)
+            // Return a more detailed error
+            Err(format!("Failed to build workspace tree: {}. Please check permissions and ensure the directory is accessible.", e))
         }
     }
 }
