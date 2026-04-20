@@ -12,10 +12,21 @@ NERD_FONTS_REPO="https://github.com/ryanoasis/nerd-fonts/releases/download/v3.3.
 # Create fonts directory if it doesn't exist
 mkdir -p "$FONT_DIR"
 
-echo "Downloading JetBrains Mono Nerd Font to $FONT_DIR..."
+# Clean up function
+cleanup() {
+    echo "Cleaning up..."
+    # Remove the zip file if it exists
+    rm -f "$FONT_DIR/JetBrainsMono.zip"
+    # Remove temporary directory if it exists
+    if [ -n "${TEMP_DIR:-}" ] && [ -d "$TEMP_DIR" ]; then
+        rm -rf "$TEMP_DIR"
+    fi
+}
 
-# Clean up any existing zip file
-rm -f "$FONT_DIR/JetBrainsMono.zip"
+# Register cleanup function to run on exit
+trap cleanup EXIT
+
+echo "Downloading JetBrains Mono Nerd Font to $FONT_DIR..."
 
 # Download the complete font zip
 ZIP_FILE="JetBrainsMono.zip"
@@ -48,40 +59,70 @@ if curl -L -o "$FONT_DIR/$ZIP_FILE" "$DOWNLOAD_URL" --fail --progress-bar; then
         done
         
         # Now, find and copy the specific files we need
-        # Look for Regular (not Italic) - try .ttf first
-        REGULAR_FILE=$(find "$TEMP_DIR" -name "*.ttf" -type f | grep -i "regular" | grep -v -i "italic" | head -1)
+        # The actual filenames have different patterns, so we need to be more flexible
+        
+        # Look for Regular (not Italic) - try multiple patterns
+        REGULAR_FILE=$(find "$TEMP_DIR" -name "*.ttf" -type f | grep -i -E "(regular|Regular)" | grep -v -i "italic" | head -1)
         if [ -n "$REGULAR_FILE" ]; then
             cp "$REGULAR_FILE" "$FONT_DIR/JetBrainsMonoNerdFont-Regular.ttf"
             echo "✓ Copied Regular variant (.ttf)"
         else
-            echo "✗ Could not find Regular variant"
+            # Try alternative pattern
+            REGULAR_FILE=$(find "$TEMP_DIR" -name "*Regular*.ttf" -type f | grep -v -i "italic" | head -1)
+            if [ -n "$REGULAR_FILE" ]; then
+                cp "$REGULAR_FILE" "$FONT_DIR/JetBrainsMonoNerdFont-Regular.ttf"
+                echo "✓ Copied Regular variant (.ttf) (alternative pattern)"
+            else
+                echo "✗ Could not find Regular variant"
+            fi
         fi
         
         # Look for Bold (not Italic)
-        BOLD_FILE=$(find "$TEMP_DIR" -name "*.ttf" -type f | grep -i "bold" | grep -v -i "italic" | head -1)
+        BOLD_FILE=$(find "$TEMP_DIR" -name "*.ttf" -type f | grep -i -E "(bold|Bold)" | grep -v -i "italic" | head -1)
         if [ -n "$BOLD_FILE" ]; then
             cp "$BOLD_FILE" "$FONT_DIR/JetBrainsMonoNerdFont-Bold.ttf"
             echo "✓ Copied Bold variant (.ttf)"
         else
-            echo "✗ Could not find Bold variant"
+            # Try alternative pattern
+            BOLD_FILE=$(find "$TEMP_DIR" -name "*Bold*.ttf" -type f | grep -v -i "italic" | head -1)
+            if [ -n "$BOLD_FILE" ]; then
+                cp "$BOLD_FILE" "$FONT_DIR/JetBrainsMonoNerdFont-Bold.ttf"
+                echo "✓ Copied Bold variant (.ttf) (alternative pattern)"
+            else
+                echo "✗ Could not find Bold variant"
+            fi
         fi
         
         # Look for Italic (not Bold)
-        ITALIC_FILE=$(find "$TEMP_DIR" -name "*.ttf" -type f | grep -i "italic" | grep -v -i "bold" | head -1)
+        ITALIC_FILE=$(find "$TEMP_DIR" -name "*.ttf" -type f | grep -i -E "(italic|Italic)" | grep -v -i "bold" | head -1)
         if [ -n "$ITALIC_FILE" ]; then
             cp "$ITALIC_FILE" "$FONT_DIR/JetBrainsMonoNerdFont-Italic.ttf"
             echo "✓ Copied Italic variant (.ttf)"
         else
-            echo "✗ Could not find Italic variant"
+            # Try alternative pattern
+            ITALIC_FILE=$(find "$TEMP_DIR" -name "*Italic*.ttf" -type f | grep -v -i "bold" | head -1)
+            if [ -n "$ITALIC_FILE" ]; then
+                cp "$ITALIC_FILE" "$FONT_DIR/JetBrainsMonoNerdFont-Italic.ttf"
+                echo "✓ Copied Italic variant (.ttf) (alternative pattern)"
+            else
+                echo "✗ Could not find Italic variant"
+            fi
         fi
         
         # Look for Bold Italic
-        BOLD_ITALIC_FILE=$(find "$TEMP_DIR" -name "*.ttf" -type f | grep -i "bold" | grep -i "italic" | head -1)
+        BOLD_ITALIC_FILE=$(find "$TEMP_DIR" -name "*.ttf" -type f | grep -i -E "(bold.*italic|italic.*bold)" | head -1)
         if [ -n "$BOLD_ITALIC_FILE" ]; then
             cp "$BOLD_ITALIC_FILE" "$FONT_DIR/JetBrainsMonoNerdFont-BoldItalic.ttf"
             echo "✓ Copied Bold Italic variant (.ttf)"
         else
-            echo "✗ Could not find Bold Italic variant"
+            # Try alternative pattern
+            BOLD_ITALIC_FILE=$(find "$TEMP_DIR" -name "*Bold*Italic*.ttf" -o -name "*Italic*Bold*.ttf" -type f | head -1)
+            if [ -n "$BOLD_ITALIC_FILE" ]; then
+                cp "$BOLD_ITALIC_FILE" "$FONT_DIR/JetBrainsMonoNerdFont-BoldItalic.ttf"
+                echo "✓ Copied Bold Italic variant (.ttf) (alternative pattern)"
+            else
+                echo "✗ Could not find Bold Italic variant"
+            fi
         fi
         
         # Clean up temporary directory
@@ -93,7 +134,8 @@ if curl -L -o "$FONT_DIR/$ZIP_FILE" "$DOWNLOAD_URL" --fail --progress-bar; then
         exit 1
     fi
     
-    # Clean up the zip file
+    # Clean up the zip file immediately after extraction to save space
+    echo "Removing zip file to save space..."
     rm -f "$FONT_DIR/$ZIP_FILE"
     
     # Verify we have the required files
