@@ -1,0 +1,17 @@
+[package]
+name = "zaroxi-service-workspace"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+description = "Workspace service orchestration logic for Zaroxi Studio"
+
+[dependencies]
+zaroxi-domain-workspace = { workspace = true }
+zaroxi-ops-file = { workspace = true }
+zaroxi-protocol = { workspace = true }
+zaroxi-infra-rpc = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+tracing = { workspace = true }
+anyhow = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
