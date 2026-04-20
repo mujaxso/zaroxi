@@ -100,46 +100,56 @@ impl WorkspaceService {
         Ok(tree)
     }
     
-    async fn build_tree_recursive(&self, current_path: &PathBuf, tree: &mut Vec<ExplorerTreeNode>, depth: usize) -> Result<()> {
-        // Limit recursion depth to prevent infinite loops
-        if depth > 20 {
-            return Ok(());
-        }
-        
-        let entries = self.list_directory(current_path.clone()).await?;
-        
-        for entry in entries {
-            let mut children = if entry.is_dir {
-                // Recursively build children for directories
-                let mut child_nodes = Vec::new();
-                let child_path = PathBuf::from(&entry.path);
-                self.build_tree_recursive(&child_path, &mut child_nodes, depth + 1).await?;
-                Some(child_nodes)
-            } else {
-                None
-            };
+    fn build_tree_recursive<'a>(
+        &'a self,
+        current_path: &'a PathBuf,
+        tree: &'a mut Vec<ExplorerTreeNode>,
+        depth: usize,
+    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<()>> + 'a + Send>> {
+        Box::pin(async move {
+            // Limit recursion depth to prevent infinite loops
+            if depth > 20 {
+                return Ok(());
+            }
             
-            let node = ExplorerTreeNode {
-                id: entry.path.clone(),
-                path: entry.path.clone(),
-                name: entry.name.clone(),
-                is_dir: entry.is_dir,
-                file_type: entry.file_type.clone(),
-                size: entry.size,
-                modified: entry.modified.and_then(|t| {
-                    chrono::DateTime::from_timestamp(
-                        t.duration_since(std::time::UNIX_EPOCH).ok()?.as_secs() as i64,
-                        0
-                    )
-                    .map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string())
-                }),
-                children,
-                parent_path: current_path.to_string_lossy().to_string(),
-            };
-            tree.push(node);
-        }
-        
-        Ok(())
+            let entries = self.list_directory(current_path.clone()).await?;
+            
+            for entry in entries {
+                let children = if entry.is_dir {
+                    // Recursively build children for directories
+                    let mut child_nodes = Vec::new();
+                    let child_path = PathBuf::from(&entry.path);
+                    
+                    // This is now a boxed future, so recursion is handled properly
+                    self.build_tree_recursive(&child_path, &mut child_nodes, depth + 1).await?;
+                    
+                    Some(child_nodes)
+                } else {
+                    None
+                };
+                
+                let node = ExplorerTreeNode {
+                    id: entry.path.clone(),
+                    path: entry.path.clone(),
+                    name: entry.name.clone(),
+                    is_dir: entry.is_dir,
+                    file_type: entry.file_type.clone(),
+                    size: entry.size,
+                    modified: entry.modified.and_then(|t| {
+                        chrono::DateTime::from_timestamp(
+                            t.duration_since(std::time::UNIX_EPOCH).ok()?.as_secs() as i64,
+                            0
+                        )
+                        .map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string())
+                    }),
+                    children,
+                    parent_path: current_path.to_string_lossy().to_string(),
+                };
+                tree.push(node);
+            }
+            
+            Ok(())
+        })
     }
 
     /// Get active workspace
