@@ -8,9 +8,9 @@ interface EditorContainerProps {
 
 export function EditorContainer({ filePath }: EditorContainerProps) {
   const [content, setContent] = useState<string>('');
-  const [language, setLanguage] = useState<string>('rust');
+  const [language, setLanguage] = useState<string>('plaintext');
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [fileName, setFileName] = useState<string>('editor.rs');
+  const [fileName, setFileName] = useState<string>('editor');
 
   useEffect(() => {
     if (filePath) {
@@ -112,6 +112,11 @@ export function EditorContainer({ filePath }: EditorContainerProps) {
           <span>{fileName}</span>
           {isLoading && (
             <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+          )}
+          {filePath && (
+            <span className="text-xs text-muted-foreground truncate max-w-xs" title={filePath}>
+              {filePath}
+            </span>
           )}
         </div>
         <div className="flex items-center space-x-2">
