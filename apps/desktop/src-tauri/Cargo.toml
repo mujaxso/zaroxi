@@ -23,18 +23,18 @@ thiserror = { workspace = true }
 uuid = { workspace = true }
 
 # Workspace crates
-core-types = { path = "../../../crates/core-types" }
-editor-core = { path = "../../../language/editor-core" }
-workspace-model = { path = "../../../domain/workspace-model" }
-ai-context = { path = "../../../ai/ai-context" }
-ai-agent = { path = "../../../ai/ai-agent" }
-patch-engine = { path = "../../../operations/patch-engine" }
-rpc = { path = "../../../infrastructure/rpc" }
-settings = { path = "../../../infrastructure/settings" }
-permissions = { path = "../../../infrastructure/permissions" }
-file-ops = { path = "../../../operations/file-ops" }
-syntax-core = { path = "../../../language/syntax-core" }
-theme = { path = "../../../crates/theme" }
+zaroxi-protocol = { path = "../../../crates/zaroxi-protocol" }
+zaroxi-domain-editor = { path = "../../../language/zaroxi-domain-editor" }
+zaroxi-domain-workspace = { path = "../../../domain/zaroxi-domain-workspace" }
+zaroxi-domain-zaroxi-domain-ai-context = { path = "../../../ai/zaroxi-domain-zaroxi-domain-ai-context" }
+zaroxi-zaroxi-ai-agent = { path = "../../../ai/zaroxi-zaroxi-ai-agent" }
+zaroxi-ops-patch = { path = "../../../operations/zaroxi-ops-patch" }
+zaroxi-infra-zaroxi-infra-rpc = { path = "../../../infrastructure/zaroxi-infra-zaroxi-infra-rpc" }
+zaroxi-infra-zaroxi-infra-settings = { path = "../../../infrastructure/zaroxi-infra-zaroxi-infra-settings" }
+zaroxi-infra-zaroxi-infra-permissions = { path = "../../../infrastructure/zaroxi-infra-zaroxi-infra-permissions" }
+zaroxi-ops-file = { path = "../../../operations/zaroxi-ops-file" }
+zaroxi-lang-syntax = { path = "../../../language/zaroxi-lang-syntax" }
+zaroxi-zaroxi-theme = { path = "../../../crates/zaroxi-zaroxi-theme" }
 
 [features]
 default = []
