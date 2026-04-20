@@ -44,6 +44,9 @@ zaroxi-service-workspace = { workspace = true }
 zaroxi-lang-lsp = { workspace = true }
 zaroxi-core-ids = { workspace = true }
 
+# Additional dependencies for file operations
+parking_lot = { workspace = true }
+
 [features]
 default = []
 
