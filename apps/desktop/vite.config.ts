@@ -30,4 +30,7 @@ export default defineConfig({
     sourcemap: !!process.env.TAURI_DEBUG,
     outDir: path.resolve(__dirname, 'dist'),
   },
+  optimizeDeps: {
+    exclude: ['@tauri-apps/api', '@tauri-apps/plugin-clipboard-manager', '@tauri-apps/plugin-global-shortcut', '@tauri-apps/plugin-notification', '@tauri-apps/plugin-shell'],
+  },
 });

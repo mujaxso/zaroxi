@@ -24,7 +24,12 @@ export function EditorContainer() {
       </div>
       <div className="flex-1 overflow-hidden">
         <CodeEditor
-          initialValue="// Welcome to Zaroxi Editor\n// This is a placeholder for the actual editor\n\nfn main() {\n    println!(\"Hello, Zaroxi!\");\n}"
+          initialValue={`// Welcome to Zaroxi Editor
+// This is a placeholder for the actual editor
+
+fn main() {
+    println!("Hello, Zaroxi!");
+}`}
           onChange={handleEditorChange}
           language="rust"
           readOnly={false}

@@ -1,10 +1,10 @@
 import React from 'react';
-import { ActivityRail } from '../../../layouts/shell/ActivityRail';
-import { StatusBar } from '../../../layouts/shell/StatusBar';
-import { CommandPalette } from '../../../layouts/shell/CommandPalette';
-import { WorkspaceExplorerContainer } from '../../features/workspace/containers/WorkspaceExplorerContainer';
-import { EditorContainer } from '../../features/editor/containers/EditorContainer';
-import { AssistantPanelContainer } from '../../features/assistant/containers/AssistantPanelContainer';
+import { ActivityRail } from '@/layouts/shell/ActivityRail';
+import { StatusBar } from '@/layouts/shell/StatusBar';
+import { CommandPalette } from '@/layouts/shell/CommandPalette';
+import { WorkspaceExplorerContainer } from '@/features/workspace/containers/WorkspaceExplorerContainer';
+import { EditorContainer } from '@/features/editor/containers/EditorContainer';
+import { AssistantPanelContainer } from '@/features/assistant/containers/AssistantPanelContainer';
 
 export function AppShell() {
   const [activePanel, setActivePanel] = React.useState('explorer');
