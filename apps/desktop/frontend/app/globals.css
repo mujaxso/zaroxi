@@ -73,7 +73,7 @@
   /* Font face definitions for JetBrains Mono Nerd Font */
   @font-face {
     font-family: 'JetBrains Mono Nerd Font';
-    src: url('/fonts/JetBrainsMonoNerdFont-Regular.woff2') format('woff2');
+    src: url('/fonts/JetBrainsMonoNerdFont-Regular.ttf') format('truetype');
     font-weight: 400;
     font-style: normal;
     font-display: swap;
@@ -81,7 +81,7 @@
   
   @font-face {
     font-family: 'JetBrains Mono Nerd Font';
-    src: url('/fonts/JetBrainsMonoNerdFont-Bold.woff2') format('woff2');
+    src: url('/fonts/JetBrainsMonoNerdFont-Bold.ttf') format('truetype');
     font-weight: 700;
     font-style: normal;
     font-display: swap;
@@ -89,7 +89,7 @@
   
   @font-face {
     font-family: 'JetBrains Mono Nerd Font';
-    src: url('/fonts/JetBrainsMonoNerdFont-Italic.woff2') format('woff2');
+    src: url('/fonts/JetBrainsMonoNerdFont-Italic.ttf') format('truetype');
     font-weight: 400;
     font-style: italic;
     font-display: swap;
@@ -97,7 +97,7 @@
   
   @font-face {
     font-family: 'JetBrains Mono Nerd Font';
-    src: url('/fonts/JetBrainsMonoNerdFont-BoldItalic.woff2') format('woff2');
+    src: url('/fonts/JetBrainsMonoNerdFont-BoldItalic.ttf') format('truetype');
     font-weight: 700;
     font-style: italic;
     font-display: swap;
