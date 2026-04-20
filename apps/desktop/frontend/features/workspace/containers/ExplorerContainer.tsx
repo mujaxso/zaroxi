@@ -24,22 +24,25 @@ export function ExplorerContainer() {
       const dialogResult = await WorkspaceService.openFileDialog();
       
       if (dialogResult.selectedPath) {
-        console.log('Opening workspace at:', dialogResult.selectedPath);
-        const workspace = await WorkspaceService.openWorkspace({ path: dialogResult.selectedPath });
-        console.log('Workspace opened:', workspace);
-        
-        const tree = await WorkspaceService.getWorkspaceTree({
-          workspaceId: workspace.workspaceId,
-          rootPath: workspace.rootPath
-        });
-        console.log('Tree received:', tree);
-        console.log('Tree nodes:', tree.tree);
-        console.log('Tree length:', tree.tree.length);
-        
-        setCurrentWorkspace(workspace);
-        setWorkspaceTree(tree.tree);
-        // Expand the root path by default
-        toggleExpanded(workspace.rootPath);
+        console.log('[ExplorerContainer] Opening workspace at:', dialogResult.selectedPath);
+        try {
+          const workspace = await WorkspaceService.openWorkspace({ path: dialogResult.selectedPath });
+          console.log('[ExplorerContainer] Workspace opened:', workspace);
+          
+          const tree = await WorkspaceService.getWorkspaceTree({
+            workspaceId: workspace.workspaceId,
+            rootPath: workspace.rootPath
+          });
+          console.log('[ExplorerContainer] Tree received with', tree.tree.length, 'nodes');
+          
+          setCurrentWorkspace(workspace);
+          setWorkspaceTree(tree.tree);
+          // Expand the root path by default
+          toggleExpanded(workspace.rootPath);
+        } catch (error) {
+          console.error('[ExplorerContainer] Error:', error);
+          throw error;
+        }
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Failed to open workspace';
@@ -137,10 +140,16 @@ export function ExplorerContainer() {
     );
   }
 
-  console.log('ExplorerContainer: currentWorkspace:', currentWorkspace);
-  console.log('ExplorerContainer: workspaceTree:', workspaceTree);
-  console.log('ExplorerContainer: workspaceTree length:', workspaceTree.length);
-  console.log('ExplorerContainer: isLoading:', isLoading);
+  console.log('ExplorerContainer render:', {
+    currentWorkspace: currentWorkspace ? {
+      workspaceId: currentWorkspace.workspaceId,
+      rootPath: currentWorkspace.rootPath,
+      fileCount: currentWorkspace.fileCount
+    } : null,
+    workspaceTreeLength: workspaceTree.length,
+    isLoading,
+    hasWorkspace: !!currentWorkspace
+  });
 
   if (isLoading && workspaceTree.length === 0) {
     return (

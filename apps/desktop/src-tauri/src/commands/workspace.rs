@@ -126,16 +126,26 @@ pub async fn get_workspace_tree(
         return Err(format!("Path does not exist: {}", request.root_path));
     }
     
-    info!("Path exists, building tree...");
+    if !path.is_dir() {
+        error!("Path is not a directory: {}", request.root_path);
+        return Err(format!("Path is not a directory: {}", request.root_path));
+    }
+    
+    info!("Path exists and is a directory, building tree...");
     
     // Build workspace tree
     match workspace_service.build_workspace_tree(path).await {
         Ok(tree) => {
             info!("Successfully built tree with {} nodes", tree.len());
             if tree.is_empty() {
-                warn!("Tree is empty - this might be expected for an empty directory");
+                warn!("Tree is empty - directory might be empty or have permission issues");
+                // Check if directory is actually empty
+                if let Ok(entries) = std::fs::read_dir(&request.root_path) {
+                    let count = entries.count();
+                    info!("Directory actually has {} entries", count);
+                }
             } else {
-                info!("First few nodes: {:?}", tree.iter().take(3).map(|n| &n.name).collect::<Vec<_>>());
+                info!("First node: name={}, is_dir={}", tree[0].name, tree[0].is_dir);
             }
             Ok(WorkspaceTreeResponse {
                 workspace_id: request.workspace_id,

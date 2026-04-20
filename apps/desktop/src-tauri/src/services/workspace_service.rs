@@ -107,6 +107,18 @@ impl WorkspaceService {
         
         info!("Found {} entries in root directory", entries.len());
         
+        // Sort entries: directories first, then files
+        let mut entries = entries;
+        entries.sort_by(|a, b| {
+            if a.is_dir && !b.is_dir {
+                std::cmp::Ordering::Less
+            } else if !a.is_dir && b.is_dir {
+                std::cmp::Ordering::Greater
+            } else {
+                a.name.to_lowercase().cmp(&b.name.to_lowercase())
+            }
+        });
+        
         for entry in entries {
             let node = ExplorerTreeNode {
                 id: entry.path.clone(),
@@ -134,6 +146,11 @@ impl WorkspaceService {
         }
         
         info!("Built tree with {} nodes", tree.len());
+        if tree.is_empty() {
+            info!("Tree is empty - directory might be empty or inaccessible");
+        } else {
+            info!("Sample node: {:?}", tree[0]);
+        }
         Ok(tree)
     }
 
