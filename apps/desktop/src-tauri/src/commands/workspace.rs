@@ -234,9 +234,8 @@ pub struct OpenDialogResponse {
 }
 
 #[command]
-pub async fn open_file_dialog(window: tauri::Window) -> Result<OpenDialogResponse, String> {
+pub async fn open_file_dialog() -> Result<OpenDialogResponse, String> {
     use tracing::{info, warn, error};
-    use tokio::sync::oneshot;
     
     info!("Opening file dialog for workspace selection");
     
@@ -244,41 +243,7 @@ pub async fn open_file_dialog(window: tauri::Window) -> Result<OpenDialogRespons
     let is_wayland = std::env::var("WAYLAND_DISPLAY").is_ok();
     info!("Wayland detected: {}", is_wayland);
     
-    // For Wayland, try using Tauri's dialog which might work better
-    if is_wayland {
-        info!("Using Tauri dialog for Wayland");
-        use tauri::api::dialog::FileDialogBuilder;
-        
-        let (tx, rx) = oneshot::channel();
-        
-        // Show dialog on the main thread
-        FileDialogBuilder::new()
-            .set_title("Select Workspace Directory")
-            .pick_folder(move |folder_path| {
-                let _ = tx.send(folder_path);
-            });
-        
-        // Wait for the result with a timeout
-        match tokio::time::timeout(std::time::Duration::from_secs(30), rx).await {
-            Ok(Ok(path)) => {
-                let selected_path = path.map(|p| p.to_string_lossy().to_string());
-                info!("Tauri dialog completed with path: {:?}", selected_path);
-                return Ok(OpenDialogResponse {
-                    selected_path,
-                });
-            }
-            Ok(Err(e)) => {
-                error!("Failed to receive dialog result: {}", e);
-            }
-            Err(_) => {
-                error!("Dialog timeout");
-            }
-        }
-        warn!("Tauri dialog failed, falling back to rfd");
-    }
-    
-    // Fallback to rfd for non-Wayland or if Tauri dialog fails
-    info!("Using rfd dialog");
+    // Use rfd for all platforms
     use rfd::AsyncFileDialog;
     
     // Open a directory picker dialog
@@ -297,6 +262,11 @@ pub async fn open_file_dialog(window: tauri::Window) -> Result<OpenDialogRespons
     
     if selected_path.is_none() {
         warn!("No path selected - dialog was cancelled or failed");
+        // On Wayland, we might need to check if portals are available
+        if is_wayland {
+            info!("On Wayland, ensure xdg-desktop-portal is installed and running");
+            info!("You may need to install xdg-desktop-portal-gtk or xdg-desktop-portal-kde");
+        }
     } else {
         info!("Dialog completed with path: {:?}", selected_path);
     }

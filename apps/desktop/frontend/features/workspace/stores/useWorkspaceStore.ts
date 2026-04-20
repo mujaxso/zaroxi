@@ -102,7 +102,15 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
         // Backend state setters
         setCurrentWorkspace: (workspace) => {
           console.log('[WorkspaceStore] setCurrentWorkspace called with:', workspace);
-          set({ currentWorkspace: workspace });
+          set({ 
+            currentWorkspace: workspace,
+            // Reset UI state when workspace changes
+            explorerUI: {
+              expandedPaths: new Set<string>(),
+              selectedPath: null,
+              activeFilePath: null,
+            }
+          });
         },
         setWorkspaceTree: (tree) => {
           console.log('[WorkspaceStore] setWorkspaceTree called with tree of length:', tree.length);

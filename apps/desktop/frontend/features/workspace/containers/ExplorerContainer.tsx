@@ -50,7 +50,7 @@ export function ExplorerContainer() {
         }
       } else {
         console.log('[ExplorerContainer] No path selected - dialog was cancelled or failed');
-        setError('No directory selected. The file dialog may have been cancelled or encountered an issue. If you\'re using Wayland (Hyprland), ensure your desktop environment supports file dialogs.');
+        setError('No directory selected. The file dialog may have been cancelled or encountered an issue. If you\'re using Wayland (Hyprland), ensure xdg-desktop-portal is installed and running. Try installing xdg-desktop-portal-gtk or xdg-desktop-portal-kde.');
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Failed to open workspace';
@@ -148,13 +148,52 @@ export function ExplorerContainer() {
           <p className="text-sm text-muted-foreground mb-6">
             Open a folder to browse files and folders in the explorer.
           </p>
-          <button
-            onClick={handleOpenWorkspace}
-            disabled={isLoading}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoading ? 'Opening...' : 'Open Workspace'}
-          </button>
+          <div className="space-y-3">
+            <button
+              onClick={handleOpenWorkspace}
+              disabled={isLoading}
+              className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? 'Opening...' : 'Open Workspace (Dialog)'}
+            </button>
+            <div className="text-xs text-muted-foreground text-center">or</div>
+            <div className="flex space-x-2">
+              <input
+                type="text"
+                placeholder="/path/to/workspace"
+                className="flex-1 px-3 py-1 text-sm border border-border rounded bg-background"
+                id="manual-path-input"
+              />
+              <button
+                onClick={async () => {
+                  const input = document.getElementById('manual-path-input') as HTMLInputElement;
+                  const path = input.value.trim();
+                  if (path) {
+                    setLoading(true);
+                    setError(null);
+                    try {
+                      const workspace = await WorkspaceService.openWorkspace({ path });
+                      const tree = await WorkspaceService.getWorkspaceTree({
+                        workspaceId: workspace.workspaceId,
+                        rootPath: workspace.rootPath
+                      });
+                      setCurrentWorkspace(workspace);
+                      setWorkspaceTree(tree.tree);
+                      toggleExpanded(workspace.rootPath);
+                    } catch (err) {
+                      setError(err instanceof Error ? err.message : 'Failed to open workspace');
+                    } finally {
+                      setLoading(false);
+                    }
+                  }
+                }}
+                disabled={isLoading}
+                className="px-3 py-1 text-sm bg-muted text-muted-foreground rounded hover:bg-muted/80 transition-colors disabled:opacity-50"
+              >
+                Open
+              </button>
+            </div>
+          </div>
           <p className="mt-4 text-xs text-muted-foreground">
             You can also use the folder icon in the activity rail.
           </p>
