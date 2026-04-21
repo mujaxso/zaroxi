@@ -1,8 +1,9 @@
 //! Theme service for desktop app orchestration
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Emitter, Manager};
 use zaroxi_theme::ZaroxiTheme;
 
 /// Theme service for desktop-specific theme orchestration
+#[derive(Clone)]
 pub struct ThemeService {
     app_handle: AppHandle,
 }

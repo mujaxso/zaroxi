@@ -49,6 +49,11 @@ pub fn run() {
             
             // Initialize theme service
             let theme_service = crate::services::theme_service::ThemeService::new(app.handle().clone());
+            
+            // Apply initial theme before moving
+            theme_service.apply_theme();
+            
+            // Manage the theme service
             app.manage(theme_service);
             
             // Initialize app state
@@ -56,9 +61,6 @@ pub fn run() {
             app.manage(app_state);
             
             tracing::info!("Zaroxi Desktop app setup complete");
-            
-            // Apply initial theme
-            theme_service.apply_theme();
             
             Ok(())
         })
