@@ -25,6 +25,12 @@ impl std::fmt::Display for ZaroxiTheme {
     }
 }
 
+impl Default for ZaroxiTheme {
+    fn default() -> Self {
+        ZaroxiTheme::System
+    }
+}
+
 impl ZaroxiTheme {
     /// Get all available zaroxi_theme variants
     pub fn all() -> Vec<Self> {
@@ -40,16 +46,27 @@ impl ZaroxiTheme {
         }
     }
     
-    /// Get the semantic colors for this zaroxi_theme
-    pub fn colors(&self) -> SemanticColors {
+    /// Resolve to concrete theme (Dark or Light) based on system preference if needed
+    pub fn resolve(&self, system_is_dark: bool) -> Self {
         match self {
+            ZaroxiTheme::Dark => ZaroxiTheme::Dark,
+            ZaroxiTheme::Light => ZaroxiTheme::Light,
+            ZaroxiTheme::System => {
+                if system_is_dark {
+                    ZaroxiTheme::Dark
+                } else {
+                    ZaroxiTheme::Light
+                }
+            }
+        }
+    }
+    
+    /// Get the semantic colors for this zaroxi_theme
+    pub fn colors(&self, system_is_dark: bool) -> SemanticColors {
+        match self.resolve(system_is_dark) {
             ZaroxiTheme::Dark => SemanticColors::dark(),
             ZaroxiTheme::Light => SemanticColors::light(),
-            ZaroxiTheme::System => {
-                // TODO: Detect system preference
-                // For now, default to dark zaroxi_theme
-                SemanticColors::dark()
-            }
+            ZaroxiTheme::System => unreachable!(), // Should be resolved above
         }
     }
 }
@@ -110,10 +127,10 @@ impl Default for DesignTokens {
     }
 }
 
-/// Semantic color roles for Zaroxi
+/// Semantic color roles for Zaroxi IDE
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct SemanticColors {
-    // Background surfaces
+    // Background surfaces - hierarchy from deepest to highest
     pub app_background: Color,
     pub shell_background: Color,
     pub panel_background: Color,
@@ -121,16 +138,26 @@ pub struct SemanticColors {
     pub editor_background: Color,
     pub input_background: Color,
     pub status_bar_background: Color,
+    pub title_bar_background: Color,
+    pub activity_rail_background: Color,
+    pub sidebar_background: Color,
+    pub tab_background: Color,
+    pub tab_active_background: Color,
+    pub assistant_panel_background: Color,
     
-    // Text colors
+    // Text colors - hierarchy from most prominent to subtle
     pub text_primary: Color,
     pub text_secondary: Color,
     pub text_muted: Color,
     pub text_faint: Color,
     pub text_on_accent: Color,
+    pub text_on_surface: Color,
+    pub text_disabled: Color,
+    pub text_link: Color,
     
     // UI elements
     pub border: Color,
+    pub border_subtle: Color,
     pub divider: Color,
     pub accent: Color,
     pub accent_hover: Color,
@@ -141,6 +168,8 @@ pub struct SemanticColors {
     pub hover_background: Color,
     pub active_background: Color,
     pub selected_background: Color,
+    pub selected_text_background: Color,
+    pub selected_editor_background: Color,
     
     // Status colors
     pub success: Color,
@@ -150,10 +179,26 @@ pub struct SemanticColors {
     
     // Focus
     pub focus_ring: Color,
+    
+    // Editor specific
+    pub editor_gutter_background: Color,
+    pub editor_line_highlight: Color,
+    pub editor_cursor: Color,
+    pub editor_selection: Color,
+    pub editor_find_highlight: Color,
+    
+    // Syntax colors (basic set for IDE)
+    pub syntax_keyword: Color,
+    pub syntax_function: Color,
+    pub syntax_string: Color,
+    pub syntax_comment: Color,
+    pub syntax_type: Color,
+    pub syntax_variable: Color,
+    pub syntax_constant: Color,
 }
 
 impl SemanticColors {
-    /// Dark zaroxi_theme semantic colors
+    /// Dark theme semantic colors - optimized for long coding sessions
     pub fn dark() -> Self {
         Self {
             app_background: Color::from_rgb(0.098, 0.110, 0.137),
@@ -163,14 +208,24 @@ impl SemanticColors {
             editor_background: Color::from_rgb(0.098, 0.110, 0.137),
             input_background: Color::from_rgb(0.137, 0.149, 0.176),
             status_bar_background: Color::from_rgb(0.118, 0.129, 0.157),
+            title_bar_background: Color::from_rgb(0.078, 0.090, 0.117),
+            activity_rail_background: Color::from_rgb(0.078, 0.090, 0.117),
+            sidebar_background: Color::from_rgb(0.118, 0.129, 0.157),
+            tab_background: Color::from_rgb(0.137, 0.149, 0.176),
+            tab_active_background: Color::from_rgb(0.098, 0.110, 0.137),
+            assistant_panel_background: Color::from_rgb(0.118, 0.129, 0.157),
             
             text_primary: Color::from_rgb(0.941, 0.949, 0.961),
             text_secondary: Color::from_rgb(0.784, 0.800, 0.824),
             text_muted: Color::from_rgb(0.627, 0.647, 0.678),
             text_faint: Color::from_rgb(0.471, 0.486, 0.518),
             text_on_accent: Color::from_rgb(1.0, 1.0, 1.0),
+            text_on_surface: Color::from_rgb(0.941, 0.949, 0.961),
+            text_disabled: Color::from_rgb(0.471, 0.486, 0.518),
+            text_link: Color::from_rgb(0.329, 0.584, 0.988),
             
             border: Color::from_rgb(0.196, 0.208, 0.235),
+            border_subtle: Color::from_rgba(0.196, 0.208, 0.235, 0.5),
             divider: Color::from_rgb(0.196, 0.208, 0.235),
             accent: Color::from_rgb(0.329, 0.584, 0.988),
             accent_hover: Color::from_rgb(0.400, 0.639, 1.0),
@@ -180,6 +235,8 @@ impl SemanticColors {
             hover_background: Color::from_rgba(1.0, 1.0, 1.0, 0.05),
             active_background: Color::from_rgba(1.0, 1.0, 1.0, 0.08),
             selected_background: Color::from_rgba(0.329, 0.584, 0.988, 0.15),
+            selected_text_background: Color::from_rgba(0.329, 0.584, 0.988, 0.25),
+            selected_editor_background: Color::from_rgba(0.329, 0.584, 0.988, 0.2),
             
             success: Color::from_rgb(0.298, 0.843, 0.596),
             warning: Color::from_rgb(0.988, 0.729, 0.298),
@@ -187,10 +244,24 @@ impl SemanticColors {
             info: Color::from_rgb(0.329, 0.584, 0.988),
             
             focus_ring: Color::from_rgba(0.329, 0.584, 0.988, 0.25),
+            
+            editor_gutter_background: Color::from_rgb(0.078, 0.090, 0.117),
+            editor_line_highlight: Color::from_rgba(1.0, 1.0, 1.0, 0.03),
+            editor_cursor: Color::from_rgb(0.941, 0.949, 0.961),
+            editor_selection: Color::from_rgba(0.329, 0.584, 0.988, 0.3),
+            editor_find_highlight: Color::from_rgba(0.988, 0.729, 0.298, 0.3),
+            
+            syntax_keyword: Color::from_rgb(0.988, 0.447, 0.447),
+            syntax_function: Color::from_rgb(0.298, 0.843, 0.596),
+            syntax_string: Color::from_rgb(0.988, 0.729, 0.298),
+            syntax_comment: Color::from_rgb(0.627, 0.647, 0.678),
+            syntax_type: Color::from_rgb(0.329, 0.584, 0.988),
+            syntax_variable: Color::from_rgb(0.941, 0.949, 0.961),
+            syntax_constant: Color::from_rgb(0.988, 0.729, 0.298),
         }
     }
     
-    /// Light zaroxi_theme semantic colors
+    /// Light theme semantic colors - clean but not sterile, optimized for readability
     pub fn light() -> Self {
         Self {
             app_background: Color::from_rgb(0.973, 0.976, 0.980),
@@ -200,14 +271,24 @@ impl SemanticColors {
             editor_background: Color::from_rgb(0.992, 0.992, 0.990),
             input_background: Color::from_rgb(1.0, 1.0, 1.0),
             status_bar_background: Color::from_rgb(0.961, 0.965, 0.969),
+            title_bar_background: Color::from_rgb(0.941, 0.945, 0.949),
+            activity_rail_background: Color::from_rgb(0.941, 0.945, 0.949),
+            sidebar_background: Color::from_rgb(0.961, 0.965, 0.969),
+            tab_background: Color::from_rgb(0.980, 0.982, 0.984),
+            tab_active_background: Color::from_rgb(0.992, 0.992, 0.990),
+            assistant_panel_background: Color::from_rgb(0.961, 0.965, 0.969),
             
             text_primary: Color::from_rgb(0.18, 0.20, 0.23),
             text_secondary: Color::from_rgb(0.40, 0.43, 0.47),
             text_muted: Color::from_rgb(0.55, 0.58, 0.62),
             text_faint: Color::from_rgb(0.70, 0.72, 0.75),
             text_on_accent: Color::from_rgb(1.0, 1.0, 1.0),
+            text_on_surface: Color::from_rgb(0.18, 0.20, 0.23),
+            text_disabled: Color::from_rgb(0.70, 0.72, 0.75),
+            text_link: Color::from_rgb(0.06, 0.53, 0.98),
             
             border: Color::from_rgb(0.88, 0.89, 0.91),
+            border_subtle: Color::from_rgba(0.88, 0.89, 0.91, 0.5),
             divider: Color::from_rgb(0.88, 0.89, 0.91),
             accent: Color::from_rgb(0.06, 0.53, 0.98),
             accent_hover: Color::from_rgb(0.04, 0.47, 0.88),
@@ -217,6 +298,8 @@ impl SemanticColors {
             hover_background: Color::from_rgba(0.0, 0.0, 0.0, 0.04),
             active_background: Color::from_rgba(0.0, 0.0, 0.0, 0.06),
             selected_background: Color::from_rgba(0.06, 0.53, 0.98, 0.1),
+            selected_text_background: Color::from_rgba(0.06, 0.53, 0.98, 0.2),
+            selected_editor_background: Color::from_rgba(0.06, 0.53, 0.98, 0.15),
             
             success: Color::from_rgb(0.16, 0.65, 0.33),
             warning: Color::from_rgb(0.91, 0.58, 0.07),
@@ -224,6 +307,20 @@ impl SemanticColors {
             info: Color::from_rgb(0.06, 0.53, 0.98),
             
             focus_ring: Color::from_rgba(0.06, 0.53, 0.98, 0.25),
+            
+            editor_gutter_background: Color::from_rgb(0.941, 0.945, 0.949),
+            editor_line_highlight: Color::from_rgba(0.0, 0.0, 0.0, 0.02),
+            editor_cursor: Color::from_rgb(0.18, 0.20, 0.23),
+            editor_selection: Color::from_rgba(0.06, 0.53, 0.98, 0.2),
+            editor_find_highlight: Color::from_rgba(0.91, 0.58, 0.07, 0.2),
+            
+            syntax_keyword: Color::from_rgb(0.91, 0.26, 0.26),
+            syntax_function: Color::from_rgb(0.16, 0.65, 0.33),
+            syntax_string: Color::from_rgb(0.91, 0.58, 0.07),
+            syntax_comment: Color::from_rgb(0.55, 0.58, 0.62),
+            syntax_type: Color::from_rgb(0.06, 0.53, 0.98),
+            syntax_variable: Color::from_rgb(0.18, 0.20, 0.23),
+            syntax_constant: Color::from_rgb(0.91, 0.58, 0.07),
         }
     }
 }

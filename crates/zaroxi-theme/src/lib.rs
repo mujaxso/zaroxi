@@ -3,6 +3,8 @@
 
 mod colors;
 mod theme;
+mod manager;
 
 pub use colors::*;
 pub use theme::{ZaroxiTheme, SemanticColors, DesignTokens};
+pub use manager::{ThemeManager, ThemeSettings};

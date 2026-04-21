@@ -47,7 +47,18 @@ pub fn run() {
             let workspace_service = Arc::new(WorkspaceService::new());
             app.manage(workspace_service);
             
+            // Initialize theme service
+            let theme_service = crate::services::theme_service::ThemeService::new(app.handle().clone());
+            app.manage(theme_service);
+            
+            // Initialize app state
+            let app_state = crate::app_state::AppState::new();
+            app.manage(app_state);
+            
             tracing::info!("Zaroxi Desktop app setup complete");
+            
+            // Apply initial theme
+            theme_service.apply_theme();
             
             Ok(())
         })
@@ -67,6 +78,11 @@ pub fn run() {
             commands::preview::generate_preview,
             commands::zaroxi_infra_settings::load_settings,
             commands::zaroxi_infra_settings::save_settings,
+            // Theme commands
+            commands::zaroxi_infra_settings::load_theme_settings,
+            commands::zaroxi_infra_settings::save_theme_settings,
+            commands::zaroxi_infra_settings::get_current_theme,
+            commands::zaroxi_infra_settings::set_theme,
         ])
         .on_window_event(|window, event| {
             windows::handle_window_event(&window, event);
