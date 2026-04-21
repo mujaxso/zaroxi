@@ -7,8 +7,9 @@ import { ThemeProvider } from '@/lib/theme/ThemeProvider';
 import { Toolbar } from '@/components/layout/Toolbar';
 import { SettingsPage } from '@/features/settings/pages/SettingsPage';
 import '@/styles/tokens.css';
-import { listen } from '@tauri-apps/api/event';
-import { invoke } from '@tauri-apps/api/core';
+
+// Check if we're running in Tauri
+const isTauri = typeof window !== 'undefined' && '__TAURI__' in window;
 
 interface AppProviderProps {
   children: ReactNode;
@@ -18,24 +19,36 @@ export function AppProvider({ children }: AppProviderProps) {
   const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
-    // Listen for open-settings event from menu
-    const unlistenSettings = listen('open-settings', () => {
-      setShowSettings(true);
-    });
+    // Listen for open-settings event from menu (Tauri only)
+    let unlistenSettings: Promise<() => void> | undefined;
+    let unlistenWorkspace: Promise<() => void> | undefined;
+    
+    if (isTauri) {
+      import('@tauri-apps/api/event').then(({ listen }) => {
+        unlistenSettings = listen('open-settings', () => {
+          setShowSettings(true);
+        });
+        
+        unlistenWorkspace = listen('menu:open-workspace', () => {
+          // Trigger the open workspace dialog
+          import('@tauri-apps/api/core').then(({ invoke }) => {
+            invoke('open_file_dialog').catch(console.error);
+          });
+        });
+      });
+    }
 
-    // Listen for open-workspace event from menu
-    const unlistenWorkspace = listen('menu:open-workspace', () => {
-      // Trigger the open workspace dialog
-      invoke('open_file_dialog').catch(console.error);
-    });
-
-    // Also listen for custom event from toolbar
+    // Also listen for custom event from toolbar (works in both environments)
     const handleOpenSettings = () => setShowSettings(true);
     window.addEventListener('open-settings', handleOpenSettings as EventListener);
 
     return () => {
-      unlistenSettings.then(f => f());
-      unlistenWorkspace.then(f => f());
+      if (unlistenSettings) {
+        unlistenSettings.then(f => f()).catch(console.error);
+      }
+      if (unlistenWorkspace) {
+        unlistenWorkspace.then(f => f()).catch(console.error);
+      }
       window.removeEventListener('open-settings', handleOpenSettings as EventListener);
     };
   }, []);

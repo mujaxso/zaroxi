@@ -1,8 +1,9 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { invoke } from '@tauri-apps/api/core';
-import { listen } from '@tauri-apps/api/event';
-import { ZaroxiTheme, ThemeSettings } from './types';
+import { ZaroxiTheme } from './types';
+
+// Check if we're running in Tauri
+const isTauri = typeof window !== 'undefined' && '__TAURI__' in window;
 
 // Helper to convert Rust enum to TypeScript string
 function toRustTheme(mode: ZaroxiTheme): 'Dark' | 'Light' | 'System' {
@@ -44,9 +45,16 @@ export const useThemeStore = create<ThemeStore>()(
       setThemeMode: async (mode) => {
         set({ isLoading: true });
         try {
-          // Convert to Rust enum format
-          const rustTheme = toRustTheme(mode);
-          await invoke('set_theme', { theme: rustTheme });
+          if (isTauri) {
+            // In Tauri environment, use the backend
+            const { invoke } = await import('@tauri-apps/api/core');
+            const rustTheme = toRustTheme(mode);
+            await invoke('set_theme', { theme: rustTheme });
+          } else {
+            // In browser, just update locally
+            // Simulate async operation
+            await new Promise(resolve => setTimeout(resolve, 50));
+          }
           
           // Determine if dark based on mode
           const isSystem = mode === 'system';
@@ -71,24 +79,43 @@ export const useThemeStore = create<ThemeStore>()(
       loadThemeSettings: async () => {
         set({ isLoading: true });
         try {
-          const settings: ThemeSettings = await invoke('load_theme_settings');
-          // The Rust command returns a ZaroxiTheme enum which will be serialized as a string
-          const currentTheme: string = await invoke('get_current_theme');
-          const rustTheme = currentTheme as 'Dark' | 'Light' | 'System';
-          const tsTheme = fromRustTheme(rustTheme);
-          
-          const isSystem = tsTheme === 'system';
-          const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-          const isDark = tsTheme === 'dark' || (isSystem && systemPrefersDark);
-          
-          set({ 
-            themeMode: tsTheme,
-            isDark,
-            isSystem,
-            isLoading: false 
-          });
-          
-          updateCssVariables(isDark);
+          if (isTauri) {
+            // In Tauri environment, load from backend
+            const { invoke } = await import('@tauri-apps/api/core');
+            // The Rust command returns a ZaroxiTheme enum which will be serialized as a string
+            const currentTheme: string = await invoke('get_current_theme');
+            const rustTheme = currentTheme as 'Dark' | 'Light' | 'System';
+            const tsTheme = fromRustTheme(rustTheme);
+            
+            const isSystem = tsTheme === 'system';
+            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const isDark = tsTheme === 'dark' || (isSystem && systemPrefersDark);
+            
+            set({ 
+              themeMode: tsTheme,
+              isDark,
+              isSystem,
+              isLoading: false 
+            });
+            
+            updateCssVariables(isDark);
+          } else {
+            // In browser, load from localStorage (handled by persist middleware)
+            // Also check system preference
+            const savedState = get();
+            const isSystem = savedState.themeMode === 'system';
+            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const isDark = savedState.themeMode === 'dark' || (isSystem && systemPrefersDark);
+            
+            set({ 
+              themeMode: savedState.themeMode,
+              isDark,
+              isSystem,
+              isLoading: false 
+            });
+            
+            updateCssVariables(isDark);
+          }
         } catch (error) {
           console.error('Failed to load theme settings:', error);
           set({ isLoading: false });
@@ -115,17 +142,25 @@ export const useThemeStore = create<ThemeStore>()(
   )
 );
 
-// Listen to theme changes from backend
-export function setupThemeListener() {
-  return listen<{ mode: string; isDark: boolean }>('theme:changed', (event) => {
-    // The mode comes as a string from Rust serialization
-    const rustMode = event.payload.mode as 'Dark' | 'Light' | 'System';
-    const tsMode = fromRustTheme(rustMode);
-    useThemeStore.getState().applyTheme({ 
-      mode: tsMode, 
-      isDark: event.payload.isDark 
+// Listen to theme changes from backend (Tauri only)
+async function setupThemeListener() {
+  if (!isTauri) return () => {};
+  
+  try {
+    const { listen } = await import('@tauri-apps/api/event');
+    return listen<{ mode: string; isDark: boolean }>('theme:changed', (event) => {
+      // The mode comes as a string from Rust serialization
+      const rustMode = event.payload.mode as 'Dark' | 'Light' | 'System';
+      const tsMode = fromRustTheme(rustMode);
+      useThemeStore.getState().applyTheme({ 
+        mode: tsMode, 
+        isDark: event.payload.isDark 
+      });
     });
-  });
+  } catch (error) {
+    console.error('Failed to setup theme listener:', error);
+    return () => {};
+  }
 }
 
 // Update CSS custom properties based on theme
@@ -166,10 +201,24 @@ export function initializeTheme() {
   
   mediaQuery.addEventListener('change', handleSystemThemeChange);
   
-  // Setup backend listener
-  setupThemeListener();
+  // Setup backend listener (Tauri only)
+  let cleanupListener: (() => void) | undefined;
+  setupThemeListener().then(unlisten => {
+    if (unlisten) {
+      cleanupListener = () => {
+        try {
+          unlisten.then(f => f());
+        } catch (error) {
+          console.error('Error cleaning up listener:', error);
+        }
+      };
+    }
+  });
   
   return () => {
     mediaQuery.removeEventListener('change', handleSystemThemeChange);
+    if (cleanupListener) {
+      cleanupListener();
+    }
   };
 }

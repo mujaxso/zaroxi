@@ -6,8 +6,8 @@ export function Toolbar() {
   const { themeMode, setThemeMode } = useThemeStore();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   
-  const handleThemeChange = (theme: ZaroxiTheme) => {
-    setThemeMode(theme);
+  const handleThemeChange = async (theme: ZaroxiTheme) => {
+    await setThemeMode(theme);
     setIsMenuOpen(false);
   };
   
