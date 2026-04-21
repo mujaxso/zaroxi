@@ -8,7 +8,7 @@ mod app_state;
 mod bootstrap;
 mod commands;
 mod events;
-mod menu;
+// mod menu; // No longer needed
 mod zaroxi_infra_permissions;
 mod services;
 mod windows;
@@ -38,10 +38,7 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
     
     tauri::Builder::default()
         .setup(|app| {
-            // Create menu for the main window
-            let handle = app.handle();
-            let menu = menu::create_app_menu(handle)?;
-            app.set_menu(menu)?;
+            // No menu created - using custom UI menu only
             
             // Initialize and manage the workspace service
             let workspace_service = Arc::new(WorkspaceService::new());
@@ -97,48 +94,6 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
             commands::zaroxi_infra_settings::get_current_theme,
             commands::zaroxi_infra_settings::set_theme,
         ])
-        .on_menu_event(|app_handle, event| {
-            let app_handle_clone = app_handle.clone();
-            match event.id.as_ref() {
-                "open_workspace" => {
-                    tauri::async_runtime::spawn(async move {
-                        let _ = app_handle_clone.emit("menu:open-workspace", ());
-                    });
-                }
-                "open_settings" => {
-                    // Emit event to frontend to open settings
-                    let _ = app_handle.emit("open-settings", ());
-                }
-                "theme_system" => {
-                    if let Some(theme_service) = app_handle.try_state::<crate::services::theme_service::ThemeService>() {
-                        let theme_service = theme_service.inner().clone();
-                        tauri::async_runtime::spawn(async move {
-                            let _ = theme_service.set_theme_mode(zaroxi_theme::ZaroxiTheme::System).await;
-                        });
-                    }
-                }
-                "theme_light" => {
-                    if let Some(theme_service) = app_handle.try_state::<crate::services::theme_service::ThemeService>() {
-                        let theme_service = theme_service.inner().clone();
-                        tauri::async_runtime::spawn(async move {
-                            let _ = theme_service.set_theme_mode(zaroxi_theme::ZaroxiTheme::Light).await;
-                        });
-                    }
-                }
-                "theme_dark" => {
-                    if let Some(theme_service) = app_handle.try_state::<crate::services::theme_service::ThemeService>() {
-                        let theme_service = theme_service.inner().clone();
-                        tauri::async_runtime::spawn(async move {
-                            let _ = theme_service.set_theme_mode(zaroxi_theme::ZaroxiTheme::Dark).await;
-                        });
-                    }
-                }
-                "quit" => {
-                    app_handle.exit(0);
-                }
-                _ => {}
-            }
-        })
         .on_window_event(|window, event| {
             windows::handle_window_event(window, event);
         })
