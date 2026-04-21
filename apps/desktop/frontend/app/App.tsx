@@ -1,5 +1,5 @@
 import { AppProvider } from './bootstrap/AppProvider';
-import { AppShell } from './shell/AppShell';
+import { AppShell } from '@/layouts/shell/AppShell';
 
 function App() {
   return (
