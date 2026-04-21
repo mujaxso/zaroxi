@@ -86,6 +86,39 @@ pub fn run() {
             commands::zaroxi_infra_settings::get_current_theme,
             commands::zaroxi_infra_settings::set_theme,
         ])
+        .on_menu_event(|app_handle, event| {
+            let app_handle_clone = app_handle.clone();
+            match event.id.as_ref() {
+                "open_workspace" => {
+                    tauri::async_runtime::spawn(async move {
+                        let _ = app_handle_clone.emit("menu:open-workspace", ());
+                    });
+                }
+                "open_settings" => {
+                    // Emit event to frontend to open settings
+                    let _ = app_handle.emit("open-settings", ());
+                }
+                "theme_system" => {
+                    if let Ok(theme_service) = app_handle.try_state::<crate::services::theme_service::ThemeService>() {
+                        let _ = theme_service.set_theme_mode(zaroxi_theme::ZaroxiTheme::System);
+                    }
+                }
+                "theme_light" => {
+                    if let Ok(theme_service) = app_handle.try_state::<crate::services::theme_service::ThemeService>() {
+                        let _ = theme_service.set_theme_mode(zaroxi_theme::ZaroxiTheme::Light);
+                    }
+                }
+                "theme_dark" => {
+                    if let Ok(theme_service) = app_handle.try_state::<crate::services::theme_service::ThemeService>() {
+                        let _ = theme_service.set_theme_mode(zaroxi_theme::ZaroxiTheme::Dark);
+                    }
+                }
+                "quit" => {
+                    app_handle.exit(0);
+                }
+                _ => {}
+            }
+        })
         .on_window_event(|window, event| {
             windows::handle_window_event(&window, event);
         })

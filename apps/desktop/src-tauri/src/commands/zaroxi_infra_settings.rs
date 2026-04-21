@@ -22,29 +22,60 @@ pub async fn save_settings(settings: serde_json::Value) -> Result<(), String> {
     Ok(())
 }
 
+use std::fs;
+use std::path::PathBuf;
+use tauri::api::path::app_config_dir;
+
 #[command]
 pub async fn load_theme_settings() -> Result<ThemeSettings, String> {
-    // TODO: Implement actual settings loading from disk
-    // For now, return default (System theme)
-    Ok(ThemeSettings::default())
+    // Get config directory
+    let config_dir = app_config_dir(&tauri::Config::default())
+        .ok_or_else(|| "Failed to get config directory".to_string())?;
+    
+    let theme_path = config_dir.join("theme_settings.json");
+    
+    if !theme_path.exists() {
+        return Ok(ThemeSettings::default());
+    }
+    
+    let content = fs::read_to_string(&theme_path)
+        .map_err(|e| format!("Failed to read theme settings: {}", e))?;
+    
+    serde_json::from_str(&content)
+        .map_err(|e| format!("Failed to parse theme settings: {}", e))
 }
 
 #[command]
 pub async fn save_theme_settings(settings: ThemeSettings) -> Result<(), String> {
-    // TODO: Implement actual settings saving to disk
-    println!("Saving theme settings: {:?}", settings);
+    // Get config directory
+    let config_dir = app_config_dir(&tauri::Config::default())
+        .ok_or_else(|| "Failed to get config directory".to_string())?;
+    
+    // Create config directory if it doesn't exist
+    fs::create_dir_all(&config_dir)
+        .map_err(|e| format!("Failed to create config directory: {}", e))?;
+    
+    let theme_path = config_dir.join("theme_settings.json");
+    
+    let content = serde_json::to_string_pretty(&settings)
+        .map_err(|e| format!("Failed to serialize theme settings: {}", e))?;
+    
+    fs::write(&theme_path, content)
+        .map_err(|e| format!("Failed to write theme settings: {}", e))?;
+    
     Ok(())
 }
 
 #[command]
 pub async fn get_current_theme() -> Result<ZaroxiTheme, String> {
-    // TODO: Load from actual settings
-    Ok(ZaroxiTheme::System)
+    let settings = load_theme_settings().await?;
+    Ok(settings.theme_mode)
 }
 
 #[command]
 pub async fn set_theme(theme: ZaroxiTheme) -> Result<(), String> {
-    // TODO: Save to settings
-    println!("Setting theme to: {:?}", theme);
-    Ok(())
+    let settings = ThemeSettings {
+        theme_mode: theme,
+    };
+    save_theme_settings(settings).await
 }
