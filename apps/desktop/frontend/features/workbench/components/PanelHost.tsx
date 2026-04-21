@@ -5,12 +5,24 @@ import { cn } from '@/lib/utils';
 
 interface PanelHostProps {
   className?: string;
+  side?: 'left' | 'right';
 }
 
-export function PanelHost({ className }: PanelHostProps) {
-  const { activePanel, isPanelVisible, panelWidth } = useWorkbenchStore();
+export function PanelHost({ className, side = 'left' }: PanelHostProps) {
+  const { 
+    activeLeftPanel, 
+    activeRightPanel, 
+    isLeftPanelVisible, 
+    isRightPanelVisible,
+    leftPanelWidth,
+    rightPanelWidth 
+  } = useWorkbenchStore();
   
-  if (!isPanelVisible || !activePanel) {
+  const activePanel = side === 'left' ? activeLeftPanel : activeRightPanel;
+  const isVisible = side === 'left' ? isLeftPanelVisible : isRightPanelVisible;
+  const panelWidth = side === 'left' ? leftPanelWidth : rightPanelWidth;
+  
+  if (!isVisible || !activePanel) {
     return null;
   }
 
@@ -24,7 +36,11 @@ export function PanelHost({ className }: PanelHostProps) {
 
   return (
     <div 
-      className={cn('h-full border-r border-border bg-sidebar overflow-hidden flex flex-col', className)}
+      className={cn(
+        'h-full bg-sidebar overflow-hidden flex flex-col',
+        side === 'left' ? 'border-r border-border' : 'border-l border-border',
+        className
+      )}
       style={{ width: panelWidth }}
     >
       <div className="flex-shrink-0 border-b border-border px-4 py-3">

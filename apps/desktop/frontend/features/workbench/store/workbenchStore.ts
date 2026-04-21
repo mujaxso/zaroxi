@@ -4,76 +4,142 @@ import { devtools } from 'zustand/middleware';
 export type PanelId = 'explorer' | 'search' | 'git' | 'debug' | 'assistant' | 'settings';
 
 export interface PanelState {
-  // Active panel ID
-  activePanel: PanelId | null;
-  // Whether the side panel is visible
-  isPanelVisible: boolean;
-  // Panel width (for future resizing)
-  panelWidth: number;
+  // Active left panel ID
+  activeLeftPanel: PanelId | null;
+  // Active right panel ID (for assistant)
+  activeRightPanel: PanelId | null;
+  // Whether the left panel is visible
+  isLeftPanelVisible: boolean;
+  // Whether the right panel is visible
+  isRightPanelVisible: boolean;
+  // Panel widths
+  leftPanelWidth: number;
+  rightPanelWidth: number;
 }
 
 export interface PanelActions {
-  // Activate a panel (makes it visible if not already)
-  activatePanel: (panelId: PanelId) => void;
-  // Toggle panel visibility (collapse/expand)
-  togglePanelVisibility: () => void;
-  // Close the panel
-  closePanel: () => void;
-  // Set panel width
-  setPanelWidth: (width: number) => void;
-  // Toggle a specific panel (if already active, close it)
+  // Activate a panel on the left side
+  activateLeftPanel: (panelId: PanelId) => void;
+  // Activate a panel on the right side
+  activateRightPanel: (panelId: PanelId) => void;
+  // Toggle left panel visibility
+  toggleLeftPanelVisibility: () => void;
+  // Toggle right panel visibility
+  toggleRightPanelVisibility: () => void;
+  // Close left panel
+  closeLeftPanel: () => void;
+  // Close right panel
+  closeRightPanel: () => void;
+  // Set panel widths
+  setLeftPanelWidth: (width: number) => void;
+  setRightPanelWidth: (width: number) => void;
+  // Toggle a specific panel
   togglePanel: (panelId: PanelId) => void;
 }
 
 const DEFAULT_PANEL_WIDTH = 280;
+const DEFAULT_RIGHT_PANEL_WIDTH = 320;
 
 export const useWorkbenchStore = create<PanelState & PanelActions>()(
   devtools(
     (set, get) => ({
-      activePanel: 'explorer',
-      isPanelVisible: true,
-      panelWidth: DEFAULT_PANEL_WIDTH,
+      activeLeftPanel: 'explorer',
+      activeRightPanel: null,
+      isLeftPanelVisible: true,
+      isRightPanelVisible: false,
+      leftPanelWidth: DEFAULT_PANEL_WIDTH,
+      rightPanelWidth: DEFAULT_RIGHT_PANEL_WIDTH,
 
-      activatePanel: (panelId) => {
-        const { activePanel, isPanelVisible } = get();
-        if (activePanel === panelId && isPanelVisible) {
+      activateLeftPanel: (panelId) => {
+        const { activeLeftPanel, isLeftPanelVisible } = get();
+        if (activeLeftPanel === panelId && isLeftPanelVisible) {
           // Already active and visible, do nothing
           return;
         }
         set({
-          activePanel: panelId,
-          isPanelVisible: true,
+          activeLeftPanel: panelId,
+          isLeftPanelVisible: true,
         });
       },
 
-      togglePanelVisibility: () => {
+      activateRightPanel: (panelId) => {
+        const { activeRightPanel, isRightPanelVisible } = get();
+        if (activeRightPanel === panelId && isRightPanelVisible) {
+          // Already active and visible, close it
+          set({
+            isRightPanelVisible: false,
+            activeRightPanel: null,
+          });
+        } else {
+          // Activate this panel on the right
+          set({
+            activeRightPanel: panelId,
+            isRightPanelVisible: true,
+          });
+        }
+      },
+
+      toggleLeftPanelVisibility: () => {
         set((state) => ({
-          isPanelVisible: !state.isPanelVisible,
+          isLeftPanelVisible: !state.isLeftPanelVisible,
         }));
       },
 
-      closePanel: () => {
+      toggleRightPanelVisibility: () => {
+        set((state) => ({
+          isRightPanelVisible: !state.isRightPanelVisible,
+        }));
+      },
+
+      closeLeftPanel: () => {
         set({
-          isPanelVisible: false,
-          activePanel: null,
+          isLeftPanelVisible: false,
+          activeLeftPanel: null,
         });
       },
 
-      setPanelWidth: (width) => {
-        set({ panelWidth: Math.max(200, Math.min(600, width)) });
+      closeRightPanel: () => {
+        set({
+          isRightPanelVisible: false,
+          activeRightPanel: null,
+        });
+      },
+
+      setLeftPanelWidth: (width) => {
+        set({ leftPanelWidth: Math.max(200, Math.min(600, width)) });
+      },
+
+      setRightPanelWidth: (width) => {
+        set({ rightPanelWidth: Math.max(200, Math.min(600, width)) });
       },
 
       togglePanel: (panelId) => {
-        const { activePanel, isPanelVisible } = get();
-        if (activePanel === panelId && isPanelVisible) {
-          // Toggle off
-          set({ isPanelVisible: false });
+        const { activeLeftPanel, isLeftPanelVisible, activeRightPanel, isRightPanelVisible } = get();
+        
+        // Check if it's a right-side panel (assistant)
+        if (panelId === 'assistant') {
+          if (activeRightPanel === panelId && isRightPanelVisible) {
+            // Toggle off
+            set({ isRightPanelVisible: false });
+          } else {
+            // Activate on right side
+            set({
+              activeRightPanel: panelId,
+              isRightPanelVisible: true,
+            });
+          }
         } else {
-          // Activate this panel
-          set({
-            activePanel: panelId,
-            isPanelVisible: true,
-          });
+          // Left-side panel
+          if (activeLeftPanel === panelId && isLeftPanelVisible) {
+            // Toggle off
+            set({ isLeftPanelVisible: false });
+          } else {
+            // Activate on left side
+            set({
+              activeLeftPanel: panelId,
+              isLeftPanelVisible: true,
+            });
+          }
         }
       },
     }),

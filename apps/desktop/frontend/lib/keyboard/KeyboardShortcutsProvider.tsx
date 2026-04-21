@@ -6,7 +6,7 @@ interface KeyboardShortcutsProviderProps {
 }
 
 function KeyboardShortcutsHandler({ children }: KeyboardShortcutsProviderProps) {
-  const { togglePanelVisibility, activatePanel } = useWorkbenchStore();
+  const { toggleLeftPanelVisibility, activateLeftPanel, activateRightPanel } = useWorkbenchStore();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -15,43 +15,43 @@ function KeyboardShortcutsHandler({ children }: KeyboardShortcutsProviderProps) 
         case 'b':
           if ((e.ctrlKey || e.metaKey) && e.shiftKey) {
             e.preventDefault();
-            togglePanelVisibility();
+            toggleLeftPanelVisibility();
           }
           break;
         case ',':
           if (e.ctrlKey || e.metaKey) {
             e.preventDefault();
-            activatePanel('settings');
+            activateLeftPanel('settings');
           }
           break;
         case '1':
           if (e.ctrlKey || e.metaKey) {
             e.preventDefault();
-            activatePanel('explorer');
+            activateLeftPanel('explorer');
           }
           break;
         case '2':
           if (e.ctrlKey || e.metaKey) {
             e.preventDefault();
-            activatePanel('search');
+            activateLeftPanel('search');
           }
           break;
         case '3':
           if (e.ctrlKey || e.metaKey) {
             e.preventDefault();
-            activatePanel('git');
+            activateLeftPanel('git');
           }
           break;
         case '4':
           if (e.ctrlKey || e.metaKey) {
             e.preventDefault();
-            activatePanel('debug');
+            activateLeftPanel('debug');
           }
           break;
         case '5':
           if (e.ctrlKey || e.metaKey) {
             e.preventDefault();
-            activatePanel('assistant');
+            activateRightPanel('assistant');
           }
           break;
       }
@@ -59,7 +59,7 @@ function KeyboardShortcutsHandler({ children }: KeyboardShortcutsProviderProps) 
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [togglePanelVisibility, activatePanel]);
+  }, [toggleLeftPanelVisibility, activateLeftPanel, activateRightPanel]);
 
   return <>{children}</>;
 }

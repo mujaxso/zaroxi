@@ -16,7 +16,7 @@ interface AppProviderProps {
 }
 
 function AppProviderContent({ children }: AppProviderProps) {
-  const { activatePanel } = useWorkbenchStore();
+  const { activateLeftPanel } = useWorkbenchStore();
 
   useEffect(() => {
     // Listen for open-settings event from menu (Tauri only)
@@ -26,7 +26,7 @@ function AppProviderContent({ children }: AppProviderProps) {
     if (isTauri) {
       import('@tauri-apps/api/event').then(({ listen }) => {
         unlistenSettings = listen('open-settings', () => {
-          activatePanel('settings');
+          activateLeftPanel('settings');
         });
         
         unlistenWorkspace = listen('menu:open-workspace', () => {
@@ -39,7 +39,7 @@ function AppProviderContent({ children }: AppProviderProps) {
     }
 
     // Also listen for custom event from toolbar (works in both environments)
-    const handleOpenSettings = () => activatePanel('settings');
+    const handleOpenSettings = () => activateLeftPanel('settings');
     window.addEventListener('open-settings', handleOpenSettings as EventListener);
 
     return () => {
@@ -51,7 +51,7 @@ function AppProviderContent({ children }: AppProviderProps) {
       }
       window.removeEventListener('open-settings', handleOpenSettings as EventListener);
     };
-  }, [activatePanel]);
+  }, [activateLeftPanel]);
 
   return (
     <div className="font-sans antialiased bg-app text-primary h-screen flex flex-col">
