@@ -42,23 +42,6 @@ export function EditorContainer() {
     };
   }, [activeFilePath]);
 
-  useEffect(() => {
-    // Debug: log actual font used in editor
-    if (!activeFilePath) return;
-    const timer = setTimeout(() => {
-      const editorWrapper = document.querySelector('.code-editor-font');
-      if (editorWrapper) {
-        const computed = window.getComputedStyle(editorWrapper);
-        console.log('[EditorContainer] Editor wrapper font:', computed.fontFamily);
-        const child = editorWrapper.querySelector('textarea, pre, [class*="editor"], .code-editor');
-        if (child) {
-          const childComputed = window.getComputedStyle(child);
-          console.log('[EditorContainer] Child element font:', childComputed.fontFamily);
-        }
-      }
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, [activeFilePath]);
 
   const loadFile = async (path: string) => {
     setIsLoading(true);
