@@ -1,41 +1,10 @@
-/* Import fonts */
-@font-face {
-  font-family: "Zaroxi Mono";
-  src: url("/fonts/JetBrainsMonoNerdFont-Regular.ttf") format("truetype");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Zaroxi Mono";
-  src: url("/fonts/JetBrainsMonoNerdFont-Bold.ttf") format("truetype");
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Zaroxi Mono";
-  src: url("/fonts/JetBrainsMonoNerdFont-Italic.ttf") format("truetype");
-  font-weight: 400;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Zaroxi Mono";
-  src: url("/fonts/JetBrainsMonoNerdFont-BoldItalic.ttf") format("truetype");
-  font-weight: 700;
-  font-style: italic;
-  font-display: swap;
-}
+/* Fonts are provided by the system (JetBrainsMono Nerd Font) */
 
 /* Define CSS custom properties for fonts */
 :root {
-  --font-sans: "Zaroxi Mono", "JetBrains Mono", system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --font-mono: "Zaroxi Mono", "JetBrains Mono", "Cascadia Code", "Fira Code", ui-monospace, monospace;
-  --font-icon: "Zaroxi Mono", ui-monospace, monospace;
+  --font-sans: "JetBrainsMono Nerd Font Mono", "JetBrains Mono", system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: "JetBrainsMono Nerd Font Mono", "JetBrains Mono", "Cascadia Code", "Fira Code", ui-monospace, monospace;
+  --font-icon: "JetBrainsMono Nerd Font Mono", ui-monospace, monospace;
 }
 
 /* Apply font to html element for inheritance */
