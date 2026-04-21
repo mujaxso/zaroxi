@@ -2,8 +2,11 @@ import { cn } from '@/lib/utils';
 import { nerdFontIcons } from '@/lib/theme/nerd-font-icons';
 import { useEffect, useRef, useState } from 'react';
 
+// Export the IconName type for use in other files
+export type IconName = keyof typeof nerdFontIcons;
+
 interface IconProps {
-  name: keyof typeof nerdFontIcons;
+  name: IconName;
   size?: number;
   className?: string;
   label?: string;
