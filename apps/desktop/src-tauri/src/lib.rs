@@ -64,8 +64,7 @@ pub fn run() {
             app.manage(app_state);
             
             // Get the main window and set it up
-            // Use get_window instead of get_webview_window to get a Window
-            let main_window = app.get_window("main").expect("Failed to get main window");
+            let main_window = app.get_webview_window("main").expect("Failed to get main window");
             
             // Call our window setup function to ensure decorations are removed
             if let Err(e) = windows::setup_window(&main_window) {

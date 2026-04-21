@@ -132,6 +132,7 @@
   /* Ensure the background is solid to cover transparent window */
   position: relative;
   z-index: 1;
+  min-height: 100vh;
 }
 .bg-shell { background-color: var(--color-shell-background); }
 .bg-panel { background-color: var(--color-panel-background); }

@@ -1,4 +1,4 @@
-use tauri::{WindowEvent, Window};
+use tauri::{WindowEvent, Window, WebviewWindow};
 
 pub fn handle_window_event<R: tauri::Runtime>(_window: &Window<R>, event: &WindowEvent) {
     match event {
@@ -10,7 +10,7 @@ pub fn handle_window_event<R: tauri::Runtime>(_window: &Window<R>, event: &Windo
     }
 }
 
-pub fn setup_window<R: tauri::Runtime>(window: &Window<R>) -> Result<(), Box<dyn std::error::Error>> {
+pub fn setup_window<R: tauri::Runtime>(window: &WebviewWindow<R>) -> Result<(), Box<dyn std::error::Error>> {
     // Remove native window decorations to use our custom title bar
     // Note: This is already set in tauri.conf.json, but we keep it here for safety
     window.set_decorations(false)?;
