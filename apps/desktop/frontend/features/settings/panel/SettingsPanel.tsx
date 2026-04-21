@@ -1,4 +1,4 @@
-import { SettingsPage } from '../../pages/SettingsPage';
+import { SettingsPage } from '@/features/settings/pages/SettingsPage';
 
 export default function SettingsPanel() {
   return (
