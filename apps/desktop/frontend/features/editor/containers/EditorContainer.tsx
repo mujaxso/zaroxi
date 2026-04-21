@@ -107,15 +107,15 @@ export function EditorContainer() {
   };
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="border-b border-border px-4 py-2 flex items-center justify-between">
+    <div className="h-full flex flex-col bg-editor">
+      <div className="border-b border-border px-4 py-2 flex items-center justify-between bg-panel-header">
         <div className="text-sm font-medium flex items-center space-x-2">
-          <span>{fileName}</span>
+          <span className="text-primary">{fileName}</span>
           {isLoading && (
             <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
           )}
           {activeFilePath && (
-            <span className="text-xs text-muted-foreground truncate max-w-xs" title={activeFilePath}>
+            <span className="text-xs text-muted truncate max-w-xs" title={activeFilePath}>
               {activeFilePath}
             </span>
           )}
@@ -124,14 +124,14 @@ export function EditorContainer() {
           {activeFilePath && (
             <button
               onClick={handleEditorSave}
-              className="save-button px-3 py-1 text-xs bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors"
+              className="save-button px-3 py-1 text-xs bg-accent text-on-accent rounded hover:bg-accent-hover transition-colors"
             >
               Save
             </button>
           )}
         </div>
       </div>
-      <div className="flex-1 overflow-hidden code-editor-font">
+      <div className="flex-1 overflow-hidden code-editor-font bg-editor">
         <CodeEditor
           initialValue={content}
           onChange={handleEditorChange}

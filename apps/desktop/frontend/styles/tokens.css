@@ -1,4 +1,13 @@
 /* CSS Custom Properties for Zaroxi Theme - Updated for better surface hierarchy */
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--color-app-background);
+}
+
 :root {
   /* Light theme defaults - Enhanced for better panel/editor distinction */
   --color-app-background: #f5f7fa;
