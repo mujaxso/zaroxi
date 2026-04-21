@@ -47,9 +47,7 @@ export function FontLoader() {
         if (isLoaded) {
           document.body.classList.add('fonts-loaded');
           setFontsLoaded(true);
-          console.log('Fonts loaded and ready');
         } else {
-          console.warn('Font loaded but not available for use');
           setFontsLoaded(false);
         }
       } catch (error) {

@@ -33,7 +33,7 @@
 
 /* Define CSS custom properties for fonts */
 :root {
-  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-sans: "Zaroxi Mono", "JetBrains Mono", system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --font-mono: "Zaroxi Mono", "JetBrains Mono", "Cascadia Code", "Fira Code", ui-monospace, monospace;
   --font-icon: "Zaroxi Mono", ui-monospace, monospace;
 }
@@ -50,9 +50,6 @@ body {
 code, pre, kbd, samp {
   font-family: var(--font-mono) !important;
 }
-
-/* Import font utilities */
-@import '../lib/theme/fonts.css';
 
 /* Apply font to common UI elements */
 button, input, textarea, select {
@@ -77,24 +74,4 @@ h1, h2, h3, h4, h5, h6 {
 /* When fonts are loaded, apply them globally */
 body.fonts-loaded {
   /* The fonts are already applied via CSS custom properties */
-}
-
-/* Ensure code elements use monospace */
-code, pre, kbd, samp {
-  font-family: var(--font-mono) !important;
-}
-
-/* Debug styles */
-.debug-font-check::after {
-  content: 'Font: Zaroxi Mono ✓';
-  position: fixed;
-  bottom: 10px;
-  right: 10px;
-  background: rgba(0,0,0,0.8);
-  color: #00ff00;
-  padding: 5px;
-  font-size: 10px;
-  z-index: 9999;
-  border-radius: 3px;
-  font-family: "Zaroxi Mono", monospace;
 }

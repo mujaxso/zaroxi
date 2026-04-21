@@ -5,7 +5,7 @@
 @layer base {
   :root {
     /* Font family tokens */
-    --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-sans: 'Zaroxi Mono', 'JetBrains Mono', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     --font-mono: 'Zaroxi Mono', 'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace;
     --font-icon: 'Zaroxi Mono', monospace;
     
