@@ -13,7 +13,7 @@ mod zaroxi_infra_permissions;
 mod services;
 mod windows;
 
-use tauri::{Emitter, Manager, RunEvent};
+use tauri::{Manager, RunEvent};
 use std::sync::Arc;
 use crate::services::workspace_service::WorkspaceService;
 
