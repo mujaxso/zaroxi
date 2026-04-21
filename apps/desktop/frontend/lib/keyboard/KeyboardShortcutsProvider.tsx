@@ -66,6 +66,12 @@ function KeyboardShortcutsHandler({ children }: KeyboardShortcutsProviderProps) 
             activateRightPanel('assistant');
           }
           break;
+        case ',':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            activateLeftPanel('settings');
+          }
+          break;
       }
     };
 

@@ -129,7 +129,7 @@ export const useWorkbenchStore = create<PanelState & PanelActions>()(
             });
           }
         } else {
-          // Left-side panel
+          // Left-side panel (including settings, extensions, etc.)
           if (activeLeftPanel === panelId && isLeftPanelVisible) {
             // Toggle off
             set({ isLeftPanelVisible: false });

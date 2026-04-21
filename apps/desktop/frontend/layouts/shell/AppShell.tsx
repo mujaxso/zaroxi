@@ -9,7 +9,6 @@ import { Suspense, lazy } from 'react';
 
 // Lazy load full-width panel components
 const SettingsPanel = lazy(() => import('@/features/settings/panel/SettingsPanel'));
-const ExtensionsPanel = lazy(() => import('@/features/extensions/panel/ExtensionsPanel'));
 
 export function AppShell() {
   const { 
@@ -22,16 +21,15 @@ export function AppShell() {
   // Get activity items for the active panels
   const leftActivity = activeLeftPanel ? getActivityItem(activeLeftPanel) : null;
   
-  // Determine if we should show full-width panels (settings or extensions)
-  const isFullWidthPanel = leftActivity && 
-    (leftActivity.id === 'settings' || leftActivity.id === 'extensions');
+  // Determine if we should show full-width panel (only settings)
+  const isSettingsActive = leftActivity?.id === 'settings' && isLeftPanelVisible;
   
-  // Show left panel when it's visible and not a full-width panel
-  const showLeftPanel = isLeftPanelVisible && activeLeftPanel && !isFullWidthPanel;
+  // Show left panel when it's visible and not settings
+  const showLeftPanel = isLeftPanelVisible && activeLeftPanel && !isSettingsActive;
   // Show right panel when it's visible
   const showRightPanel = isRightPanelVisible && activeRightPanel;
-  // Show main content when not showing full-width panel
-  const showMainContent = !isFullWidthPanel;
+  // Show main content when not showing settings
+  const showMainContent = !isSettingsActive;
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground font-sans">
@@ -41,13 +39,13 @@ export function AppShell() {
         {/* Activity Rail - Always visible */}
         <ActivityRail />
         
-        {/* Left Panel */}
+        {/* Left Panel (for all left-side panels except settings) */}
         {showLeftPanel && (
           <PanelHost side="left" />
         )}
         
-        {/* Full-width panels (Settings, Extensions) */}
-        {isFullWidthPanel && isLeftPanelVisible && (
+        {/* Settings Panel (full width when active) */}
+        {isSettingsActive && (
           <div className="flex-1 flex flex-col overflow-hidden">
             <Suspense fallback={
               <div className="p-4">
@@ -58,13 +56,12 @@ export function AppShell() {
                 </div>
               </div>
             }>
-              {leftActivity?.id === 'settings' && <SettingsPanel />}
-              {leftActivity?.id === 'extensions' && <ExtensionsPanel />}
+              <SettingsPanel />
             </Suspense>
           </div>
         )}
         
-        {/* Main Content Area */}
+        {/* Main Content Area (Editor) */}
         {showMainContent && (
           <div className="flex-1 flex flex-col overflow-hidden">
             <div className="flex-1 overflow-hidden">
