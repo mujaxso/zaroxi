@@ -63,6 +63,14 @@ pub fn run() {
             let app_state = crate::app_state::AppState::new();
             app.manage(app_state);
             
+            // Get the main window and set it up
+            let main_window = app.get_webview_window("main").expect("Failed to get main window");
+            
+            // Call our window setup function to ensure decorations are removed
+            if let Err(e) = windows::setup_window(&main_window) {
+                tracing::error!("Failed to setup window: {}", e);
+            }
+            
             tracing::info!("Zaroxi Desktop app setup complete");
             
             Ok(())
