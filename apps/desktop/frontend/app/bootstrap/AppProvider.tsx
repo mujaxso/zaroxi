@@ -4,7 +4,6 @@ import { TauriProvider } from './TauriProvider';
 import { KeyboardShortcutsProvider } from '@/lib/keyboard/KeyboardShortcutsProvider';
 import { FontLoader } from './FontLoader';
 import { ThemeProvider } from '@/lib/theme/ThemeProvider';
-import { Toolbar } from '@/components/layout/Toolbar';
 import { useWorkbenchStore } from '@/features/workbench/store/workbenchStore';
 import '@/styles/tokens.css';
 
@@ -55,7 +54,6 @@ function AppProviderContent({ children }: AppProviderProps) {
 
   return (
     <div className="font-sans antialiased bg-app text-primary h-screen flex flex-col">
-      <Toolbar />
       <div className="flex-1 overflow-hidden">
         {children}
       </div>

@@ -15,6 +15,8 @@ export interface PanelState {
   // Panel widths
   leftPanelWidth: number;
   rightPanelWidth: number;
+  // Top bar visibility (always visible in new design)
+  isTopBarVisible: boolean;
 }
 
 export interface PanelActions {
@@ -49,6 +51,7 @@ export const useWorkbenchStore = create<PanelState & PanelActions>()(
       isRightPanelVisible: false,
       leftPanelWidth: DEFAULT_PANEL_WIDTH,
       rightPanelWidth: DEFAULT_RIGHT_PANEL_WIDTH,
+      isTopBarVisible: true,
 
       activateLeftPanel: (panelId) => {
         const { activeLeftPanel, isLeftPanelVisible } = get();

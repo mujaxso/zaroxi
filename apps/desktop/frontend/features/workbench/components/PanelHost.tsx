@@ -37,34 +37,34 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
   return (
     <div 
       className={cn(
-        'h-full bg-sidebar overflow-hidden flex flex-col',
-        side === 'left' ? 'border-r border-border' : 'border-l border-border',
+        'h-full bg-panel overflow-hidden flex flex-col',
+        side === 'left' ? 'border-r border-divider' : 'border-l border-divider',
         className
       )}
       style={{ width: panelWidth }}
     >
-      <div className="flex-shrink-0 border-b border-border px-4 py-3">
+      <div className="flex-shrink-0 border-b border-divider px-4 py-3 bg-panel-header">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h3 className="font-semibold text-primary">{activityItem.label}</h3>
             {activityItem.badge !== undefined && activityItem.badge > 0 && (
-              <span className="px-1.5 py-0.5 text-xs rounded-full bg-accent text-accent-foreground">
+              <span className="px-1.5 py-0.5 text-xs rounded-full bg-accent text-on-accent">
                 {activityItem.badge}
               </span>
             )}
           </div>
           {activityItem.shortcut && (
-            <span className="text-xs text-muted-foreground font-mono">
+            <span className="text-xs text-muted font-mono">
               {activityItem.shortcut}
             </span>
           )}
         </div>
         {activityItem.description && (
-          <p className="text-xs text-muted-foreground mt-1">{activityItem.description}</p>
+          <p className="text-xs text-muted mt-1">{activityItem.description}</p>
         )}
       </div>
       
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto bg-panel">
         <Suspense fallback={
           <div className="p-4">
             <div className="space-y-2">

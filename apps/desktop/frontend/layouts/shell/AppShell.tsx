@@ -3,9 +3,11 @@ import { CommandPalette } from './CommandPalette';
 import { EditorContainer } from '@/features/editor/containers/EditorContainer';
 import { ActivityRail } from '@/features/workbench/components/ActivityRail';
 import { PanelHost } from '@/features/workbench/components/PanelHost';
+import { TopBar } from '@/features/workbench/components/TopBar';
 import { useWorkbenchStore } from '@/features/workbench/store/workbenchStore';
 import { getActivityItem } from '@/features/workbench/config/activityRegistry';
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
+import { setupWindowControls } from '@/lib/platform/windowControls';
 
 // Lazy load full-width panel components
 const SettingsPanel = lazy(() => import('@/features/settings/panel/SettingsPanel'));
@@ -31,9 +33,16 @@ export function AppShell() {
   // Show main content when not showing settings
   const showMainContent = !isSettingsActive;
 
+  useEffect(() => {
+    setupWindowControls();
+  }, []);
+
   return (
-    <div className="flex flex-col h-screen bg-background text-foreground font-sans">
+    <div className="flex flex-col h-screen bg-app text-primary font-sans">
       <CommandPalette />
+      
+      {/* Compact Top Bar */}
+      <TopBar />
       
       <div className="flex flex-1 overflow-hidden">
         {/* Activity Rail - Always visible */}

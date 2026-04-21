@@ -1,19 +1,22 @@
-/* CSS Custom Properties for Zaroxi Theme */
+/* CSS Custom Properties for Zaroxi Theme - Updated for better surface hierarchy */
 :root {
-  /* Light theme defaults */
-  --color-app-background: #f8f9fa;
-  --color-shell-background: #f1f3f5;
-  --color-panel-background: #f8f9fa;
+  /* Light theme defaults - Enhanced for better panel/editor distinction */
+  --color-app-background: #f5f7fa;
+  --color-shell-background: #f0f2f5;
+  --color-panel-background: #ffffff;
+  --color-panel-header-background: #f8f9fa;
   --color-elevated-panel-background: #ffffff;
-  --color-editor-background: #fdfdfc;
+  --color-editor-background: #fefefe;
   --color-input-background: #ffffff;
-  --color-status-bar-background: #f1f3f5;
-  --color-title-bar-background: #e9ecef;
-  --color-activity-rail-background: #e9ecef;
-  --color-sidebar-background: #f1f3f5;
+  --color-status-bar-background: #f0f2f5;
+  --color-title-bar-background: #ffffff;
+  --color-title-bar-foreground: #212529;
+  --color-activity-rail-background: #f8f9fa;
+  --color-sidebar-background: #ffffff;
   --color-tab-background: #f8f9fa;
-  --color-tab-active-background: #fdfdfc;
-  --color-assistant-panel-background: #f1f3f5;
+  --color-tab-active-background: #ffffff;
+  --color-assistant-panel-background: #ffffff;
+  --color-workbench-chrome: #f8f9fa;
   
   --color-text-primary: #212529;
   --color-text-secondary: #495057;
@@ -24,9 +27,9 @@
   --color-text-disabled: #adb5bd;
   --color-text-link: #0d6efd;
   
-  --color-border: #dee2e6;
-  --color-border-subtle: rgba(222, 226, 230, 0.5);
-  --color-divider: #dee2e6;
+  --color-border: #e9ecef;
+  --color-border-subtle: rgba(233, 236, 239, 0.5);
+  --color-divider: #e9ecef;
   --color-accent: #0d6efd;
   --color-accent-hover: #0b5ed7;
   --color-accent-soft: rgba(13, 110, 253, 0.12);
@@ -45,7 +48,7 @@
   
   --color-focus-ring: rgba(13, 110, 253, 0.25);
   
-  --color-editor-gutter-background: #e9ecef;
+  --color-editor-gutter-background: #f8f9fa;
   --color-editor-line-highlight: rgba(0, 0, 0, 0.02);
   --color-editor-cursor: #212529;
   --color-editor-selection: rgba(13, 110, 253, 0.2);
@@ -61,19 +64,22 @@
 }
 
 :root.dark {
-  --color-app-background: #191c21;
-  --color-shell-background: #1d2128;
-  --color-panel-background: #23272e;
-  --color-elevated-panel-background: #2a2e36;
-  --color-editor-background: #191c21;
-  --color-input-background: #23272e;
-  --color-status-bar-background: #1d2128;
-  --color-title-bar-background: #14171c;
-  --color-activity-rail-background: #14171c;
-  --color-sidebar-background: #1d2128;
-  --color-tab-background: #23272e;
-  --color-tab-active-background: #191c21;
-  --color-assistant-panel-background: #1d2128;
+  --color-app-background: #1a1d21;
+  --color-shell-background: #1e2126;
+  --color-panel-background: #25282e;
+  --color-panel-header-background: #2a2d34;
+  --color-elevated-panel-background: #2c2f36;
+  --color-editor-background: #1e2126;
+  --color-input-background: #25282e;
+  --color-status-bar-background: #1e2126;
+  --color-title-bar-background: #25282e;
+  --color-title-bar-foreground: #f1f3f5;
+  --color-activity-rail-background: #1a1d21;
+  --color-sidebar-background: #25282e;
+  --color-tab-background: #25282e;
+  --color-tab-active-background: #1e2126;
+  --color-assistant-panel-background: #25282e;
+  --color-workbench-chrome: #1e2126;
   
   --color-text-primary: #f1f3f5;
   --color-text-secondary: #ced4da;
@@ -105,7 +111,7 @@
   
   --color-focus-ring: rgba(77, 171, 247, 0.25);
   
-  --color-editor-gutter-background: #14171c;
+  --color-editor-gutter-background: #1a1d21;
   --color-editor-line-highlight: rgba(255, 255, 255, 0.03);
   --color-editor-cursor: #f1f3f5;
   --color-editor-selection: rgba(77, 171, 247, 0.3);
@@ -124,16 +130,19 @@
 .bg-app { background-color: var(--color-app-background); }
 .bg-shell { background-color: var(--color-shell-background); }
 .bg-panel { background-color: var(--color-panel-background); }
+.bg-panel-header { background-color: var(--color-panel-header-background); }
 .bg-elevated-panel { background-color: var(--color-elevated-panel-background); }
 .bg-editor { background-color: var(--color-editor-background); }
 .bg-input { background-color: var(--color-input-background); }
 .bg-status-bar { background-color: var(--color-status-bar-background); }
 .bg-title-bar { background-color: var(--color-title-bar-background); }
+.text-title-bar-foreground { color: var(--color-title-bar-foreground); }
 .bg-activity-rail { background-color: var(--color-activity-rail-background); }
 .bg-sidebar { background-color: var(--color-sidebar-background); }
 .bg-tab { background-color: var(--color-tab-background); }
 .bg-tab-active { background-color: var(--color-tab-active-background); }
 .bg-assistant-panel { background-color: var(--color-assistant-panel-background); }
+.bg-workbench-chrome { background-color: var(--color-workbench-chrome); }
 
 .text-primary { color: var(--color-text-primary); }
 .text-secondary { color: var(--color-text-secondary); }

@@ -25,7 +25,7 @@ export function ActivityRail({ className }: ActivityRailProps) {
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className={cn('w-12 flex flex-col items-center py-4 border-r border-border bg-sidebar h-full', className)}>
+      <div className={cn('w-12 flex flex-col items-center py-4 border-r border-divider bg-activity-rail h-full', className)}>
         {/* Top activity items */}
         <div className="flex flex-col items-center space-y-4">
           {topActivities.map((activity) => {
