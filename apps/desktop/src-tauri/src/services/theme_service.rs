@@ -13,12 +13,6 @@ impl ThemeService {
         Self { app_handle }
     }
     
-    /// Get the current theme mode, considering system preference
-    pub fn current_theme_mode(&self) -> ZaroxiTheme {
-        // TODO: Load from persisted settings
-        ZaroxiTheme::System
-    }
-    
     /// Check if system prefers dark mode
     pub fn system_prefers_dark(&self) -> bool {
         // Try to get from main window
@@ -35,9 +29,28 @@ impl ThemeService {
         true
     }
     
+    /// Load current theme from settings
+    pub async fn load_theme_mode(&self) -> ZaroxiTheme {
+        match crate::commands::zaroxi_infra_settings::load_theme_settings().await {
+            Ok(settings) => {
+                tracing::info!("Loaded theme settings: {:?}", settings.theme_mode);
+                settings.theme_mode
+            }
+            Err(e) => {
+                tracing::warn!("Failed to load theme settings: {}, using default", e);
+                ZaroxiTheme::System
+            }
+        }
+    }
+    
+    /// Get the current theme mode, considering system preference
+    pub async fn current_theme_mode(&self) -> ZaroxiTheme {
+        self.load_theme_mode().await
+    }
+    
     /// Apply theme to the app
-    pub fn apply_theme(&self) {
-        let theme_mode = self.current_theme_mode();
+    pub async fn apply_theme(&self) {
+        let theme_mode = self.load_theme_mode().await;
         let is_dark = match theme_mode {
             ZaroxiTheme::Dark => true,
             ZaroxiTheme::Light => false,
@@ -55,14 +68,14 @@ impl ThemeService {
     }
     
     /// Set theme mode and persist it
-    pub fn set_theme_mode(&self, theme_mode: ZaroxiTheme) -> Result<(), String> {
+    pub async fn set_theme_mode(&self, theme_mode: ZaroxiTheme) -> Result<(), String> {
         // Save to settings
         let settings = zaroxi_theme::ThemeSettings {
             theme_mode,
         };
         
         // Use the command to save settings
-        match crate::commands::zaroxi_infra_settings::save_theme_settings(settings) {
+        match crate::commands::zaroxi_infra_settings::save_theme_settings(settings).await {
             Ok(_) => tracing::info!("Theme settings saved: {:?}", theme_mode),
             Err(e) => tracing::error!("Failed to save theme settings: {}", e),
         }
@@ -82,43 +95,5 @@ impl ThemeService {
         );
         
         Ok(())
-    }
-    
-    /// Load current theme from settings
-    pub fn load_theme_mode(&self) -> ZaroxiTheme {
-        match crate::commands::zaroxi_infra_settings::load_theme_settings() {
-            Ok(settings) => {
-                tracing::info!("Loaded theme settings: {:?}", settings.theme_mode);
-                settings.theme_mode
-            }
-            Err(e) => {
-                tracing::warn!("Failed to load theme settings: {}, using default", e);
-                ZaroxiTheme::System
-            }
-        }
-    }
-    
-    /// Get the current theme mode, considering system preference
-    pub fn current_theme_mode(&self) -> ZaroxiTheme {
-        self.load_theme_mode()
-    }
-    
-    /// Apply theme to the app
-    pub fn apply_theme(&self) {
-        let theme_mode = self.load_theme_mode();
-        let is_dark = match theme_mode {
-            ZaroxiTheme::Dark => true,
-            ZaroxiTheme::Light => false,
-            ZaroxiTheme::System => self.system_prefers_dark(),
-        };
-        
-        // Emit event to frontend with theme data
-        let _ = self.app_handle.emit(
-            "theme:changed",
-            serde_json::json!({
-                "mode": theme_mode,
-                "isDark": is_dark,
-            }),
-        );
     }
 }

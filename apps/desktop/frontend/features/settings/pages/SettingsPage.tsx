@@ -1,5 +1,4 @@
 import { ThemeSettings } from '../components/ThemeSettings';
-import { Settings, Palette } from 'lucide-react';
 
 export function SettingsPage() {
   return (
@@ -7,7 +6,7 @@ export function SettingsPage() {
       <div className="max-w-4xl mx-auto p-6">
         <div className="flex items-center gap-3 mb-8">
           <div className="p-2 rounded-lg bg-accent-soft-bg text-accent">
-            <Settings className="w-6 h-6" />
+            <span className="text-2xl">⚙️</span>
           </div>
           <div>
             <h1 className="text-2xl font-bold text-primary">Settings</h1>
@@ -19,7 +18,7 @@ export function SettingsPage() {
           <div className="lg:col-span-2 space-y-8">
             <div className="bg-panel rounded-xl border border-border p-6">
               <div className="flex items-center gap-3 mb-6">
-                <Palette className="w-5 h-5 text-accent" />
+                <span className="text-2xl">🎨</span>
                 <h2 className="text-xl font-semibold text-primary">Appearance</h2>
               </div>
               <ThemeSettings />

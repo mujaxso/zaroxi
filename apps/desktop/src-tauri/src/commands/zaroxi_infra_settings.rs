@@ -2,6 +2,7 @@
 
 use tauri::command;
 use zaroxi_theme::{ThemeSettings, ZaroxiTheme};
+use std::fs;
 
 #[command]
 pub async fn load_settings() -> Result<serde_json::Value, String> {
@@ -22,15 +23,12 @@ pub async fn save_settings(settings: serde_json::Value) -> Result<(), String> {
     Ok(())
 }
 
-use std::fs;
-use std::path::PathBuf;
-use tauri::api::path::app_config_dir;
-
 #[command]
 pub async fn load_theme_settings() -> Result<ThemeSettings, String> {
-    // Get config directory
-    let config_dir = app_config_dir(&tauri::Config::default())
-        .ok_or_else(|| "Failed to get config directory".to_string())?;
+    // Get config directory using tauri's path resolver
+    let config_dir = tauri::api::path::config_dir()
+        .ok_or_else(|| "Failed to get config directory".to_string())?
+        .join("zaroxi");
     
     let theme_path = config_dir.join("theme_settings.json");
     
@@ -47,9 +45,10 @@ pub async fn load_theme_settings() -> Result<ThemeSettings, String> {
 
 #[command]
 pub async fn save_theme_settings(settings: ThemeSettings) -> Result<(), String> {
-    // Get config directory
-    let config_dir = app_config_dir(&tauri::Config::default())
-        .ok_or_else(|| "Failed to get config directory".to_string())?;
+    // Get config directory using tauri's path resolver
+    let config_dir = tauri::api::path::config_dir()
+        .ok_or_else(|| "Failed to get config directory".to_string())?
+        .join("zaroxi");
     
     // Create config directory if it doesn't exist
     fs::create_dir_all(&config_dir)

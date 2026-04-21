@@ -1,25 +1,24 @@
 import { useThemeStore } from '@/lib/theme/theme-store';
 import { ZaroxiTheme } from '@/lib/theme/types';
-import { Monitor, Sun, Moon } from 'lucide-react';
 
 export function ThemeSettings() {
   const { themeMode, setThemeMode, isLoading } = useThemeStore();
   
-  const themes: { value: ZaroxiTheme; label: string; icon: React.ReactNode }[] = [
+  const themes: { value: ZaroxiTheme; label: string; icon: string }[] = [
     { 
       value: 'system', 
       label: 'System', 
-      icon: <Monitor className="w-4 h-4" /> 
+      icon: '🖥️'
     },
     { 
       value: 'light', 
       label: 'Light', 
-      icon: <Sun className="w-4 h-4" /> 
+      icon: '☀️'
     },
     { 
       value: 'dark', 
       label: 'Dark', 
-      icon: <Moon className="w-4 h-4" /> 
+      icon: '🌙'
     },
   ];
   
@@ -46,7 +45,7 @@ export function ThemeSettings() {
                 : 'border-border hover:border-accent/50 hover:bg-hover-bg'
             }`}
           >
-            <div className={`p-3 rounded-full mb-3 ${
+            <div className={`p-3 rounded-full mb-3 text-2xl ${
               themeMode === theme.value
                 ? 'bg-accent/10 text-accent'
                 : 'bg-panel text-muted'

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Menu, Settings, Sun, Moon, Monitor } from 'lucide-react';
 import { useThemeStore } from '@/lib/theme/theme-store';
 import { ZaroxiTheme } from '@/lib/theme/types';
 
@@ -13,9 +12,9 @@ export function Toolbar() {
   };
   
   const themeIcon = {
-    system: <Monitor className="w-4 h-4" />,
-    light: <Sun className="w-4 h-4" />,
-    dark: <Moon className="w-4 h-4" />,
+    system: '🖥️',
+    light: '☀️',
+    dark: '🌙',
   }[themeMode];
   
   return (
@@ -26,7 +25,7 @@ export function Toolbar() {
           className="p-2 rounded hover:bg-hover-bg text-primary"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
         >
-          <Menu className="w-5 h-5" />
+          <span className="text-lg">☰</span>
         </button>
         
         <div className="text-sm font-medium text-primary">
@@ -42,7 +41,7 @@ export function Toolbar() {
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border hover:bg-hover-bg text-primary"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
-            {themeIcon}
+            <span>{themeIcon}</span>
             <span className="text-sm capitalize">{themeMode}</span>
           </button>
           
@@ -55,7 +54,7 @@ export function Toolbar() {
                     themeMode === 'system' ? 'bg-selected-bg text-accent' : 'text-primary'
                   }`}
                 >
-                  <Monitor className="w-4 h-4" />
+                  <span>🖥️</span>
                   <span>System</span>
                 </button>
                 <button
@@ -64,7 +63,7 @@ export function Toolbar() {
                     themeMode === 'light' ? 'bg-selected-bg text-accent' : 'text-primary'
                   }`}
                 >
-                  <Sun className="w-4 h-4" />
+                  <span>☀️</span>
                   <span>Light</span>
                 </button>
                 <button
@@ -73,7 +72,7 @@ export function Toolbar() {
                     themeMode === 'dark' ? 'bg-selected-bg text-accent' : 'text-primary'
                   }`}
                 >
-                  <Moon className="w-4 h-4" />
+                  <span>🌙</span>
                   <span>Dark</span>
                 </button>
               </div>
@@ -88,7 +87,7 @@ export function Toolbar() {
             window.dispatchEvent(new CustomEvent('open-settings'));
           }}
         >
-          <Settings className="w-5 h-5" />
+          <span className="text-lg">⚙️</span>
         </button>
       </div>
     </div>
