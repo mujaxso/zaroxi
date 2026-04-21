@@ -60,7 +60,7 @@ export function Icon({ name, size = 16, className, label, debug = false }: IconP
         width: size,
         height: size,
         fontFamily: fontReady 
-          ? '"JetBrainsMonoNL Nerd Font Mono", "JetBrainsMonoNL NFM", monospace'
+          ? '"JetBrainsMono Nerd Font", "JetBrainsMonoNL Nerd Font Mono", "JetBrainsMonoNL NFM", monospace'
           : 'monospace',
         fontVariantLigatures: 'normal',
         fontFeatureSettings: '"liga" 1, "calt" 1',
