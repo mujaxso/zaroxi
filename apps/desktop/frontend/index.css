@@ -67,7 +67,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Apply to editor and code surfaces */
-.editor, .code-editor, .monaco-editor {
+.editor, .code-editor, .monaco-editor,
+.code-editor-font {
   font-family: var(--font-mono) !important;
 }
 
@@ -78,6 +79,16 @@ h1, h2, h3, h4, h5, h6 {
 .monaco-editor .line-numbers,
 .monaco-editor .cursors-layer {
   font-family: var(--font-mono) !important;
+}
+
+/* Ensure any text or code elements inside custom editor use the same font */
+.code-editor-font textarea,
+.code-editor-font pre,
+.code-editor-font code,
+.code-editor textarea,
+.code-editor pre,
+.code-editor code {
+  font-family: inherit !important;
 }
 
 /* Reset font inheritance */
