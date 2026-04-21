@@ -1,5 +1,5 @@
 //! Theme service for desktop app orchestration
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{AppHandle, Manager};
 use zaroxi_theme::ZaroxiTheme;
 
 /// Theme service for desktop-specific theme orchestration
@@ -69,6 +69,7 @@ impl ThemeService {
     }
     
     /// Set theme mode and persist it
+    #[allow(dead_code)]
     pub async fn set_theme_mode(&self, theme_mode: ZaroxiTheme) -> Result<(), String> {
         // Save to settings
         let settings = zaroxi_theme::ThemeSettings {
