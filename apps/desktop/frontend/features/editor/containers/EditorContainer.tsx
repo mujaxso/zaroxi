@@ -50,7 +50,7 @@ export function EditorContainer() {
       setLanguage(response.language || 'plaintext');
       setFileName(path.split(/[\\/]/).pop() || 'file');
     } catch (error) {
-      console.error('Failed to load file:', error);
+      // Failed to load file
       setContent(`// Error loading file: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setLanguage('plaintext');
       setFileName('error.txt');
@@ -65,7 +65,7 @@ export function EditorContainer() {
 
   const handleEditorSave = async () => {
     if (!activeFilePath) {
-      console.warn('No file path to save to');
+      // No file path to save to
       return;
     }
     
@@ -74,7 +74,7 @@ export function EditorContainer() {
         path: activeFilePath,
         content: content,
       });
-      console.log('File saved successfully');
+      // File saved successfully
       // Show a temporary success message
       const saveBtn = document.querySelector('.save-button');
       if (saveBtn) {
@@ -89,8 +89,7 @@ export function EditorContainer() {
         }, 1000);
       }
     } catch (error) {
-      console.error('Failed to save file:', error);
-      // Show error
+      // Failed to save file
       const saveBtn = document.querySelector('.save-button');
       if (saveBtn) {
         const originalText = saveBtn.textContent;

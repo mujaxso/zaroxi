@@ -38,6 +38,11 @@
   --font-icon: "Zaroxi Mono", ui-monospace, monospace;
 }
 
+/* Apply font to html element for inheritance */
+html {
+  font-family: var(--font-sans);
+}
+
 /* Apply base font to the entire app */
 body {
   font-family: var(--font-sans) !important;
