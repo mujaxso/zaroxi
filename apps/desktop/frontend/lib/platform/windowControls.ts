@@ -11,22 +11,48 @@ export async function setupWindowControls() {
       const appWindow = getCurrent();
       
       // Make the top bar draggable
-      const dragRegions = document.querySelectorAll('[data-tauri-drag-region]');
-      dragRegions.forEach(region => {
-        region.addEventListener('mousedown', (e) => {
-          // Check if the click is on a button or element with data-no-drag attribute
-          const target = e.target as HTMLElement;
-          if (target.closest('[data-no-drag="true"]')) {
-            return;
-          }
-          // Start window dragging
-          appWindow.startDragging();
+      const setupDrag = () => {
+        const dragRegions = document.querySelectorAll('[data-tauri-drag-region]');
+        dragRegions.forEach(region => {
+          // Remove existing listeners to avoid duplicates
+          region.removeEventListener('mousedown', handleDrag);
+          region.addEventListener('mousedown', handleDrag);
         });
+      };
+
+      const handleDrag = (e: MouseEvent) => {
+        // Check if the click is on a button or element with data-no-drag attribute
+        const target = e.target as HTMLElement;
+        if (target.closest('[data-no-drag="true"]')) {
+          return;
+        }
+        // Start window dragging
+        appWindow.startDragging();
+      };
+
+      // Initial setup
+      setupDrag();
+      
+      // Also set up a mutation observer to handle dynamic changes
+      const observer = new MutationObserver(() => {
+        setupDrag();
       });
+      
+      observer.observe(document.body, { childList: true, subtree: true });
+      
+      // Return cleanup function
+      return () => {
+        observer.disconnect();
+        const dragRegions = document.querySelectorAll('[data-tauri-drag-region]');
+        dragRegions.forEach(region => {
+          region.removeEventListener('mousedown', handleDrag);
+        });
+      };
     } catch (error) {
       console.error('Error setting up window controls:', error);
     }
   }
+  return () => {};
 }
 
 export const windowControlActions = {

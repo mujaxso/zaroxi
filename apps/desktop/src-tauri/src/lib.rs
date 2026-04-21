@@ -67,9 +67,9 @@ pub fn run() {
             let main_window = app.get_webview_window("main").expect("Failed to get main window");
             
             // Call our window setup function to ensure decorations are removed
-            // Note: main_window is a WebviewWindow, which implements Deref to Window
-            // So we can pass it as &Window
-            if let Err(e) = windows::setup_window(&main_window) {
+            // main_window is a WebviewWindow, which implements Deref<Target = Window>
+            // So we can dereference it to get a &Window
+            if let Err(e) = windows::setup_window(&*main_window) {
                 tracing::error!("Failed to setup window: {}", e);
             }
             

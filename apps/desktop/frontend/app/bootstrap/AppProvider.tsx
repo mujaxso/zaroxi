@@ -54,7 +54,7 @@ function AppProviderContent({ children }: AppProviderProps) {
 
   return (
     <div className="font-sans antialiased bg-app text-primary h-screen flex flex-col">
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden bg-app">
         {children}
       </div>
     </div>
