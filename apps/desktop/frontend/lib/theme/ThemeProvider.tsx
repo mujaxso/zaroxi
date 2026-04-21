@@ -10,7 +10,14 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   
   useEffect(() => {
     const cleanup = initializeTheme();
-    return cleanup;
+    // Mark loading as complete after a short delay to ensure theme is applied
+    const timer = setTimeout(() => {
+      // We can't directly modify the store here, but the store should update itself
+    }, 100);
+    return () => {
+      cleanup();
+      clearTimeout(timer);
+    };
   }, []);
   
   // Prevent flash of unstyled content

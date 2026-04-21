@@ -78,6 +78,11 @@ export const useThemeStore = create<ThemeStore>()(
       
       loadThemeSettings: async () => {
         set({ isLoading: true });
+        // Add a timeout to ensure loading doesn't hang indefinitely
+        const timeoutId = setTimeout(() => {
+          set({ isLoading: false });
+        }, 2000);
+        
         try {
           if (isTauri) {
             // In Tauri environment, load from backend
@@ -91,6 +96,7 @@ export const useThemeStore = create<ThemeStore>()(
             const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
             const isDark = tsTheme === 'dark' || (isSystem && systemPrefersDark);
             
+            clearTimeout(timeoutId);
             set({ 
               themeMode: tsTheme,
               isDark,
@@ -107,6 +113,7 @@ export const useThemeStore = create<ThemeStore>()(
             const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
             const isDark = savedState.themeMode === 'dark' || (isSystem && systemPrefersDark);
             
+            clearTimeout(timeoutId);
             set({ 
               themeMode: savedState.themeMode,
               isDark,
@@ -118,6 +125,7 @@ export const useThemeStore = create<ThemeStore>()(
           }
         } catch (error) {
           console.error('Failed to load theme settings:', error);
+          clearTimeout(timeoutId);
           set({ isLoading: false });
         }
       },
@@ -184,7 +192,11 @@ export function initializeTheme() {
   const store = useThemeStore.getState();
   
   // Load saved theme
-  store.loadThemeSettings();
+  store.loadThemeSettings().catch(error => {
+    console.error('Failed to load theme settings:', error);
+    // Ensure loading state is cleared even on error
+    useThemeStore.setState({ isLoading: false });
+  });
   
   // Listen to system theme changes
   const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');

@@ -1,5 +1,5 @@
 import { StatusBar } from './StatusBar';
-import { CommandPalette } from './CommandPalette';
+// import { CommandPalette } from './CommandPalette';
 import { EditorContainer } from '@/features/editor/containers/EditorContainer';
 import { ActivityRail } from '@/features/workbench/components/ActivityRail';
 import { PanelHost } from '@/features/workbench/components/PanelHost';
@@ -52,7 +52,7 @@ export function AppShell() {
   return (
     <div className="flex flex-col h-screen bg-app text-primary font-sans">
       
-      <CommandPalette />
+      {/* <CommandPalette /> */}
       
       {/* Compact Top Bar */}
       <TopBar />
