@@ -62,6 +62,14 @@ export const ACTIVITY_REGISTRY: ActivityItem[] = [
     description: 'Debug and run your code',
   },
   {
+    id: 'extensions',
+    label: 'Extensions',
+    icon: 'puzzle',
+    panelComponent: SettingsPanel, // Temporary, will be replaced with actual ExtensionsPanel
+    available: true,
+    description: 'Manage extensions and add-ons',
+  },
+  {
     id: 'assistant',
     label: 'AI Assistant',
     icon: 'sparkles',

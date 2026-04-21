@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
-export type PanelId = 'explorer' | 'search' | 'git' | 'debug' | 'assistant' | 'settings';
+export type PanelId = 'explorer' | 'search' | 'git' | 'debug' | 'assistant' | 'settings' | 'extensions';
 
 export interface PanelState {
   // Active left panel ID

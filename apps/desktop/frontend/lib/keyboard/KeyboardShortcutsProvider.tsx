@@ -24,6 +24,12 @@ function KeyboardShortcutsHandler({ children }: KeyboardShortcutsProviderProps) 
             activateLeftPanel('settings');
           }
           break;
+        case '.':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            activateLeftPanel('extensions');
+          }
+          break;
         case '1':
           if (e.ctrlKey || e.metaKey) {
             e.preventDefault();
@@ -49,6 +55,12 @@ function KeyboardShortcutsHandler({ children }: KeyboardShortcutsProviderProps) 
           }
           break;
         case '5':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            activateLeftPanel('extensions');
+          }
+          break;
+        case '6':
           if (e.ctrlKey || e.metaKey) {
             e.preventDefault();
             activateRightPanel('assistant');
