@@ -1,4 +1,25 @@
-import { WebviewWindow } from '@tauri-apps/api/window';
+let getCurrentWindow: any = null;
+
+// Dynamically import to avoid errors if module not available
+async function loadWindowApi() {
+  if (typeof window === 'undefined') return;
+  try {
+    const module = await import('@tauri-apps/api/window');
+    getCurrentWindow = module.getCurrentWindow || module.default?.getCurrentWindow;
+  } catch (error) {
+    console.warn('Failed to load Tauri window API:', error);
+  }
+}
+
+export async function getWindowInstance() {
+  if (await isTauri()) {
+    await loadWindowApi();
+    if (getCurrentWindow) {
+      return getCurrentWindow();
+    }
+  }
+  return null;
+}
 
 export async function isTauri(): Promise<boolean> {
   return typeof window !== 'undefined' && '__TAURI__' in window;
@@ -7,8 +28,13 @@ export async function isTauri(): Promise<boolean> {
 export async function setupWindowControls() {
   if (await isTauri()) {
     try {
+      await loadWindowApi();
+      if (!getCurrentWindow) {
+        console.warn('getCurrentWindow not available');
+        return () => {};
+      }
       // Enable custom window controls
-      const appWindow = WebviewWindow.getCurrent();
+      const appWindow = getCurrentWindow();
       
       // Make the top bar draggable
       const handleDrag = (e: MouseEvent) => {
@@ -60,7 +86,9 @@ export const windowControlActions = {
   minimize: async () => {
     if (await isTauri()) {
       try {
-        const window = WebviewWindow.getCurrent();
+        await loadWindowApi();
+        if (!getCurrentWindow) return;
+        const window = getCurrentWindow();
         await window.minimize();
       } catch (error) {
         console.error('Error minimizing window:', error);
@@ -70,7 +98,9 @@ export const windowControlActions = {
   maximize: async () => {
     if (await isTauri()) {
       try {
-        const window = WebviewWindow.getCurrent();
+        await loadWindowApi();
+        if (!getCurrentWindow) return;
+        const window = getCurrentWindow();
         const isMaximized = await window.isMaximized();
         if (isMaximized) {
           await window.unmaximize();
@@ -85,7 +115,9 @@ export const windowControlActions = {
   close: async () => {
     if (await isTauri()) {
       try {
-        const window = WebviewWindow.getCurrent();
+        await loadWindowApi();
+        if (!getCurrentWindow) return;
+        const window = getCurrentWindow();
         await window.close();
       } catch (error) {
         console.error('Error closing window:', error);

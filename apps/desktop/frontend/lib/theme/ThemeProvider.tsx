@@ -1,4 +1,4 @@
-import { ReactNode, useEffect } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { useThemeStore, initializeTheme } from './theme-store';
 
 interface ThemeProviderProps {
@@ -7,21 +7,23 @@ interface ThemeProviderProps {
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
   const { isLoading } = useThemeStore();
+  const [showFallback, setShowFallback] = useState(false);
   
   useEffect(() => {
     const cleanup = initializeTheme();
-    // Mark loading as complete after a short delay to ensure theme is applied
-    const timer = setTimeout(() => {
-      // We can't directly modify the store here, but the store should update itself
-    }, 100);
+    // If theme loading takes more than 1 second, show the app anyway
+    const timeout = setTimeout(() => {
+      setShowFallback(true);
+    }, 1000);
+    
     return () => {
       cleanup();
-      clearTimeout(timer);
+      clearTimeout(timeout);
     };
   }, []);
   
-  // Prevent flash of unstyled content
-  if (isLoading) {
+  // If still loading after timeout, show children anyway
+  if (isLoading && !showFallback) {
     return (
       <div className="fixed inset-0 bg-app flex items-center justify-center">
         <div className="text-muted">Loading theme...</div>

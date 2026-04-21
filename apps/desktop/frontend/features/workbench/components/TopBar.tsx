@@ -2,8 +2,7 @@ import { Icon } from '@/components/ui/Icon';
 import { cn } from '@/lib/utils';
 import { useWorkbenchStore } from '../store/workbenchStore';
 import { useEffect, useState } from 'react';
-import { WebviewWindow } from '@tauri-apps/api/window';
-import { isTauri } from '@/lib/platform/windowControls';
+import { isTauri, getWindowInstance, windowControlActions } from '@/lib/platform/windowControls';
 
 interface TopBarProps {
   className?: string;
@@ -20,7 +19,8 @@ export function TopBar({ className }: TopBarProps) {
       setIsTauriEnv(tauriCheck);
       if (tauriCheck) {
         try {
-          const currentWindow = WebviewWindow.getCurrent();
+          const currentWindow = await getWindowInstance();
+          if (!currentWindow) return;
           const updateMaximized = async () => {
             setIsMaximized(await currentWindow.isMaximized());
           };
@@ -45,39 +45,30 @@ export function TopBar({ className }: TopBarProps) {
 
   const handleMinimize = async () => {
     if (isTauriEnv) {
-      try {
-        const window = WebviewWindow.getCurrent();
-        await window.minimize();
-      } catch (error) {
-        console.error('Error minimizing window:', error);
-      }
+      await windowControlActions.minimize();
     }
   };
 
   const handleMaximize = async () => {
     if (isTauriEnv) {
-      try {
-        const window = WebviewWindow.getCurrent();
-        if (isMaximized) {
-          await window.unmaximize();
-        } else {
-          await window.maximize();
+      await windowControlActions.maximize();
+      // Update maximized state after a short delay
+      setTimeout(async () => {
+        try {
+          const currentWindow = await getWindowInstance();
+          if (currentWindow) {
+            setIsMaximized(await currentWindow.isMaximized());
+          }
+        } catch (error) {
+          console.error('Error updating maximized state:', error);
         }
-        setIsMaximized(!isMaximized);
-      } catch (error) {
-        console.error('Error toggling maximize:', error);
-      }
+      }, 100);
     }
   };
 
   const handleClose = async () => {
     if (isTauriEnv) {
-      try {
-        const window = WebviewWindow.getCurrent();
-        await window.close();
-      } catch (error) {
-        console.error('Error closing window:', error);
-      }
+      await windowControlActions.close();
     }
   };
 
