@@ -58,6 +58,9 @@ impl ThemeService {
             ZaroxiTheme::System => self.system_prefers_dark(),
         };
         
+        // Small delay to ensure frontend is ready
+        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+        
         // Emit event to frontend with theme data
         let _ = self.app_handle.emit(
             "theme:changed",

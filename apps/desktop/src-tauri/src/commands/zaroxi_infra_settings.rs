@@ -63,7 +63,9 @@ pub async fn load_theme_settings() -> Result<ThemeSettings, String> {
             let theme_path = config_dir.join("theme_settings.json");
             
             if !theme_path.exists() {
-                return Ok(ThemeSettings::default());
+                return Ok(ThemeSettings {
+                    theme_mode: zaroxi_theme::ZaroxiTheme::Light,
+                });
             }
             
             let content = fs::read_to_string(&theme_path)

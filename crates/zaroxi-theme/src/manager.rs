@@ -12,7 +12,7 @@ pub struct ThemeSettings {
 impl Default for ThemeSettings {
     fn default() -> Self {
         ThemeSettings {
-            theme_mode: ZaroxiTheme::System,
+            theme_mode: ZaroxiTheme::Light,
         }
     }
 }

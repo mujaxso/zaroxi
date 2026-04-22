@@ -7,9 +7,7 @@ pub fn on_app_ready(app_handle: &AppHandle) -> Result<(), Box<dyn std::error::Er
     
     // Apply theme on startup
     tauri::async_runtime::spawn(async move {
-        if let Err(e) = theme_service.apply_theme().await {
-            tracing::error!("Failed to apply theme on startup: {}", e);
-        }
+        theme_service.apply_theme().await;
     });
     
     Ok(())
