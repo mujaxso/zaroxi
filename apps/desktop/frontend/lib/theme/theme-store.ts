@@ -211,10 +211,34 @@ function updateCssVariables(isDark: boolean) {
 export function initializeTheme() {
   const store = useThemeStore.getState();
   
-  // Don't apply theme immediately from localStorage to prevent flash
-  // Wait for backend to send the correct theme
+  // First, try to read from localStorage immediately to prevent flash
+  try {
+    const saved = localStorage.getItem('zaroxi-theme-storage');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed.state && parsed.state.themeMode) {
+        const themeMode = parsed.state.themeMode;
+        const isSystem = themeMode === 'system';
+        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const isDark = themeMode === 'dark' || (isSystem && systemPrefersDark);
+        
+        // Apply theme immediately
+        updateCssVariables(isDark);
+        
+        // Update store state without triggering persistence
+        useThemeStore.setState({
+          themeMode,
+          isDark,
+          isSystem,
+          isLoading: true, // Still loading from backend
+        });
+      }
+    }
+  } catch (error) {
+    console.error('Failed to read theme from localStorage:', error);
+  }
   
-  // Load saved theme from backend
+  // Then load from backend to get the actual theme
   store.loadThemeSettings().catch(error => {
     console.error('Failed to load theme settings:', error);
     // Ensure loading state is cleared even on error
