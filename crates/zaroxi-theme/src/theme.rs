@@ -269,38 +269,39 @@ impl SemanticColors {
         }
     }
     
-    /// Light theme semantic colors - Professional IDE with better contrast
+    /// Light theme semantic colors - Clean and consistent professional IDE
     pub fn light() -> Self {
         Self {
-            app_background: Color::from_rgb(0.96, 0.97, 0.98),           // #f5f7fa - Base with blue tint
-            shell_background: Color::from_rgb(0.94, 0.95, 0.96),         // #f0f2f5 - Shell
-            panel_background: Color::from_rgb(0.98, 0.99, 1.0),          // #fafcff - Panels
-            elevated_panel_background: Color::from_rgb(1.0, 1.0, 1.0),   // #ffffff - Elevated
-            editor_background: Color::from_rgb(0.99, 0.995, 0.995),      // #fcfdfd - Editor
-            input_background: Color::from_rgb(1.0, 1.0, 1.0),            // #ffffff - Inputs
-            status_bar_background: Color::from_rgb(0.94, 0.95, 0.96),    // #f0f2f5 - Status bar matches shell
-            title_bar_background: Color::from_rgb(0.92, 0.93, 0.94),     // #ebedf0 - Title bar
-            activity_rail_background: Color::from_rgb(0.93, 0.94, 0.95), // #edf0f2 - Activity rail
-            sidebar_background: Color::from_rgb(0.98, 0.99, 1.0),        // #fafcff - Sidebar
-            tab_background: Color::from_rgb(0.98, 0.99, 1.0),            // #fafcff - Inactive tabs
-            tab_active_background: Color::from_rgb(0.99, 0.995, 0.995),  // #fcfdfd - Active tab matches editor
-            assistant_panel_background: Color::from_rgb(0.98, 0.99, 1.0), // #fafcff - Right panel
+            // Background surfaces - All consistent light gray
+            app_background: Color::from_rgb(0.98, 0.98, 0.98),           // #fafafa - Very light gray
+            shell_background: Color::from_rgb(0.97, 0.97, 0.97),         // #f7f7f7 - Slightly darker
+            panel_background: Color::from_rgb(0.98, 0.98, 0.98),         // #fafafa - Matches editor
+            elevated_panel_background: Color::from_rgb(0.98, 0.98, 0.98), // #fafafa - Same
+            editor_background: Color::from_rgb(0.98, 0.98, 0.98),        // #fafafa - Professional light gray
+            input_background: Color::from_rgb(1.0, 1.0, 1.0),            // #ffffff - Inputs pure white
+            status_bar_background: Color::from_rgb(0.97, 0.97, 0.97),    // #f7f7f7 - Status bar
+            title_bar_background: Color::from_rgb(0.97, 0.97, 0.97),     // #f7f7f7 - Title bar
+            activity_rail_background: Color::from_rgb(0.97, 0.97, 0.97), // #f7f7f7 - Activity rail
+            sidebar_background: Color::from_rgb(0.98, 0.98, 0.98),       // #fafafa - Sidebar matches editor
+            tab_background: Color::from_rgb(0.98, 0.98, 0.98),           // #fafafa - Inactive tabs
+            tab_active_background: Color::from_rgb(0.98, 0.98, 0.98),    // #fafafa - Active tab matches editor
+            assistant_panel_background: Color::from_rgb(0.98, 0.98, 0.98), // #fafafa - Right panel
             
-            // Text colors - Better contrast
-            text_primary: Color::from_rgb(0.10, 0.12, 0.18),            // #1a1f2e - Primary text
-            text_secondary: Color::from_rgb(0.30, 0.33, 0.40),          // #4d5566 - Secondary
-            text_muted: Color::from_rgb(0.50, 0.53, 0.60),              // #808899 - Muted
-            text_faint: Color::from_rgb(0.65, 0.68, 0.75),              // #a6adbf - Faint
+            // Text colors - Better contrast with light background
+            text_primary: Color::from_rgb(0.15, 0.15, 0.15),            // #262626 - Dark gray for primary
+            text_secondary: Color::from_rgb(0.35, 0.35, 0.35),          // #595959 - Secondary
+            text_muted: Color::from_rgb(0.55, 0.55, 0.55),              // #8c8c8c - Muted
+            text_faint: Color::from_rgb(0.70, 0.70, 0.70),              // #b3b3b3 - Faint
             text_on_accent: Color::from_rgb(1.0, 1.0, 1.0),             // #ffffff - Text on accent
-            text_on_surface: Color::from_rgb(0.10, 0.12, 0.18),         // #1a1f2e - Text on surfaces
-            text_disabled: Color::from_rgb(0.70, 0.73, 0.80),           // #b3bad3 - Disabled
-            text_link: Color::from_rgb(0.10, 0.50, 0.90),               // #1a80e6 - Link
+            text_on_surface: Color::from_rgb(0.15, 0.15, 0.15),         // #262626 - Text on surfaces
+            text_disabled: Color::from_rgb(0.75, 0.75, 0.75),           // #bfbfbf - Disabled
+            text_link: Color::from_rgb(0.10, 0.50, 0.90),               // #1a80e6 - Link blue
             
-            // UI elements - More neutral borders
-            border: Color::from_rgb(0.75, 0.77, 0.80),                  // #bfc4cc - More neutral
-            border_subtle: Color::from_rgba(0.75, 0.77, 0.80, 0.5),     // Subtle borders
-            divider: Color::from_rgb(0.75, 0.77, 0.80),                 // #bfc4cc - Dividers
-            accent: Color::from_rgb(0.10, 0.50, 0.90),                  // #1a80e6 - Accent
+            // UI elements - Subtle borders
+            border: Color::from_rgb(0.85, 0.85, 0.85),                  // #d9d9d9 - Light gray border
+            border_subtle: Color::from_rgba(0.85, 0.85, 0.85, 0.5),     // Subtle borders
+            divider: Color::from_rgb(0.85, 0.85, 0.85),                 // #d9d9d9 - Dividers
+            accent: Color::from_rgb(0.10, 0.50, 0.90),                  // #1a80e6 - Accent blue
             accent_hover: Color::from_rgb(0.08, 0.45, 0.82),            // #1473d1 - Hover accent
             accent_soft: Color::from_rgba(0.10, 0.50, 0.90, 0.12),      // Soft accent
             accent_soft_background: Color::from_rgba(0.10, 0.50, 0.90, 0.06), // Very soft accent
@@ -313,29 +314,29 @@ impl SemanticColors {
             selected_editor_background: Color::from_rgba(0.10, 0.50, 0.90, 0.15), // Editor selection
             
             // Status colors
-            success: Color::from_rgb(0.20, 0.70, 0.40),                 // #33b366 - Success
-            warning: Color::from_rgb(0.90, 0.60, 0.10),                 // #e69900 - Warning
-            error: Color::from_rgb(0.90, 0.30, 0.30),                   // #e64d4d - Error
-            info: Color::from_rgb(0.10, 0.50, 0.90),                    // #1a80e6 - Info
+            success: Color::from_rgb(0.20, 0.70, 0.40),                 // #33b366 - Success green
+            warning: Color::from_rgb(0.90, 0.60, 0.10),                 // #e69900 - Warning orange
+            error: Color::from_rgb(0.90, 0.30, 0.30),                   // #e64d4d - Error red
+            info: Color::from_rgb(0.10, 0.50, 0.90),                    // #1a80e6 - Info blue
             
             // Focus
             focus_ring: Color::from_rgba(0.10, 0.50, 0.90, 0.25),       // Focus ring
             
             // Editor specific
-            editor_gutter_background: Color::from_rgb(0.98, 0.99, 1.0), // #fafcff - Gutter
-            editor_line_highlight: Color::from_rgba(0.0, 0.0, 0.0, 0.02), // Line highlight
-            editor_cursor: Color::from_rgb(0.10, 0.12, 0.18),           // #1a1f2e - Cursor
-            editor_selection: Color::from_rgba(0.10, 0.50, 0.90, 0.15), // Editor selection
-            editor_find_highlight: Color::from_rgba(0.90, 0.60, 0.10, 0.20), // Find highlight
+            editor_gutter_background: Color::from_rgb(0.98, 0.98, 0.98), // #fafafa - Gutter matches editor
+            editor_line_highlight: Color::from_rgba(0.0, 0.0, 0.0, 0.03), // Slightly darker line highlight
+            editor_cursor: Color::from_rgb(0.15, 0.15, 0.15),           // #262626 - Cursor
+            editor_selection: Color::from_rgba(0.10, 0.50, 0.90, 0.20), // Editor selection
+            editor_find_highlight: Color::from_rgba(0.90, 0.60, 0.10, 0.25), // Find highlight
             
             // Syntax colors
-            syntax_keyword: Color::from_rgb(0.90, 0.30, 0.30),          // #e64d4d - Keywords
-            syntax_function: Color::from_rgb(0.20, 0.70, 0.40),         // #33b366 - Functions
-            syntax_string: Color::from_rgb(0.90, 0.60, 0.10),           // #e69900 - Strings
-            syntax_comment: Color::from_rgb(0.50, 0.53, 0.60),          // #808899 - Comments
-            syntax_type: Color::from_rgb(0.10, 0.50, 0.90),             // #1a80e6 - Types
-            syntax_variable: Color::from_rgb(0.10, 0.12, 0.18),         // #1a1f2e - Variables
-            syntax_constant: Color::from_rgb(0.90, 0.60, 0.10),         // #e69900 - Constants
+            syntax_keyword: Color::from_rgb(0.90, 0.30, 0.30),          // #e64d4d - Keywords red
+            syntax_function: Color::from_rgb(0.20, 0.70, 0.40),         // #33b366 - Functions green
+            syntax_string: Color::from_rgb(0.90, 0.60, 0.10),           // #e69900 - Strings orange
+            syntax_comment: Color::from_rgb(0.55, 0.55, 0.55),          // #8c8c8c - Comments gray
+            syntax_type: Color::from_rgb(0.10, 0.50, 0.90),             // #1a80e6 - Types blue
+            syntax_variable: Color::from_rgb(0.15, 0.15, 0.15),         // #262626 - Variables dark gray
+            syntax_constant: Color::from_rgb(0.90, 0.60, 0.10),         // #e69900 - Constants orange
         }
     }
 }
