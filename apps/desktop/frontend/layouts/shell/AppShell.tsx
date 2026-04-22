@@ -50,7 +50,7 @@ export function AppShell() {
   }, []);
 
   return (
-    <div className="flex flex-col h-screen bg-app text-primary font-sans overflow-hidden">
+    <div className="flex flex-col h-screen bg-app text-primary font-sans overflow-hidden" style={{ backgroundColor: 'var(--background)' }}>
       
       {/* <CommandPalette /> */}
       

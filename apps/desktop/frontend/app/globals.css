@@ -9,44 +9,44 @@
     --font-mono: 'Zaroxi Mono', 'JetBrainsMono Nerd Font Mono', 'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace;
     --font-icon: 'Zaroxi Mono', 'JetBrainsMono Nerd Font Mono', monospace;
     
-    /* Color tokens - Updated for clean light theme */
-    --background: 0 0% 98%;  /* #fafafa */
-    --foreground: 0 0% 15%;  /* #262626 */
+    /* Color tokens - Professional IDE theme */
+    --background: 0 0% 96%;  /* #f5f5f5 */
+    --foreground: 0 0% 13%;  /* #212121 */
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 15%;
+    --card-foreground: 0 0% 13%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 15%;
-    --primary: 0 0% 15%;
+    --popover-foreground: 0 0% 13%;
+    --primary: 0 0% 13%;
     --primary-foreground: 0 0% 98%;
     --secondary: 0 0% 96%;
-    --secondary-foreground: 0 0% 15%;
+    --secondary-foreground: 0 0% 13%;
     --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 55%;  /* #8c8c8c */
+    --muted-foreground: 0 0% 45%;  /* #737373 */
     --accent: 0 0% 96%;
-    --accent-foreground: 0 0% 15%;
+    --accent-foreground: 0 0% 13%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: hsl(0 0% 85%);  /* #d9d9d9 */
+    --border: hsl(0 0% 88%);  /* #e0e0e0 */
     --input: 0 0% 100%;
     --ring: 222.2 84% 4.9%;
     --radius: 0.5rem;
     --sidebar: 0 0% 98%;  /* #fafafa */
-    --editor: 0 0% 98%;   /* #fafafa */
-    --editor-foreground: 0 0% 15%;  /* #262626 */
+    --editor: 0 0% 100%;   /* #ffffff */
+    --editor-foreground: 0 0% 13%;  /* #212121 */
     
-    /* Status bar colors - match the theme */
-    --status-bar: hsl(0 0% 98%);  /* #fafafa */
-    --status-bar-foreground: hsl(0 0% 35%);  /* #595959 */
-    --status-bar-border: hsl(0 0% 85%);  /* #d9d9d9 */
+    /* Status bar colors */
+    --status-bar: hsl(0 0% 96%);  /* #f5f5f5 */
+    --status-bar-foreground: hsl(0 0% 45%);  /* #737373 */
+    --status-bar-border: hsl(0 0% 88%);  /* #e0e0e0 */
     
     /* Additional theme-specific colors */
-    --status-bar-background: hsl(0 0% 98%);  /* #fafafa */
-    --status-bar-foreground: hsl(0 0% 35%);  /* #595959 */
-    --status-bar-border: hsl(0 0% 85%);  /* #d9d9d9 */
+    --status-bar-background: hsl(0 0% 96%);  /* #f5f5f5 */
+    --status-bar-foreground: hsl(0 0% 45%);  /* #737373 */
+    --status-bar-border: hsl(0 0% 88%);  /* #e0e0e0 */
     
     /* Shell background from theme */
-    --shell-background: hsl(0 0% 98%);  /* #fafafa */
-    --text-secondary: hsl(0 0% 35%);  /* #595959 */
+    --shell-background: hsl(0 0% 96%);  /* #f5f5f5 */
+    --text-secondary: hsl(0 0% 45%);  /* #737373 */
   }
 
   .dark {
