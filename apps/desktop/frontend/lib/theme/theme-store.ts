@@ -175,6 +175,8 @@ async function setupThemeListener() {
 function updateCssVariables(isDark: boolean) {
   const root = document.documentElement;
   
+  console.log(`Setting theme to ${isDark ? 'dark' : 'light'}`);
+  
   if (isDark) {
     root.classList.add('dark');
     root.classList.remove('light');
@@ -185,13 +187,26 @@ function updateCssVariables(isDark: boolean) {
   
   // Set data attribute for CSS selectors
   root.setAttribute('data-theme', isDark ? 'dark' : 'light');
+  
+  // Also update CSS variables for light theme explicitly
+  if (!isDark) {
+    // Ensure light theme variables are applied
+    root.style.setProperty('--editor-background', '0 0% 100%');
+    root.style.setProperty('--panel-background', '0 0% 98%');
+    root.style.setProperty('--activity-rail-background', '0 0% 96%');
+  }
 }
 
 // Initialize theme on app start
 export function initializeTheme() {
   const store = useThemeStore.getState();
   
-  // Load saved theme
+  // Apply theme immediately based on current state (from localStorage)
+  // This prevents flash of incorrect theme
+  const { themeMode, isDark } = store;
+  updateCssVariables(isDark);
+  
+  // Then load saved theme (which may override if different from localStorage)
   store.loadThemeSettings().catch(error => {
     console.error('Failed to load theme settings:', error);
     // Ensure loading state is cleared even on error

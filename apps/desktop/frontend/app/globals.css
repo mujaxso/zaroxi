@@ -67,42 +67,55 @@
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 75.1%;  /* Brighter for better readability */
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: hsl(220 10% 45%);
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar: 222.2 84% 6.9%;
-    --editor: 222.2 84% 4.9%;
-    --editor-foreground: 210 40% 98%;
+    /* Override all light theme variables with dark theme values */
+    --background: 0 0% 9%;  /* #171717 - app_background from Rust dark theme */
+    --panel-background: 0 0% 13%;  /* #212121 - panel_background from Rust dark theme */
+    --editor-background: 0 0% 10%;  /* #1a1a1a - editor_background from Rust dark theme */
+    --foreground: 0 0% 98%;  /* #fafafa - text_primary from Rust dark theme */
+    --text-secondary: 0 0% 88%;  /* #e0e0e0 - text_secondary from Rust dark theme */
+    --text-muted: 0 0% 75%;  /* #bfbfbf - text_muted from Rust dark theme */
+    --text-faint: 0 0% 60%;  /* #999999 - text_faint from Rust dark theme */
+    --text-disabled: 0 0% 45%;  /* #737373 - text_disabled from Rust dark theme */
+    --text-link: 210 100% 70%;  /* #66b3ff - text_link from Rust dark theme */
+    --border: 0 0% 27%;  /* #454545 - border from Rust dark theme */
+    --accent: 210 100% 70%;  /* #66b3ff - accent from Rust dark theme */
+    --accent-hover: 210 100% 80%;  /* #80ccff - accent_hover from Rust dark theme */
+    --success: 142 70% 60%;  /* #66d999 - success from Rust dark theme */
+    --warning: 38 100% 70%;  /* #ffbf66 - warning from Rust dark theme */
+    --error: 0 70% 70%;  /* #ff8c99 - error from Rust dark theme */
     
-    /* Status bar colors for dark theme - neutral dark */
-    --status-bar: hsl(240 5% 15%);
-    --status-bar-foreground: hsl(215 20.2% 85.1%);  /* Brighter text */
-    --status-bar-border: hsl(220 10% 45%);
+    /* For compatibility */
+    --sidebar: 0 0% 13%;  /* #212121 */
+    --editor: 0 0% 10%;  /* #1a1a1a */
+    --card: 0 0% 13%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 13%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 13%;
+    --secondary: 0 0% 20%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 20%;
+    --muted-foreground: 0 0% 75%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 70% 70%;
+    --destructive-foreground: 0 0% 98%;
+    --input: 0 0% 20%;
+    --ring: 210 100% 70%;
     
-    /* Additional theme-specific colors */
-    --status-bar-background: hsl(240 5% 15%);
-    --status-bar-foreground: hsl(215 20.2% 85.1%);
-    --status-bar-border: hsl(220 10% 45%);
+    /* Status bar */
+    --status-bar-background: 0 0% 14%;  /* #242428 - status_bar_background from Rust dark theme */
+    --status-bar-foreground: 0 0% 88%;  /* #e0e0e0 */
+    --status-bar-border: 0 0% 27%;  /* #454545 */
     
-    /* Shell background from theme */
-    --shell-background: hsl(240 5% 15%);
-    --text-secondary: hsl(215 20.2% 85.1%);
+    /* Shell */
+    --shell-background: 0 0% 14%;  /* #242428 */
+    
+    /* Activity rail */
+    --activity-rail-background: 0 0% 10%;  /* #1a1a1a - activity_rail_background from Rust dark theme */
+    
+    /* Title bar */
+    --title-bar-background: 0 0% 8%;  /* #141414 - title_bar_background from Rust dark theme */
   }
 }
 

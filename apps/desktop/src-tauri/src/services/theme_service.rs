@@ -59,9 +59,19 @@ impl ThemeService {
         };
         
         // Small delay to ensure frontend is ready
-        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+        tokio::time::sleep(std::time::Duration::from_millis(500)).await;
         
         // Emit event to frontend with theme data
+        let _ = self.app_handle.emit(
+            "theme:changed",
+            serde_json::json!({
+                "mode": theme_mode,
+                "isDark": is_dark,
+            }),
+        );
+        
+        // Also emit a second time after a short delay to ensure it's received
+        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
         let _ = self.app_handle.emit(
             "theme:changed",
             serde_json::json!({
