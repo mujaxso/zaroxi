@@ -42,7 +42,7 @@ export function ActivityRail({ className }: ActivityRailProps) {
                       'relative w-10 h-10 flex items-center justify-center rounded-md transition-all duration-150',
                       isActive
                         ? 'bg-accent text-on-accent shadow-sm'
-                        : 'text-secondary hover:bg-hover-bg hover:text-primary active:scale-95'
+                        : 'text-primary hover:bg-hover-bg hover:text-accent active:scale-95'
                     )}
                     aria-label={activity.label}
                   >
@@ -91,7 +91,7 @@ export function ActivityRail({ className }: ActivityRailProps) {
                       'relative w-10 h-10 flex items-center justify-center rounded-md transition-all duration-150',
                       isActive
                         ? 'bg-accent text-on-accent shadow-sm'
-                        : 'text-secondary hover:bg-hover-bg hover:text-primary active:scale-95'
+                        : 'text-primary hover:bg-hover-bg hover:text-accent active:scale-95'
                     )}
                     aria-label={activity.label}
                   >

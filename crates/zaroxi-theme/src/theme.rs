@@ -203,12 +203,12 @@ impl SemanticColors {
         Self {
             // Background surfaces - Blueish dark theme for better contrast
             app_background: Color::from_rgb(0.09, 0.11, 0.16),           // #171c29 - Base with blue tint
-            shell_background: Color::from_rgb(0.11, 0.13, 0.18),         // #1c212e - Shell
+            shell_background: Color::from_rgb(0.14, 0.14, 0.16),         // #242428 - Shell (neutral dark)
             panel_background: Color::from_rgb(0.13, 0.15, 0.20),         // #212632 - Panels
             elevated_panel_background: Color::from_rgb(0.15, 0.17, 0.22), // #262b38 - Elevated
             editor_background: Color::from_rgb(0.10, 0.12, 0.17),        // #1a1f2c - Editor
             input_background: Color::from_rgb(0.13, 0.15, 0.20),         // #212632 - Inputs
-            status_bar_background: Color::from_rgb(0.11, 0.13, 0.18),    // #1c212e - Status bar matches shell
+            status_bar_background: Color::from_rgb(0.14, 0.14, 0.16),    // #242428 - Neutral dark, not blue
             title_bar_background: Color::from_rgb(0.08, 0.10, 0.15),     // #141a25 - Title bar
             activity_rail_background: Color::from_rgb(0.10, 0.12, 0.17), // #1a1f2c - Activity rail
             sidebar_background: Color::from_rgb(0.13, 0.15, 0.20),       // #212632 - Sidebar
@@ -216,11 +216,11 @@ impl SemanticColors {
             tab_active_background: Color::from_rgb(0.10, 0.12, 0.17),    // #1a1f2c - Active tab matches editor
             assistant_panel_background: Color::from_rgb(0.13, 0.15, 0.20), // #212632 - Right panel
             
-            // Text colors - Better contrast for readability
-            text_primary: Color::from_rgb(0.95, 0.96, 0.98),            // #f2f5fa - Primary text
-            text_secondary: Color::from_rgb(0.80, 0.83, 0.88),          // #ccd4e0 - Secondary
-            text_muted: Color::from_rgb(0.65, 0.68, 0.75),              // #a6adbf - Muted
-            text_faint: Color::from_rgb(0.50, 0.53, 0.60),              // #808899 - Faint
+            // Text colors - Professional IDE with excellent contrast
+            text_primary: Color::from_rgb(0.98, 0.98, 0.98),            // #fafafa - Primary text (brighter)
+            text_secondary: Color::from_rgb(0.88, 0.90, 0.94),          // #e0e6f0 - Secondary (higher contrast)
+            text_muted: Color::from_rgb(0.75, 0.78, 0.85),              // #bfc7d9 - Muted (still readable)
+            text_faint: Color::from_rgb(0.60, 0.63, 0.70),              // #99a1b3 - Faint
             text_on_accent: Color::from_rgb(1.0, 1.0, 1.0),             // #ffffff - Text on accent
             text_on_surface: Color::from_rgb(0.95, 0.96, 0.98),         // #f2f5fa - Text on surfaces
             text_disabled: Color::from_rgb(0.45, 0.48, 0.55),           // #737a8c - Disabled

@@ -30,11 +30,17 @@ export function StatusBar({ className }: StatusBarProps) {
   });
 
   return (
-    <div className={cn(
-      "h-7 border-t border-divider bg-shell-background flex items-center justify-between px-3 text-xs font-sans",
-      "text-secondary",
-      className
-    )}>
+    <div 
+      className={cn(
+        "h-7 border-t border-divider flex items-center justify-between px-3 text-xs font-sans",
+        "text-status-bar-foreground",
+        className
+      )}
+      style={{
+        backgroundColor: 'var(--status-bar-background)',
+        borderColor: 'var(--status-bar-border)',
+      }}
+    >
       {/* Left section: Workspace info */}
       <div className="flex items-center space-x-4">
         <div className="flex items-center space-x-1.5">

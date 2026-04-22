@@ -61,7 +61,7 @@
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
     --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted-foreground: 215 20.2% 75.1%;  /* Brighter for better readability */
     --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
@@ -73,15 +73,19 @@
     --editor: 222.2 84% 4.9%;
     --editor-foreground: 210 40% 98%;
     
-    /* Status bar colors for dark theme - match shell_background from theme */
-    --status-bar: hsl(217.2 32.6% 10.5%);
-    --status-bar-foreground: hsl(215 20.2% 75.1%);
+    /* Status bar colors for dark theme - neutral dark */
+    --status-bar: hsl(240 5% 15%);
+    --status-bar-foreground: hsl(215 20.2% 85.1%);  /* Brighter text */
     --status-bar-border: hsl(217.2 32.6% 17.5%);
     
     /* Additional theme-specific colors */
-    --status-bar-background: hsl(217.2 32.6% 10.5%);
-    --status-bar-foreground: hsl(215 20.2% 75.1%);
+    --status-bar-background: hsl(240 5% 15%);
+    --status-bar-foreground: hsl(215 20.2% 85.1%);
     --status-bar-border: hsl(217.2 32.6% 17.5%);
+    
+    /* Shell background from theme */
+    --shell-background: hsl(240 5% 15%);
+    --text-secondary: hsl(215 20.2% 85.1%);
   }
 }
 
@@ -124,16 +128,16 @@
 }
 
 @layer components {
-  /* Status bar styles - use theme colors directly */
+  /* Status bar styles */
   .bg-status-bar {
-    @apply bg-status-bar-background;
+    background-color: var(--status-bar-background);
   }
   
-  .text-status-bar {
-    @apply text-status-bar-foreground;
+  .text-status-bar-foreground {
+    color: var(--status-bar-foreground);
   }
   
   .border-status-bar {
-    @apply border-status-bar-border;
+    border-color: var(--status-bar-border);
   }
 }
