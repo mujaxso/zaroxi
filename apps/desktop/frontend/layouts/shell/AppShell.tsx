@@ -50,7 +50,7 @@ export function AppShell() {
   }, []);
 
   return (
-    <div className="flex flex-col h-screen bg-app text-primary font-sans">
+    <div className="flex flex-col h-screen bg-app text-primary font-sans overflow-hidden">
       
       {/* <CommandPalette /> */}
       
@@ -59,7 +59,7 @@ export function AppShell() {
       
       <div className="flex flex-1 overflow-hidden">
         {/* Activity Rail - Always visible */}
-        <div className="h-full">
+        <div className="h-full border-r border-divider">
           <ActivityRail />
         </div>
         
@@ -70,9 +70,9 @@ export function AppShell() {
         
         {/* Settings Panel (full width when active) */}
         {isSettingsActive && (
-          <div className="flex-1 flex flex-col overflow-hidden bg-app">
+          <div className="flex-1 flex flex-col overflow-hidden bg-panel">
             <Suspense fallback={
-              <div className="p-4 bg-app">
+              <div className="p-4 bg-panel">
                 <div className="space-y-2">
                   <div className="h-4 bg-muted rounded animate-pulse w-3/4"></div>
                   <div className="h-4 bg-muted rounded animate-pulse w-1/2"></div>
@@ -87,7 +87,7 @@ export function AppShell() {
         
         {/* Main Content Area (Editor) */}
         {showMainContent && (
-          <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 flex flex-col overflow-hidden border-l border-divider">
             <div className="flex-1 overflow-hidden bg-editor">
               <EditorContainer />
             </div>

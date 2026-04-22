@@ -27,7 +27,7 @@ export function ActivityRail({ className }: ActivityRailProps) {
     <TooltipProvider delayDuration={300}>
       <div className={cn('w-12 flex flex-col items-center py-4 border-r border-divider bg-activity-rail h-full', className)}>
         {/* Top activity items */}
-        <div className="flex flex-col items-center space-y-4">
+        <div className="flex flex-col items-center space-y-3">
           {topActivities.map((activity) => {
             const isActive = activity.side === 'left' 
               ? activeLeftPanel === activity.id && isLeftPanelVisible
@@ -39,25 +39,29 @@ export function ActivityRail({ className }: ActivityRailProps) {
                   <button
                     onClick={() => togglePanel(activity.id)}
                     className={cn(
-                      'relative w-10 h-10 flex items-center justify-center rounded transition-colors',
+                      'relative w-9 h-9 flex items-center justify-center rounded-md transition-all duration-150',
                       isActive
-                        ? 'bg-accent text-on-accent'
-                        : 'hover:bg-hover-bg text-secondary hover:text-primary'
+                        ? 'bg-accent text-on-accent shadow-sm'
+                        : 'text-muted hover:bg-hover-bg hover:text-primary active:scale-95'
                     )}
                     aria-label={activity.label}
                   >
-                    <Icon name={activity.icon} size={18} />
+                    <Icon 
+                      name={activity.icon} 
+                      size={16} 
+                      className={isActive ? '' : 'opacity-90 hover:opacity-100'}
+                    />
                     {activity.badge !== undefined && activity.badge > 0 && (
-                      <span className="absolute -top-1 -right-1 w-4 h-4 text-xs flex items-center justify-center rounded-full bg-error text-on-accent font-medium">
+                      <span className="absolute -top-1 -right-1 w-4 h-4 text-xs flex items-center justify-center rounded-full bg-error text-on-accent font-medium border border-activity-rail">
                         {activity.badge > 9 ? '9+' : activity.badge}
                       </span>
                     )}
                   </button>
                 </TooltipTrigger>
-                <TooltipContent side="right">
-                  <div className="text-sm font-medium">{activity.label}</div>
+                <TooltipContent side="right" className="border border-divider bg-panel">
+                  <div className="text-sm font-semibold text-primary">{activity.label}</div>
                   {activity.description && (
-                    <div className="text-xs text-muted-foreground mt-0.5">{activity.description}</div>
+                    <div className="text-xs text-muted mt-0.5">{activity.description}</div>
                   )}
                   {activity.shortcut && (
                     <div className="text-xs font-mono mt-1 text-accent">{activity.shortcut}</div>
@@ -69,10 +73,10 @@ export function ActivityRail({ className }: ActivityRailProps) {
         </div>
         
         {/* Spacer - This pushes the bottom items down */}
-        <div className="flex-1 min-h-8" />
+        <div className="flex-1 min-h-6" />
         
         {/* Bottom activity items (Settings) */}
-        <div className="flex flex-col items-center space-y-4">
+        <div className="flex flex-col items-center space-y-3">
           {bottomActivities.map((activity) => {
             const isActive = activity.side === 'left' 
               ? activeLeftPanel === activity.id && isLeftPanelVisible
@@ -84,25 +88,29 @@ export function ActivityRail({ className }: ActivityRailProps) {
                   <button
                     onClick={() => togglePanel(activity.id)}
                     className={cn(
-                      'relative w-10 h-10 flex items-center justify-center rounded transition-colors mb-2',
+                      'relative w-9 h-9 flex items-center justify-center rounded-md transition-all duration-150',
                       isActive
-                        ? 'bg-accent text-on-accent'
-                        : 'hover:bg-hover-bg text-secondary hover:text-primary'
+                        ? 'bg-accent text-on-accent shadow-sm'
+                        : 'text-muted hover:bg-hover-bg hover:text-primary active:scale-95'
                     )}
                     aria-label={activity.label}
                   >
-                    <Icon name={activity.icon} size={18} />
+                    <Icon 
+                      name={activity.icon} 
+                      size={16} 
+                      className={isActive ? '' : 'opacity-90 hover:opacity-100'}
+                    />
                     {activity.badge !== undefined && activity.badge > 0 && (
-                      <span className="absolute -top-1 -right-1 w-4 h-4 text-xs flex items-center justify-center rounded-full bg-error text-on-accent font-medium">
+                      <span className="absolute -top-1 -right-1 w-4 h-4 text-xs flex items-center justify-center rounded-full bg-error text-on-accent font-medium border border-activity-rail">
                         {activity.badge > 9 ? '9+' : activity.badge}
                       </span>
                     )}
                   </button>
                 </TooltipTrigger>
-                <TooltipContent side="right">
-                  <div className="text-sm font-medium">{activity.label}</div>
+                <TooltipContent side="right" className="border border-divider bg-panel">
+                  <div className="text-sm font-semibold text-primary">{activity.label}</div>
                   {activity.description && (
-                    <div className="text-xs text-muted-foreground mt-0.5">{activity.description}</div>
+                    <div className="text-xs text-muted mt-0.5">{activity.description}</div>
                   )}
                   {activity.shortcut && (
                     <div className="text-xs font-mono mt-1 text-accent">{activity.shortcut}</div>
