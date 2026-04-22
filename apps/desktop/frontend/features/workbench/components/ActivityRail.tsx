@@ -58,7 +58,7 @@ export function ActivityRail({ className }: ActivityRailProps) {
                     )}
                   </button>
                 </TooltipTrigger>
-                <TooltipContent side="right" className="border border-divider bg-panel shadow-lg">
+                <TooltipContent side="right" className="border bg-panel shadow-lg">
                   <div className="text-sm font-semibold text-primary">{activity.label}</div>
                   {activity.description && (
                     <div className="text-xs text-primary/80 mt-0.5">{activity.description}</div>
@@ -107,7 +107,7 @@ export function ActivityRail({ className }: ActivityRailProps) {
                     )}
                   </button>
                 </TooltipTrigger>
-                <TooltipContent side="right" className="border border-divider bg-panel shadow-lg">
+                <TooltipContent side="right" className="border bg-panel shadow-lg">
                   <div className="text-sm font-semibold text-primary">{activity.label}</div>
                   {activity.description && (
                     <div className="text-xs text-primary/80 mt-0.5">{activity.description}</div>

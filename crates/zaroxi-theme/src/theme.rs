@@ -226,10 +226,10 @@ impl SemanticColors {
             text_disabled: Color::from_rgb(0.45, 0.48, 0.55),           // #737a8c - Disabled
             text_link: Color::from_rgb(0.40, 0.70, 1.0),                // #66b3ff - Link blue
             
-            // UI elements
-            border: Color::from_rgb(0.25, 0.28, 0.35),                  // #404758 - Borders
-            border_subtle: Color::from_rgba(0.25, 0.28, 0.35, 0.4),     // Subtle borders
-            divider: Color::from_rgb(0.25, 0.28, 0.35),                 // #404758 - Dividers
+            // UI elements - Lighter borders to match theme better
+            border: Color::from_rgb(0.35, 0.38, 0.45),                  // #596173 - Lighter borders
+            border_subtle: Color::from_rgba(0.35, 0.38, 0.45, 0.4),     // Subtle borders
+            divider: Color::from_rgb(0.35, 0.38, 0.45),                 // #596173 - Dividers
             accent: Color::from_rgb(0.40, 0.70, 1.0),                   // #66b3ff - Accent blue
             accent_hover: Color::from_rgb(0.50, 0.80, 1.0),             // #80ccff - Hover accent
             accent_soft: Color::from_rgba(0.40, 0.70, 1.0, 0.15),       // Soft accent
@@ -296,10 +296,10 @@ impl SemanticColors {
             text_disabled: Color::from_rgb(0.70, 0.73, 0.80),           // #b3bad3 - Disabled
             text_link: Color::from_rgb(0.10, 0.50, 0.90),               // #1a80e6 - Link
             
-            // UI elements
-            border: Color::from_rgb(0.85, 0.87, 0.90),                  // #d9dee6 - Borders
-            border_subtle: Color::from_rgba(0.85, 0.87, 0.90, 0.5),     // Subtle borders
-            divider: Color::from_rgb(0.85, 0.87, 0.90),                 // #d9dee6 - Dividers
+            // UI elements - Slightly darker borders for better contrast
+            border: Color::from_rgb(0.80, 0.82, 0.85),                  // #ccd1d9 - Borders
+            border_subtle: Color::from_rgba(0.80, 0.82, 0.85, 0.5),     // Subtle borders
+            divider: Color::from_rgb(0.80, 0.82, 0.85),                 // #ccd1d9 - Dividers
             accent: Color::from_rgb(0.10, 0.50, 0.90),                  // #1a80e6 - Accent
             accent_hover: Color::from_rgb(0.08, 0.45, 0.82),            // #1473d1 - Hover accent
             accent_soft: Color::from_rgba(0.10, 0.50, 0.90, 0.12),      // Soft accent

@@ -38,12 +38,12 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
     <div 
       className={cn(
         'h-full bg-panel overflow-hidden flex flex-col',
-        side === 'left' ? 'border-r border-divider' : 'border-l border-divider',
+        side === 'left' ? 'border-r' : 'border-l',
         className
       )}
       style={{ width: panelWidth }}
     >
-      <div className="flex-shrink-0 border-b border-divider px-4 py-2.5 bg-editor">
+      <div className="flex-shrink-0 border-b px-4 py-2.5 bg-editor">
         <div className="flex items-center justify-between h-6">
           <div className="flex items-center gap-2">
             <h3 className="font-bold text-sm text-primary leading-none">{activityItem.label}</h3>
