@@ -99,28 +99,28 @@ export function TopBar({ className }: TopBarProps) {
         <div className="flex items-center gap-0">
           <button
             onClick={() => togglePanel('explorer')}
-            className="px-3 py-1.5 text-xs hover:bg-hover-bg transition-colors text-secondary hover:text-accent font-medium"
+            className="px-3 py-1.5 text-xs hover:bg-hover-bg transition-colors text-primary hover:text-accent font-medium"
             data-no-drag="true"
           >
             File
           </button>
           <button
             onClick={() => togglePanel('search')}
-            className="px-3 py-1.5 text-xs hover:bg-hover-bg transition-colors text-secondary hover:text-accent font-medium"
+            className="px-3 py-1.5 text-xs hover:bg-hover-bg transition-colors text-primary hover:text-accent font-medium"
             data-no-drag="true"
           >
             Edit
           </button>
           <button
             onClick={() => togglePanel('settings')}
-            className="px-3 py-1.5 text-xs hover:bg-hover-bg transition-colors text-secondary hover:text-accent font-medium"
+            className="px-3 py-1.5 text-xs hover:bg-hover-bg transition-colors text-primary hover:text-accent font-medium"
             data-no-drag="true"
           >
             View
           </button>
           <button
             onClick={() => togglePanel('assistant')}
-            className="px-3 py-1.5 text-xs hover:bg-hover-bg transition-colors text-secondary hover:text-accent font-medium"
+            className="px-3 py-1.5 text-xs hover:bg-hover-bg transition-colors text-primary hover:text-accent font-medium"
             data-no-drag="true"
           >
             Tools
