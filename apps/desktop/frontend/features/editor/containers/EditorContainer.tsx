@@ -109,17 +109,17 @@ export function EditorContainer() {
 
   return (
     <div className="h-full flex flex-col bg-editor">
-      <div className="border-b border-divider px-3 py-1.5 flex items-center justify-between bg-activity-rail">
-        <div className="flex items-center space-x-2">
-          <div className="flex items-center space-x-1.5">
-            <Icon name="file" size={14} className="text-primary" />
+      <div className="border-b border-divider px-4 py-2.5 flex items-center justify-between bg-activity-rail">
+        <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2">
+            <Icon name="file" size={15} className="text-primary" />
             <span className="text-sm font-semibold text-primary">{fileName}</span>
             {isLoading && (
-              <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+              <div className="w-2.5 h-2.5 rounded-full bg-accent animate-pulse" />
             )}
           </div>
           {activeFilePath && (
-            <span className="text-xs text-primary/80 font-mono truncate max-w-md" title={activeFilePath}>
+            <span className="text-xs text-primary/80 font-mono truncate max-w-lg" title={activeFilePath}>
               {activeFilePath}
             </span>
           )}
@@ -128,9 +128,9 @@ export function EditorContainer() {
           {activeFilePath && (
             <button
               onClick={handleEditorSave}
-              className="save-button px-2.5 py-1 text-xs bg-accent text-on-accent rounded hover:bg-accent-hover transition-colors flex items-center space-x-1.5 font-medium"
+              className="save-button px-3 py-1.5 text-xs bg-accent text-on-accent rounded hover:bg-accent-hover transition-colors flex items-center space-x-1.5 font-medium"
             >
-              <Icon name="save" size={12} />
+              <Icon name="save" size={13} />
               <span>Save</span>
             </button>
           )}

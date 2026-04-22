@@ -44,12 +44,12 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
       )}
       style={{ width: panelWidth }}
     >
-      <div className="flex-shrink-0 border-b border-divider px-3 py-1.5 bg-activity-rail">
+      <div className="flex-shrink-0 border-b border-divider px-4 py-2.5 bg-activity-rail">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <h3 className="font-semibold text-sm text-primary">{activityItem.label}</h3>
             {activityItem.badge !== undefined && activityItem.badge > 0 && (
-              <span className="px-1 py-0.5 text-xs rounded-full bg-accent text-on-accent font-medium">
+              <span className="px-1.5 py-0.5 text-xs rounded-full bg-accent text-on-accent font-medium">
                 {activityItem.badge}
               </span>
             )}
@@ -61,7 +61,7 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
           )}
         </div>
         {activityItem.description && (
-          <p className="text-xs text-primary/80 mt-0.5">{activityItem.description}</p>
+          <p className="text-xs text-primary/80 mt-1">{activityItem.description}</p>
         )}
       </div>
       
