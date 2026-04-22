@@ -212,21 +212,26 @@ function applyThemeImmediately() {
   try {
     const saved = localStorage.getItem('zaroxi-theme-storage');
     let isDark = false;
+    let themeMode: 'dark' | 'light' | 'system' = 'system';
     
     if (saved) {
       const parsed = JSON.parse(saved);
       if (parsed.state && parsed.state.themeMode) {
-        const themeMode = parsed.state.themeMode;
+        themeMode = parsed.state.themeMode;
         const isSystem = themeMode === 'system';
         const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         isDark = themeMode === 'dark' || (isSystem && systemPrefersDark);
       } else {
         // If no saved theme, use system preference
-        isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        isDark = systemPrefersDark;
+        themeMode = 'system';
       }
     } else {
       // If no saved data, use system preference
-      isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      isDark = systemPrefersDark;
+      themeMode = 'system';
     }
     
     // Update CSS variables immediately
@@ -241,18 +246,26 @@ function applyThemeImmediately() {
     root.setAttribute('data-theme', isDark ? 'dark' : 'light');
     
     // Also update the store state
-    const themeMode = saved ? JSON.parse(saved).state?.themeMode || 'system' : 'system';
     useThemeStore.setState({
       themeMode,
       isDark,
       isSystem: themeMode === 'system',
-      isLoading: true,
+      isLoading: false, // Don't load from backend if we already have the theme
     });
+    
+    // Store the applied theme to prevent unnecessary backend loading
+    (window as any).__zaroxi_theme_applied = true;
   } catch (error) {
     console.error('Failed to apply theme immediately:', error);
     // Default to dark theme on error
     document.documentElement.classList.add('dark');
     document.documentElement.setAttribute('data-theme', 'dark');
+    useThemeStore.setState({
+      themeMode: 'dark',
+      isDark: true,
+      isSystem: false,
+      isLoading: false,
+    });
   }
 }
 
@@ -263,12 +276,14 @@ applyThemeImmediately();
 export function initializeTheme() {
   const store = useThemeStore.getState();
   
-  // Then load from backend to get the actual theme
-  store.loadThemeSettings().catch(error => {
-    console.error('Failed to load theme settings:', error);
-    // Ensure loading state is cleared even on error
-    useThemeStore.setState({ isLoading: false });
-  });
+  // Only load from backend if we haven't already applied the theme
+  // This prevents double theme application and flash
+  if (!(window as any).__zaroxi_theme_applied) {
+    store.loadThemeSettings().catch(error => {
+      console.error('Failed to load theme settings:', error);
+      useThemeStore.setState({ isLoading: false });
+    });
+  }
   
   // Listen to system theme changes
   const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');

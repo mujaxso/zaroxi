@@ -59,6 +59,8 @@ impl ThemeService {
         };
         
         // Emit event to frontend with theme data
+        // The frontend already applies theme immediately from localStorage
+        // So this is just to ensure consistency
         let _ = self.app_handle.emit(
             "theme:changed",
             serde_json::json!({
