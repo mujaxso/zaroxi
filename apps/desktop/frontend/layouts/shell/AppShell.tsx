@@ -70,7 +70,7 @@ export function AppShell() {
         
         {/* Settings Panel (full width when active) */}
         {isSettingsActive && (
-          <div className="flex-1 flex flex-col overflow-hidden bg-panel">
+          <div className="flex-1 flex flex-col overflow-hidden bg-panel border-l border-divider">
             <Suspense fallback={
               <div className="p-4 bg-panel">
                 <div className="space-y-2">
@@ -87,7 +87,7 @@ export function AppShell() {
         
         {/* Main Content Area (Editor) */}
         {showMainContent && (
-          <div className="flex-1 flex flex-col overflow-hidden border-l border-divider">
+          <div className="flex-1 flex flex-col overflow-hidden">
             <div className="flex-1 overflow-hidden bg-editor">
               <EditorContainer />
             </div>

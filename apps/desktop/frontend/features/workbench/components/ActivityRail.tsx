@@ -39,17 +39,17 @@ export function ActivityRail({ className }: ActivityRailProps) {
                   <button
                     onClick={() => togglePanel(activity.id)}
                     className={cn(
-                      'relative w-9 h-9 flex items-center justify-center rounded-md transition-all duration-150',
+                      'relative w-10 h-10 flex items-center justify-center rounded-md transition-all duration-150',
                       isActive
                         ? 'bg-accent text-on-accent shadow-sm'
-                        : 'text-muted hover:bg-hover-bg hover:text-primary active:scale-95'
+                        : 'text-secondary hover:bg-hover-bg hover:text-primary active:scale-95'
                     )}
                     aria-label={activity.label}
                   >
                     <Icon 
                       name={activity.icon} 
-                      size={16} 
-                      className={isActive ? '' : 'opacity-90 hover:opacity-100'}
+                      size={18} 
+                      className={isActive ? '' : 'opacity-80 hover:opacity-100'}
                     />
                     {activity.badge !== undefined && activity.badge > 0 && (
                       <span className="absolute -top-1 -right-1 w-4 h-4 text-xs flex items-center justify-center rounded-full bg-error text-on-accent font-medium border border-activity-rail">
