@@ -75,7 +75,7 @@ export function TopBar({ className }: TopBarProps) {
   return (
     <div 
       className={cn(
-        'h-8 flex items-center justify-between px-3 border-b',
+        'h-10 flex items-center justify-between px-4 border-b',
         'bg-title-bar text-title-bar-foreground',
         'select-none',
         isTauriEnv ? 'cursor-default' : 'cursor-auto',
@@ -92,35 +92,35 @@ export function TopBar({ className }: TopBarProps) {
           className="flex items-center gap-2" 
           {...(isTauriEnv ? { 'data-tauri-drag-region': 'true' } : {})}
         >
-          <Icon name="code" size={16} className="text-accent" />
+          <Icon name="code" size={18} className="text-accent" />
           <span className="font-semibold text-sm text-primary">Zaroxi Studio</span>
         </div>
         
         <div className="flex items-center gap-0">
           <button
             onClick={() => togglePanel('explorer')}
-            className="px-2 py-1 text-xs hover:bg-hover-bg transition-colors text-primary hover:text-accent font-medium rounded-sm"
+            className="px-3 py-2 text-xs hover:bg-hover-bg transition-colors text-primary hover:text-accent font-medium rounded-sm"
             data-no-drag="true"
           >
             File
           </button>
           <button
             onClick={() => togglePanel('search')}
-            className="px-2 py-1 text-xs hover:bg-hover-bg transition-colors text-primary hover:text-accent font-medium rounded-sm"
+            className="px-3 py-2 text-xs hover:bg-hover-bg transition-colors text-primary hover:text-accent font-medium rounded-sm"
             data-no-drag="true"
           >
             Edit
           </button>
           <button
             onClick={() => togglePanel('settings')}
-            className="px-2 py-1 text-xs hover:bg-hover-bg transition-colors text-primary hover:text-accent font-medium rounded-sm"
+            className="px-3 py-2 text-xs hover:bg-hover-bg transition-colors text-primary hover:text-accent font-medium rounded-sm"
             data-no-drag="true"
           >
             View
           </button>
           <button
             onClick={() => togglePanel('assistant')}
-            className="px-2 py-1 text-xs hover:bg-hover-bg transition-colors text-primary hover:text-accent font-medium rounded-sm"
+            className="px-3 py-2 text-xs hover:bg-hover-bg transition-colors text-primary hover:text-accent font-medium rounded-sm"
             data-no-drag="true"
           >
             Tools
@@ -130,10 +130,10 @@ export function TopBar({ className }: TopBarProps) {
 
       {/* Center section: Workspace context */}
       <div 
-        className="flex-1 flex justify-center" 
+        className="flex-1 flex justify-center items-center" 
         {...(isTauriEnv ? { 'data-tauri-drag-region': 'true' } : {})}
       >
-        <div className="text-xs text-primary/90 truncate max-w-md">
+        <div className="text-sm text-primary/90 truncate max-w-lg font-medium">
           No workspace open
         </div>
       </div>
@@ -144,44 +144,44 @@ export function TopBar({ className }: TopBarProps) {
           <>
             <button
               onClick={handleMinimize}
-              className="w-8 h-8 flex items-center justify-center rounded hover:bg-hover-bg transition-colors"
+              className="w-9 h-9 flex items-center justify-center rounded hover:bg-hover-bg transition-colors"
               aria-label="Minimize"
               data-no-drag="true"
             >
-              <Icon name="window-minimize" size={12} />
+              <Icon name="window-minimize" size={13} />
             </button>
             <button
               onClick={handleMaximize}
-              className="w-8 h-8 flex items-center justify-center rounded hover:bg-hover-bg transition-colors"
+              className="w-9 h-9 flex items-center justify-center rounded hover:bg-hover-bg transition-colors"
               aria-label={isMaximized ? 'Restore' : 'Maximize'}
               data-no-drag="true"
             >
-              <Icon name={isMaximized ? 'window-restore' : 'window-maximize'} size={12} />
+              <Icon name={isMaximized ? 'window-restore' : 'window-maximize'} size={13} />
             </button>
             <button
               onClick={handleClose}
-              className="w-8 h-8 flex items-center justify-center rounded hover:bg-destructive/20 hover:text-destructive transition-colors"
+              className="w-9 h-9 flex items-center justify-center rounded hover:bg-destructive/20 hover:text-destructive transition-colors"
               aria-label="Close"
               data-no-drag="true"
             >
-              <Icon name="window-close" size={12} />
+              <Icon name="window-close" size={13} />
             </button>
           </>
         ) : (
           <>
             <button
               onClick={() => togglePanel('settings')}
-              className="w-8 h-8 flex items-center justify-center rounded hover:bg-hover-bg transition-colors"
+              className="w-9 h-9 flex items-center justify-center rounded hover:bg-hover-bg transition-colors"
               aria-label="Settings"
             >
-              <Icon name="settings" size={14} />
+              <Icon name="settings" size={15} />
             </button>
             <button
               onClick={() => {}}
-              className="w-8 h-8 flex items-center justify-center rounded hover:bg-hover-bg transition-colors"
+              className="w-9 h-9 flex items-center justify-center rounded hover:bg-hover-bg transition-colors"
               aria-label="Theme"
             >
-              <Icon name="palette" size={14} />
+              <Icon name="palette" size={15} />
             </button>
           </>
         )}
