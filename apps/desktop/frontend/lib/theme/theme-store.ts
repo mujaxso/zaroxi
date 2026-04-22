@@ -207,36 +207,61 @@ function updateCssVariables(isDark: boolean) {
   root.setAttribute('data-theme', newTheme);
 }
 
-// Initialize theme on app start
-export function initializeTheme() {
-  const store = useThemeStore.getState();
-  
-  // First, try to read from localStorage immediately to prevent flash
+// Apply theme immediately when this module loads (before any React code runs)
+function applyThemeImmediately() {
   try {
     const saved = localStorage.getItem('zaroxi-theme-storage');
+    let isDark = false;
+    
     if (saved) {
       const parsed = JSON.parse(saved);
       if (parsed.state && parsed.state.themeMode) {
         const themeMode = parsed.state.themeMode;
         const isSystem = themeMode === 'system';
         const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        const isDark = themeMode === 'dark' || (isSystem && systemPrefersDark);
-        
-        // Apply theme immediately
-        updateCssVariables(isDark);
-        
-        // Update store state without triggering persistence
-        useThemeStore.setState({
-          themeMode,
-          isDark,
-          isSystem,
-          isLoading: true, // Still loading from backend
-        });
+        isDark = themeMode === 'dark' || (isSystem && systemPrefersDark);
+      } else {
+        // If no saved theme, use system preference
+        isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       }
+    } else {
+      // If no saved data, use system preference
+      isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     }
+    
+    // Update CSS variables immediately
+    const root = document.documentElement;
+    if (isDark) {
+      root.classList.add('dark');
+      root.classList.remove('light');
+    } else {
+      root.classList.add('light');
+      root.classList.remove('dark');
+    }
+    root.setAttribute('data-theme', isDark ? 'dark' : 'light');
+    
+    // Also update the store state
+    const themeMode = saved ? JSON.parse(saved).state?.themeMode || 'system' : 'system';
+    useThemeStore.setState({
+      themeMode,
+      isDark,
+      isSystem: themeMode === 'system',
+      isLoading: true,
+    });
   } catch (error) {
-    console.error('Failed to read theme from localStorage:', error);
+    console.error('Failed to apply theme immediately:', error);
+    // Default to dark theme on error
+    document.documentElement.classList.add('dark');
+    document.documentElement.setAttribute('data-theme', 'dark');
   }
+}
+
+// Call this immediately when the module is imported
+applyThemeImmediately();
+
+// Initialize theme on app start
+export function initializeTheme() {
+  const store = useThemeStore.getState();
   
   // Then load from backend to get the actual theme
   store.loadThemeSettings().catch(error => {
