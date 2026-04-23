@@ -19,12 +19,12 @@ export const LAYOUT = {
   /** Right‑side panel (assistant, extensions etc.) – wider for chat/reading */
   panelRight: {
     minWidth: 180,
-    defaultWidth: 260,
-    maxWidth: 350,
+    defaultWidth: 280,
+    maxWidth: 400,
     /** Minimum width when the window is narrow (must remain readable). */
-    minNarrowWidth: 100,
+    minNarrowWidth: 160,
     /** Maximum width when the window is narrow. */
-    maxNarrowWidth: 200,
+    maxNarrowWidth: 280,
   },
 
   /** Height of the compact top bar (px) */

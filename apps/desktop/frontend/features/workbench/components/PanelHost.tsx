@@ -35,14 +35,15 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
 
   // Compute responsive width bounds based on current layout mode
   const isNarrow = layoutMode === 'narrow';
-  // Use the same min/max for left and right so all panels behave identically
+  // Use distinct widths for left vs right panels (right is bigger)
   const minPanelWidth = isNarrow
-    ? LAYOUT.panelLeft.minNarrowWidth
-    : LAYOUT.panelLeft.minWidth;
+    ? (side === 'left' ? LAYOUT.panelLeft.minNarrowWidth : LAYOUT.panelRight.minNarrowWidth)
+    : (side === 'left' ? LAYOUT.panelLeft.minWidth : LAYOUT.panelRight.minWidth);
   const maxPanelWidth = isNarrow
-    ? LAYOUT.panelLeft.maxNarrowWidth
-    : LAYOUT.panelLeft.maxWidth;
-  const factor = 0.25; // all panels use the same proportional limit
+    ? (side === 'left' ? LAYOUT.panelLeft.maxNarrowWidth : LAYOUT.panelRight.maxNarrowWidth)
+    : (side === 'left' ? LAYOUT.panelLeft.maxWidth : LAYOUT.panelRight.maxWidth);
+  // Right panel gets a larger proportion of the window
+  const factor = side === 'left' ? 0.25 : 0.35;
 
   const windowWidth = typeof window !== 'undefined' ? window.innerWidth : 1024;
   const effectiveMinWidth = useMemo(() => {

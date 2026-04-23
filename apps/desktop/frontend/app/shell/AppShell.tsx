@@ -23,8 +23,9 @@ export function AppShell() {
   // Get activity items for the active panels
   const leftActivity = activeLeftPanel ? getActivityItem(activeLeftPanel) : null;
 
-  // Responsive collapse: auto‑close side panels when the window gets narrow
-  // so the editor always gets enough room.
+  // Responsive collapse: auto‑close *only* the left panel when the window gets narrow
+  // so the editor always gets enough room. The right (assistant) panel stays open
+  // and shrinks via its own responsive min‑width rules.
   const prevWidth = useRef(window.innerWidth);
   useEffect(() => {
     const handleResize = () => {
@@ -33,9 +34,7 @@ export function AppShell() {
         if (isLeftPanelVisible) {
           togglePanel(activeLeftPanel ?? 'explorer');
         }
-        if (isRightPanelVisible) {
-          togglePanel(activeRightPanel ?? 'assistant');
-        }
+        // Do NOT close the right panel – let it adapt fluidly.
       }
       prevWidth.current = currentWidth;
     };
