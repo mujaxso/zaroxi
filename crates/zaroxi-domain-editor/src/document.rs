@@ -348,7 +348,8 @@ impl Document {
         Ok(())
     }
 
-    /// Delete a range of characters.    pub fn delete(&mut self, start: usize, end: usize) -> Result<(), String> {
+    /// Delete a range of characters.
+    pub fn delete(&mut self, start: usize, end: usize) -> Result<(), String> {
         if self.large_file_mode.is_read_only() {
             return Err("Document is read-only (very large file)".to_string());
         }
