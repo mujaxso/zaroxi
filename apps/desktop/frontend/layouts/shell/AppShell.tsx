@@ -15,6 +15,7 @@ import { LAYOUT } from '@/features/workbench/config/layoutConstants';
 const SettingsPanel = lazy(() => import('@/features/settings/panel/SettingsPanel'));
 
 export function AppShell() {
+  const layoutMode = useLayoutMode();
   const { 
     activeLeftPanel, 
     isLeftPanelVisible, 
