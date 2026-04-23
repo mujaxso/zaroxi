@@ -156,21 +156,19 @@ export function CodeEditor({
   // Determine whether we are in virtual‑scrolling mode (large file)
   const isVirtualScrolling = !!onRequestLines;
 
+  // Compute first rendered line index (for transform offsets)
+  const linesToRender = isVirtualScrolling ? visibleLines : (localVisibleLines ?? []);
+  const firstRenderedLineIndex = linesToRender.length > 0 ? linesToRender[0].index : 0;
+
   // Render a read‑only line‑by‑line view for all files (both small and large)
   const renderVirtualLines = () => {
-    // Determine which lines to render
-    const linesToRender = isVirtualScrolling ? visibleLines : (localVisibleLines ?? []);
-    
-    // Compute offset based on the visible start line (without overscan)
-    const offsetY = actualFirstVisibleLine * LINE_HEIGHT;
-    
     return (
       <div
         className="absolute left-8 top-0 right-0 pr-4 font-mono"
         style={{
           fontSize: '14px',
           lineHeight: `${LINE_HEIGHT}px`,
-          transform: `translateY(${offsetY}px)`,
+          transform: `translateY(${firstRenderedLineIndex * LINE_HEIGHT}px)`,
         }}
       >
         {linesToRender.map((line) => (
@@ -202,7 +200,7 @@ export function CodeEditor({
             <div
               className="absolute left-0 top-0 w-8 bg-editor border-r border-border flex flex-col items-center font-mono text-xs text-muted-foreground"
               style={{
-                transform: `translateY(${actualFirstVisibleLine * LINE_HEIGHT}px)`,
+                transform: `translateY(${firstRenderedLineIndex * LINE_HEIGHT}px)`,
               }}
             >
               {lineNumbers.map((num) => (
