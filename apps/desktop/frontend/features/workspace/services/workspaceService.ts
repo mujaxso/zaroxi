@@ -80,6 +80,7 @@ export interface OpenDocumentResponse {
   charCount: number;
   largeFileMode: string;
   isReadOnly: boolean;
+  content?: string;
 }
 
 export interface VisibleLinesRequest {
@@ -185,16 +186,10 @@ export class WorkspaceService {
   }
 
   static async openFile(request: OpenFileRequest): Promise<OpenFileResponse> {
-    // Use the new document-based approach
+    // Use the new document-based approach which returns the full content
     const docResponse = await this.openDocument(request.path);
-    // Fetch initial visible lines (first 100 lines)
-    const visibleLines = await this.getVisibleLines({
-      documentId: docResponse.documentId,
-      startLine: 0,
-      count: 100,
-    });
-    // Combine lines into a single string for backward compatibility
-    const content = visibleLines.lines.map(l => l.text).join('\n');
+    // The response now includes the full file content
+    const content = docResponse.content ?? '';
     return {
       content,
       language: undefined, // Will be determined by the editor component
@@ -239,6 +234,7 @@ export class WorkspaceService {
         charCount: 5000,
         largeFileMode: 'Normal',
         isReadOnly: false,
+        content: '// Mock file content for development\n'.repeat(100),
       };
     }
     
