@@ -46,6 +46,11 @@ export function CodeEditor({
     return `${startLine}-${endLine}`;
   }, [scrollTop, containerHeight, totalLines]);
 
+  // Compute the actual first visible line (without overscan) for transform offsets
+  const actualFirstVisibleLine = useMemo(() => {
+    return Math.max(0, Math.floor(scrollTop / LINE_HEIGHT));
+  }, [scrollTop]);
+
   // Fetch visible lines when range changes
   useEffect(() => {
     if (!onRequestLines) return;
@@ -150,7 +155,7 @@ export function CodeEditor({
         style={{
           fontSize: '14px',
           lineHeight: `${LINE_HEIGHT}px`,
-          transform: `translateY(${Number(visibleRangeKey.split('-')[0]) * LINE_HEIGHT}px)`,
+          transform: `translateY(${actualFirstVisibleLine * LINE_HEIGHT}px)`,
         }}
       >
         {visibleLines.map((line) => (
@@ -182,7 +187,7 @@ export function CodeEditor({
             <div
               className="absolute left-0 top-0 w-8 bg-editor border-r border-border flex flex-col items-center font-mono text-xs text-muted-foreground"
               style={{
-                transform: `translateY(${Number(visibleRangeKey.split('-')[0]) * LINE_HEIGHT}px)`,
+                transform: `translateY(${actualFirstVisibleLine * LINE_HEIGHT}px)`,
               }}
             >
               {lineNumbers.map((num) => (
@@ -208,7 +213,7 @@ export function CodeEditor({
                   lineHeight: `${LINE_HEIGHT}px`,
                   letterSpacing: '0',
                   height: visibleText.split('\n').length * LINE_HEIGHT,
-                  transform: `translateY(${Number(visibleRangeKey.split('-')[0]) * LINE_HEIGHT}px)`,
+                  transform: `translateY(${actualFirstVisibleLine * LINE_HEIGHT}px)`,
                 }}
                 placeholder="Start typing..."
               />
