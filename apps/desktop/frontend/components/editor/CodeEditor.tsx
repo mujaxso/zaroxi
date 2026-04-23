@@ -64,6 +64,8 @@ export function CodeEditor({
     padding: 0,
     scrollbarWidth: 'none',
     msOverflowStyle: 'none',
+    wordBreak: 'break-all',
+    whiteSpace: 'pre-wrap',
   };
 
   if (readOnly) {
@@ -89,7 +91,7 @@ export function CodeEditor({
       spellCheck={false}
       autoComplete="off"
       autoCorrect="off"
-      wrap="off"
+      wrap="on"
     />
   );
 }
