@@ -161,9 +161,8 @@ export function CodeEditor({
     // Determine which lines to render
     const linesToRender = isVirtualScrolling ? visibleLines : (localVisibleLines ?? []);
     
-    // Compute offset based on the first rendered line index
-    const firstLineIndex = linesToRender.length > 0 ? linesToRender[0].index : 0;
-    const offsetY = firstLineIndex * LINE_HEIGHT;
+    // Compute offset based on the visible start line (without overscan)
+    const offsetY = actualFirstVisibleLine * LINE_HEIGHT;
     
     return (
       <div
