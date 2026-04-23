@@ -64,7 +64,15 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
 
   // Clamp panel width when layout mode changes (e.g., window resize)
   useEffect(() => {
-    const clamped = Math.max(minPanelWidth, Math.min(maxPanelWidth, panelWidth));
+    let target = panelWidth;
+    // When not actively dragging, restore a reasonable default for the right panel
+    // so it grows back to the regular width after a narrow‑mode session.
+    if (!isResizing && side === 'right' && layoutMode !== 'narrow') {
+      if (panelWidth < LAYOUT.panelRight.defaultWidth) {
+        target = LAYOUT.panelRight.defaultWidth;
+      }
+    }
+    const clamped = Math.max(minPanelWidth, Math.min(maxPanelWidth, target));
     if (clamped !== panelWidth) {
       if (side === 'left') {
         setLeftPanelWidth(clamped);
@@ -72,9 +80,9 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
         setRightPanelWidth(clamped);
       }
     }
-    // We intentionally only react to layoutMode and the min/max values.
+    // We intentionally only react to layoutMode, min/max values, and resizing.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [layoutMode, minPanelWidth, maxPanelWidth]);
+  }, [layoutMode, minPanelWidth, maxPanelWidth, isResizing]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
