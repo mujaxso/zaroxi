@@ -113,7 +113,7 @@ export function AppShell() {
         
         {/* Main Content Area (Editor) */}
         {showMainContent && (
-          <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+          <div className="flex-1 flex flex-col overflow-hidden min-w-0" style={{ order: 1 }}>
             <div className="flex-1 overflow-hidden bg-editor w-full min-w-0">
               <EditorContainer />
             </div>

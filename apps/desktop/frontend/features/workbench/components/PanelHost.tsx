@@ -147,11 +147,12 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
           className
         )}
         style={{
-          flex: '0 1 auto',
+          flex: side === 'right' ? '0 0 auto' : '0 1 auto',
           width: 'auto',
           flexBasis: panelWidth,
           minWidth: `${minPanelWidth}px`,
-          maxWidth: `min(${maxPanelWidth}px, ${factor * 100}vw)`,
+          maxWidth: `min(${maxPanelWidth}px, ${side === 'right' ? 0.30 : factor} * 100vw)`,
+          order: side === 'right' ? 2 : 0,
         }}
       >
         {/* Resize handle */}
