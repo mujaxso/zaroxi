@@ -41,7 +41,7 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
   const maxPanelWidth = isNarrow
     ? (side === 'left' ? LAYOUT.panelLeft.maxNarrowWidth : LAYOUT.panelRight.maxNarrowWidth)
     : (side === 'left' ? LAYOUT.panelLeft.maxWidth : LAYOUT.panelRight.maxWidth);
-  const factor = side === 'left' ? 0.20 : 0.40;
+  const factor = side === 'left' ? 0.15 : 0.50;
 
   // Clamp panel width when layout mode changes (e.g., window resize)
   useEffect(() => {
@@ -151,7 +151,7 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
           width: 'auto',
           flexBasis: panelWidth,
           minWidth: `${minPanelWidth}px`,
-          maxWidth: `min(${maxPanelWidth}px, ${factor} * 100vw)`,
+          maxWidth: `min(${maxPanelWidth}px, ${(factor * 100).toFixed(0)}vw)`,
           order: side === 'right' ? 2 : 0,
         }}
       >
