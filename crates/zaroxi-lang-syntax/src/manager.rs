@@ -11,6 +11,8 @@ pub struct SyntaxManager {
     documents: HashMap<String, SyntaxDocument>,
     // Cache parsers per language to avoid recreating them
     parsers: HashMap<LanguageId, Parser>,
+    /// Whether large file mode is active (disables syntax features)
+    large_file_mode: bool,
 }
 
 struct SyntaxDocument {
@@ -24,7 +26,25 @@ impl SyntaxManager {
         Self {
             documents: HashMap::new(),
             parsers: HashMap::new(),
+            large_file_mode: false,
         }
+    }
+
+    /// Set large file mode for the manager.
+    /// When enabled, syntax parsing is skipped for all documents.
+    pub fn set_large_file_mode(&mut self, enabled: bool) {
+        self.large_file_mode = enabled;
+        if enabled {
+            // Clear all trees to free memory
+            for doc in self.documents.values_mut() {
+                doc.tree = None;
+            }
+        }
+    }
+
+    /// Check if large file mode is active.
+    pub fn is_large_file_mode(&self) -> bool {
+        self.large_file_mode
     }
 
     pub fn update_document(
@@ -35,6 +55,17 @@ impl SyntaxManager {
     ) -> Result<(), SyntaxError> {
         let language = LanguageId::from_path(path);
         
+        // If in large file mode, store document without a tree
+        if self.large_file_mode {
+            let doc = SyntaxDocument {
+                text: text.to_string(),
+                language,
+                tree: None,
+            };
+            self.documents.insert(doc_id.to_string(), doc);
+            return Ok(());
+        }
+
         // Try to get the language
         let ts_lang = match language.tree_sitter_language() {
             Some(lang) => lang,
@@ -85,9 +116,11 @@ impl SyntaxManager {
                 text.replace_range(start_byte..old_end_byte, new_text);
                 doc.text = text;
                 
-                // Re-parse the document
-                // For now, we'll clear the tree and it will be re-parsed on next highlight
-                doc.tree = None;
+                // Re-parse the document only if not in large file mode
+                if !self.large_file_mode {
+                    // For now, we'll clear the tree and it will be re-parsed on next highlight
+                    doc.tree = None;
+                }
             }
         }
         Ok(())
@@ -98,6 +131,11 @@ impl SyntaxManager {
     }
 
     pub fn highlight_spans(&self, doc_id: &str) -> Result<Vec<HighlightSpan>, SyntaxError> {
+        // If in large file mode, return empty highlights
+        if self.large_file_mode {
+            return Ok(Vec::new());
+        }
+
         let doc = self
             .documents
             .get(doc_id)

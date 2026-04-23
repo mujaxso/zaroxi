@@ -28,6 +28,7 @@ thiserror = { workspace = true }
 uuid = { workspace = true }
 rfd = { workspace = true }
 chrono = { workspace = true }
+once_cell = { workspace = true }
 
 # Workspace crates - all under crates/ directory
 zaroxi-protocol = { workspace = true }

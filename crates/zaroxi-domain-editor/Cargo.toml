@@ -10,3 +10,4 @@ zaroxi-core-ids = { workspace = true }
 ropey = "1.6"
 serde = { workspace = true, features = ["derive"] }
 thiserror = { workspace = true }
+memmap2 = "0.9"

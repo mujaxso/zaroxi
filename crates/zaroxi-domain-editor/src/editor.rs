@@ -4,6 +4,7 @@ use crate::document::Document;
 use crate::cursor::{Cursor, CursorMovement};
 use crate::selection::Selection;
 use crate::viewport::Viewport;
+use crate::document::LargeFileMode;
 
 /// The main editor state, combining document, cursor, selection, and viewport.
 #[derive(Debug, Clone)]
@@ -161,14 +162,40 @@ impl EditorState {
         lines
     }
 
+    /// Get visible lines as `Cow<str>` to avoid allocation when possible.
+    pub fn visible_lines_cow(&self, line_height: f32, viewport_height: f32) -> Vec<(usize, std::borrow::Cow<'_, str>)> {
+        let start_line = (self.scroll_offset.1 / line_height).floor() as usize;
+        let lines_in_viewport = (viewport_height / line_height).ceil() as usize + 1;
+        
+        let mut lines = Vec::new();
+        for line_idx in start_line..(start_line + lines_in_viewport) {
+            if let Some(line_text) = self.document.line_cow(line_idx) {
+                lines.push((line_idx, line_text));
+            } else {
+                break;
+            }
+        }
+        lines
+    }
+
     /// Get document text
     pub fn text(&self) -> String {
         self.document.text()
     }
 
     /// Get document path
-    pub fn path(&self) -> Option<&str> {
+    pub fn path(&self) -> Option<&std::path::Path> {
         self.document.path()
+    }
+
+    /// Get the large file mode.
+    pub fn large_file_mode(&self) -> LargeFileMode {
+        self.document.large_file_mode()
+    }
+
+    /// Check if the document is in large file mode.
+    pub fn is_large_file(&self) -> bool {
+        self.document.is_large() || self.document.is_very_large()
     }
 }
 
