@@ -151,7 +151,7 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
           width: 'auto',
           flexBasis: panelWidth,
           minWidth: `${minPanelWidth}px`,
-          maxWidth: `min(${maxPanelWidth}px, ${side === 'right' ? 0.30 : factor} * 100vw)`,
+          maxWidth: `min(${maxPanelWidth}px, ${side === 'right' ? 0.35 : factor} * 100vw)`,
           order: side === 'right' ? 2 : 0,
         }}
       >
@@ -194,7 +194,7 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
           </div>
         </div>
         
-        <div className="flex-1 overflow-auto bg-panel h-full max-h-full min-h-0">
+        <div className="flex-1 overflow-auto bg-panel h-full max-h-full min-h-0 w-full">
           <Suspense fallback={
             <div className="p-3">
               <div className="space-y-1.5">
