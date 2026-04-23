@@ -5,6 +5,5 @@
 pub enum EditorEvent {
     DocumentChanged,
     CursorMoved,
-    SelectionChanged,
     ViewportChanged,
 }

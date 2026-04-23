@@ -1,87 +1,56 @@
-//! Viewport state for visible editor area.
+//! Simple viewport state for the minimal editor.
 
-/// Viewport dimensions and state.
+/// Viewport dimensions and visible‑line information.
 #[derive(Debug, Clone, Copy)]
 pub struct Viewport {
-    width: f32,
-    height: f32,
     /// Line height in pixels (used for scroll calculations).
-    line_height: f32,
+    pub line_height: f32,
     /// First visible line index.
-    first_visible_line: usize,
+    pub first_visible_line: usize,
     /// Number of visible lines.
-    visible_line_count: usize,
+    pub visible_line_count: usize,
+    /// Total width of the viewport (in logical pixels).
+    pub width: f32,
+    /// Total height of the viewport (in logical pixels).
+    pub height: f32,
 }
 
 impl Viewport {
-    /// Create a new viewport with default dimensions.
+    /// Create a viewport with default values (800x600, 22‑pixel line height).
     pub fn new() -> Self {
         Self {
-            width: 800.0,
-            height: 600.0,
             line_height: 22.0,
             first_visible_line: 0,
             visible_line_count: 0,
+            width: 800.0,
+            height: 600.0,
         }
     }
 
-    /// Create a viewport with specific dimensions.
+    /// Create a viewport with explicit dimensions. The line height remains 22 px.
     pub fn with_dimensions(width: f32, height: f32) -> Self {
+        let line_height = 22.0;
+        let visible_line_count = (height / line_height).ceil() as usize + 1;
         Self {
+            line_height,
+            first_visible_line: 0,
+            visible_line_count,
             width,
             height,
-            line_height: 22.0,
-            first_visible_line: 0,
-            visible_line_count: (height / 22.0).ceil() as usize + 1,
         }
     }
 
-    /// Get the viewport width.
-    pub fn width(&self) -> f32 {
-        self.width
-    }
-
-    /// Get the viewport height.
-    pub fn height(&self) -> f32 {
-        self.height
-    }
-
-    /// Set the viewport dimensions.
+    /// Set the viewport dimensions and recompute the visible‑line count.
     pub fn set_dimensions(&mut self, width: f32, height: f32) {
         self.width = width;
         self.height = height;
         self.visible_line_count = (height / self.line_height).ceil() as usize + 1;
     }
 
-    /// Get the line height.
-    pub fn line_height(&self) -> f32 {
-        self.line_height
-    }
-
-    /// Set the line height.
+    /// Set the line height and recompute the visible‑line count.
     pub fn set_line_height(&mut self, line_height: f32) {
         self.line_height = line_height;
         self.visible_line_count = (self.height / line_height).ceil() as usize + 1;
-    }
-
-    /// Get the first visible line index.
-    pub fn first_visible_line(&self) -> usize {
-        self.first_visible_line
-    }
-
-    /// Set the first visible line index.
-    pub fn set_first_visible_line(&mut self, line: usize) {
-        self.first_visible_line = line;
-    }
-
-    /// Get the number of visible lines.
-    pub fn visible_line_count(&self) -> usize {
-        self.visible_line_count
-    }
-
-    /// Get the range of visible lines (inclusive start, exclusive end).
-    pub fn visible_line_range(&self) -> std::ops::Range<usize> {
-        self.first_visible_line..(self.first_visible_line + self.visible_line_count)
     }
 
     /// Scroll to a specific line.
@@ -89,7 +58,7 @@ impl Viewport {
         self.first_visible_line = line;
     }
 
-    /// Scroll by a number of lines (positive = down, negative = up).
+    /// Scroll by a signed delta (positive = down, negative = up).
     pub fn scroll_by_lines(&mut self, delta: isize) {
         if delta > 0 {
             self.first_visible_line = self.first_visible_line.saturating_add(delta as usize);
@@ -98,14 +67,19 @@ impl Viewport {
         }
     }
 
-    /// Convert a scroll offset in pixels to a line index.
+    /// Compute the line index from a pixel offset.
     pub fn scroll_offset_to_line(&self, scroll_y: f32) -> usize {
         (scroll_y / self.line_height).floor() as usize
     }
 
-    /// Convert a line index to a scroll offset in pixels.
+    /// Compute the pixel offset for a given line index.
     pub fn line_to_scroll_offset(&self, line: usize) -> f32 {
         line as f32 * self.line_height
+    }
+
+    /// Return the `start..end` range of currently visible line indices.
+    pub fn visible_line_range(&self) -> std::ops::Range<usize> {
+        self.first_visible_line..(self.first_visible_line + self.visible_line_count)
     }
 }
 

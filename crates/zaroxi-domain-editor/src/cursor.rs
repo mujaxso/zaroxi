@@ -50,8 +50,6 @@ impl Cursor {
                 self.position = (self.position + n).min(document.len_chars());
             }
             CursorMovement::Up(_) => {
-                // For now, simple implementation
-                // In a real implementation, we'd need to track column
                 if let Some((line, col)) = document.char_to_line_col(self.position) {
                     if line > 0 {
                         if let Some(new_pos) = document.line_col_to_char(line - 1, col) {
@@ -74,9 +72,8 @@ impl Cursor {
             }
             CursorMovement::LineEnd => {
                 if let Some((line, _)) = document.char_to_line_col(self.position) {
-                    let line_start = document.line_to_char(line);
-                    let line_len = document.line(line).map(|l| l.chars().count()).unwrap_or(0);
-                    self.position = line_start + line_len;
+                    let line_text = document.line(line).unwrap_or("");
+                    self.position = document.line_to_char(line) + line_text.chars().count();
                 }
             }
             CursorMovement::DocumentStart => {
