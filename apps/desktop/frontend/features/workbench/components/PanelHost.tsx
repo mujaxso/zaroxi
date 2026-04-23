@@ -45,49 +45,8 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
   // Right panel gets a larger proportion of the window
   const factor = side === 'left' ? 0.25 : 0.35;
 
-  const [winWidth, setWinWidth] = useState(
-    typeof window !== 'undefined' ? window.innerWidth : 1024
-  );
-  useEffect(() => {
-    const handleResize = () => {
-      setWinWidth(window.innerWidth);
-    };
-    window.addEventListener('resize', handleResize);
-    handleResize();
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
-  const effectiveMinWidth = useMemo(() => {
-    // Allow the panel to go down to a percentage of the window,
-    // but never more than the canonical min width.
-    if (isNarrow) {
-      return Math.min(minPanelWidth, winWidth * 0.18);
-    }
-    return minPanelWidth;
-  }, [isNarrow, minPanelWidth, winWidth]);
 
-  const effectiveMaxWidth = useMemo(() => {
-    const proportional = winWidth * factor;
-    if (isNarrow) {
-      return Math.min(maxPanelWidth, proportional, winWidth * 0.30);
-    }
-    return Math.min(maxPanelWidth, proportional);
-  }, [isNarrow, maxPanelWidth, factor, winWidth]);
-
-  // Auto‑size the panel width when the window is resized (unless the user is dragging).
-  useEffect(() => {
-    if (isResizing) return;
-    // Compute a width that fits inside the allowed bounds.
-    const target = Math.max(effectiveMinWidth, Math.min(effectiveMaxWidth, winWidth * factor));
-    if (Math.abs(target - panelWidth) > 5) {
-      if (side === 'left') {
-        setLeftPanelWidth(target);
-      } else {
-        setRightPanelWidth(target);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [winWidth, effectiveMinWidth, effectiveMaxWidth, factor, side]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -103,8 +62,8 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
         ? moveEvent.clientX - startXRef.current
         : startXRef.current - moveEvent.clientX;
       
-      const minW = side === 'left' ? LAYOUT.panelLeft.minWidth : LAYOUT.panelRight.minWidth;
-      const maxW = side === 'left' ? LAYOUT.panelLeft.maxWidth : LAYOUT.panelRight.maxWidth;
+      const minW = minPanelWidth;
+      const maxW = maxPanelWidth;
       const newWidth = Math.max(minW, Math.min(maxW, startWidthRef.current + delta));
       
       if (side === 'left') {
@@ -204,8 +163,8 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
           flex: '0 1 auto',
           width: 'auto',
           flexBasis: panelWidth,
-          minWidth: `${effectiveMinWidth}px`,
-          maxWidth: `min(${effectiveMaxWidth}px, ${(factor * 100).toFixed(0)}vw)`,
+          minWidth: `${minPanelWidth}px`,
+          maxWidth: `min(${maxPanelWidth}px, ${(factor * 100).toFixed(0)}vw)`,
           order: side === 'right' ? 2 : 0,
         }}
       >
