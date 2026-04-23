@@ -72,7 +72,7 @@ impl Cursor {
             }
             CursorMovement::LineEnd => {
                 if let Some((line, _)) = document.char_to_line_col(self.position) {
-                    let line_text = document.line(line).unwrap_or("");
+                    let line_text = document.line(line).unwrap_or_default();
                     self.position = document.line_to_char(line) + line_text.chars().count();
                 }
             }

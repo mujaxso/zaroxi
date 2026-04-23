@@ -90,9 +90,13 @@ impl Document {
     }
 
     /// Return the text content of line `idx` (0‑based), without the trailing newline.
-    /// The returned `&str` borrows from the document.
-    pub fn line(&self, idx: usize) -> Option<&str> {
-        self.rope.get_line(idx).and_then(|slice| slice.as_str())
+    /// The returned `String` is owned and stripped of trailing line‑terminator characters.
+    pub fn line(&self, idx: usize) -> Option<String> {
+        self.rope.get_line(idx).map(|slice| {
+            let s = slice.to_string();
+            let trimmed = s.trim_end_matches('\n').trim_end_matches('\r');
+            trimmed.to_owned()
+        })
     }
 
     /// Return the entire document content as an owned `String`.

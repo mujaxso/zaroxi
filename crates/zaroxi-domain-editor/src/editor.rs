@@ -111,7 +111,7 @@ impl EditorState {
     }
 
     /// Compute the visible lines for the current viewport state.
-    pub fn visible_lines(&self) -> Vec<(usize, &str)> {
+    pub fn visible_lines(&self) -> Vec<(usize, String)> {
         let total_lines = self.document.len_lines();
         if total_lines == 0 {
             return Vec::new();
