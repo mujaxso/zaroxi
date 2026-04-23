@@ -287,7 +287,7 @@ impl Document {
             let text = source.as_str();
             let mut line = 0usize;
             let mut col = 0usize;
-            for (_i, ch) in text.char_indices() {
+            for (i, ch) in text.char_indices() {
                 if i >= char_idx {
                     break;
                 }
@@ -316,7 +316,7 @@ impl Document {
             let text = source.as_str();
             let mut current_line = 0usize;
             let mut char_idx = 0usize;
-            for (i, ch) in text.char_indices() {
+            for (_i, ch) in text.char_indices() {
                 if current_line == line {
                     return char_idx;
                 }
