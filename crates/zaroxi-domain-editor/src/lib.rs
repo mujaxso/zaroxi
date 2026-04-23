@@ -9,6 +9,7 @@ pub mod cursor;
 pub mod viewport;
 pub mod events;
 pub mod selection;
+pub mod thresholds;
 
 // Re-export main types for convenience
 pub use document::Document;
@@ -18,3 +19,4 @@ pub use cursor::{Cursor, CursorMovement};
 pub use viewport::Viewport;
 pub use events::EditorEvent;
 pub use selection::Selection;
+pub use thresholds::FileClass;

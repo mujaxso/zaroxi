@@ -4,6 +4,7 @@ use crate::document::Document;
 use crate::cursor::{Cursor, CursorMovement};
 use crate::viewport::Viewport;
 use crate::document::LargeFileMode;
+use crate::thresholds::FileClass;
 
 /// The main editor state, combining document, cursor, and viewport.
 #[derive(Debug)]
@@ -147,8 +148,12 @@ impl EditorState {
         self.document.large_file_mode()
     }
 
+    pub fn file_class(&self) -> FileClass {
+        self.document.file_class()
+    }
+
     pub fn is_large_file(&self) -> bool {
-        self.document.is_large() || self.document.is_very_large()
+        self.document.is_large()
     }
 }
 

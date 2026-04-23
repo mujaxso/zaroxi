@@ -4,8 +4,10 @@
 use std::path::PathBuf;
 use memmap2::Mmap;
 use ropey::Rope;
+use crate::thresholds::{self, FileClass};
 
-/// Large file mode indicator.
+/// Large file mode indicator (kept for backward compatibility, but classification
+/// now uses the richer `FileClass` enum from `thresholds`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LargeFileMode {
     Normal,
@@ -37,7 +39,7 @@ pub struct Document {
     version: u64,
     dirty: bool,
     path: Option<PathBuf>,
-    large_file_mode: LargeFileMode,
+    file_class: FileClass,
 }
 
 impl Document {
@@ -48,18 +50,20 @@ impl Document {
             version: 0,
             dirty: false,
             path: None,
-            large_file_mode: LargeFileMode::Normal,
+            file_class: FileClass::Normal,
         }
     }
 
     /// Create a document from a plain string.
     pub fn from_text(text: &str) -> Self {
+        let rope = Rope::from_str(text);
+        let file_class = Self::compute_file_class(&rope, text.len() as u64);
         Self {
-            rope: Rope::from_str(text),
+            rope,
             version: 0,
             dirty: false,
             path: None,
-            large_file_mode: LargeFileMode::Normal,
+            file_class,
         }
     }
 
@@ -153,7 +157,7 @@ impl Document {
 
     /// Insert text at a given character index.
     pub fn insert(&mut self, char_idx: usize, ins: &str) -> Result<(), String> {
-        if self.large_file_mode.is_read_only() {
+        if self.file_class.is_read_only() {
             return Err("Read‑only large file".into());
         }
         if char_idx > self.rope.len_chars() {
@@ -168,7 +172,7 @@ impl Document {
 
     /// Delete characters in the range `start..end`.
     pub fn delete_range(&mut self, start: usize, end: usize) -> Result<(), String> {
-        if self.large_file_mode.is_read_only() {
+        if self.file_class.is_read_only() {
             return Err("Read‑only large file".into());
         }
         if start > end {
@@ -215,37 +219,53 @@ impl Document {
         self.path = path.map(PathBuf::from);
     }
 
-    /// The large‑file mode.
+    /// The large‑file mode (kept for backward compatibility).
     pub fn large_file_mode(&self) -> LargeFileMode {
-        self.large_file_mode
+        match self.file_class {
+            FileClass::Normal => LargeFileMode::Normal,
+            FileClass::Medium => LargeFileMode::Large, // map Medium to Large
+            FileClass::Large => LargeFileMode::VeryLarge,
+        }
     }
 
     /// Whether the file is “large” (may degrade performance).
     pub fn is_large(&self) -> bool {
-        self.large_file_mode == LargeFileMode::Large
+        self.file_class == FileClass::Medium || self.file_class == FileClass::Large
     }
 
     /// Whether the file is “very large” (read‑only recommended).
     pub fn is_very_large(&self) -> bool {
-        self.large_file_mode == LargeFileMode::VeryLarge
+        self.file_class == FileClass::Large
+    }
+
+    /// The centralised file class.
+    pub fn file_class(&self) -> FileClass {
+        self.file_class
     }
 
     /// Create a document from a memory‑mapped file.
     pub fn from_mmap(mmap: Mmap, path: String, size: u64) -> Self {
-        let mode = LargeFileMode::from_size(size);
         let text = unsafe { std::str::from_utf8_unchecked(&mmap) };
+        let rope = Rope::from_str(text);
+        let file_class = Self::compute_file_class(&rope, size);
         Self {
-            rope: Rope::from_str(text),
+            rope,
             version: 0,
             dirty: false,
             path: Some(PathBuf::from(path)),
-            large_file_mode: mode,
+            file_class,
         }
     }
 
     // ------------------------------------------------------------------
-    // Internal helpers (no longer needed, but kept for API compatibility)
+    // Internal helpers
     // ------------------------------------------------------------------
+    fn compute_file_class(rope: &Rope, byte_size: u64) -> FileClass {
+        let line_count = rope.len_lines();
+        let max_line_len = rope.lines().map(|l| l.chars().count()).max().unwrap_or(0);
+        thresholds::classify_file(byte_size, line_count, max_line_len)
+    }
+
     fn _char_idx_to_byte(&self, char_idx: usize) -> Option<usize> {
         if char_idx > self.rope.len_chars() {
             return None;
