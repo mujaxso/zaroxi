@@ -2,6 +2,7 @@
 //! Line start offsets are pre‑computed to allow O(1) line access.
 
 use std::path::PathBuf;
+use memmap2::Mmap;
 
 /// Large file mode indicator.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -241,6 +242,50 @@ impl Document {
     /// Whether the file is “very large” (read‑only recommended).
     pub fn is_very_large(&self) -> bool {
         self.large_file_mode == LargeFileMode::VeryLarge
+    }
+
+    /// Create a document from a memory‑mapped file.
+    pub fn from_mmap(mmap: Mmap, path: String, size: u64) -> Self {
+        let mode = LargeFileMode::from_size(size);
+        let text = unsafe { std::str::from_utf8_unchecked(&mmap) };
+        let line_starts = compute_line_starts(text);
+        Self {
+            text: text.to_owned(),
+            line_starts,
+            version: 0,
+            dirty: false,
+            path: Some(PathBuf::from(path)),
+            large_file_mode: mode,
+        }
+    }
+
+    /// Convert a byte offset to a character index.
+    pub fn byte_to_char(&self, byte: usize) -> usize {
+        let mut char_idx = 0usize;
+        for (i, _) in self.text.char_indices() {
+            if i >= byte {
+                break;
+            }
+            char_idx += 1;
+        }
+        char_idx
+    }
+
+    /// Convert a character index to a byte offset.
+    pub fn char_to_byte(&self, char_idx: usize) -> usize {
+        let mut count = 0usize;
+        for (i, _) in self.text.char_indices() {
+            if count == char_idx {
+                return i;
+            }
+            count += 1;
+        }
+        self.text.len()
+    }
+
+    /// Delete characters in the range `start..end` (alias for `delete_range`).
+    pub fn delete(&mut self, start: usize, end: usize) -> Result<(), String> {
+        self.delete_range(start, end)
     }
 
     // ------------------------------------------------------------------
