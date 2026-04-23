@@ -27,6 +27,15 @@ impl Color {
         Self { r, g, b, a }
     }
     
+    /// Create a color from a hex string (e.g., "#1B1D22" or "1B1D22")
+    pub fn from_hex(hex: &str) -> Self {
+        let hex = hex.trim_start_matches('#');
+        let r = u8::from_str_radix(&hex[0..2], 16).unwrap_or(0) as f32 / 255.0;
+        let g = u8::from_str_radix(&hex[2..4], 16).unwrap_or(0) as f32 / 255.0;
+        let b = u8::from_str_radix(&hex[4..6], 16).unwrap_or(0) as f32 / 255.0;
+        Self { r, g, b, a: 1.0 }
+    }
+    
     /// Convert to CSS rgba() string
     pub fn to_css_rgba(&self) -> String {
         format!(
