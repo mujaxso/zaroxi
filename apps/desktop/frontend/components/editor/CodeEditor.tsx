@@ -35,6 +35,8 @@ export function CodeEditor({
   const [containerHeight, setContainerHeight] = useState(600);
   const [visibleLines, setVisibleLines] = useState<{ index: number; text: string }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const onRequestLinesRef = useRef(onRequestLines);
+  onRequestLinesRef.current = onRequestLines;
 
   // Compute visible range – stable reference to avoid infinite effect loops
   const visibleRangeKey = useMemo(() => {
