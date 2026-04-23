@@ -92,7 +92,7 @@ impl Document {
     /// Return the text content of line `idx` (0‑based), without the trailing newline.
     /// The returned `&str` borrows from the document.
     pub fn line(&self, idx: usize) -> Option<&str> {
-        self.rope.get_line(idx).map(|slice| &*slice)
+        self.rope.get_line(idx).map(|slice| slice.as_ref())
     }
 
     /// Return the entire document content as an owned `String`.
@@ -110,7 +110,7 @@ impl Document {
             return None;
         }
         let line = self.rope.char_to_line(char_idx);
-        let col = self.rope.column_of_char(char_idx);
+        let col = char_idx - self.rope.line_to_char(line);
         Some((line, col))
     }
 
