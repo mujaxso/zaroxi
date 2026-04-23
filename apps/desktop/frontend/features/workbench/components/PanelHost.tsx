@@ -178,18 +178,20 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
           </div>
         </div>
         
-        <div className="flex-1 overflow-auto bg-panel">
-          <Suspense fallback={
-            <div className="p-3">
-              <div className="space-y-1.5">
-                <div className="h-3 bg-muted rounded animate-pulse w-3/4"></div>
-                <div className="h-3 bg-muted rounded animate-pulse w-1/2"></div>
-                <div className="h-3 bg-muted rounded animate-pulse w-5/6"></div>
+        <div className="flex-1 overflow-auto bg-panel h-full max-h-full">
+          <div className="h-full min-h-0 overflow-auto">
+            <Suspense fallback={
+              <div className="p-3">
+                <div className="space-y-1.5">
+                  <div className="h-3 bg-muted rounded animate-pulse w-3/4"></div>
+                  <div className="h-3 bg-muted rounded animate-pulse w-1/2"></div>
+                  <div className="h-3 bg-muted rounded animate-pulse w-5/6"></div>
+                </div>
               </div>
-            </div>
-          }>
-            <PanelComponent />
-          </Suspense>
+            }>
+              <PanelComponent />
+            </Suspense>
+          </div>
         </div>
       </div>
       {/* Overlay during resizing */}

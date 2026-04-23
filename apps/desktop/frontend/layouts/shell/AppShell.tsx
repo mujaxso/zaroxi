@@ -83,7 +83,7 @@ export function AppShell() {
       {/* Compact Top Bar */}
       <TopBar />
       
-      <div className="flex flex-1 overflow-hidden min-h-0">
+      <div className="flex flex-1 overflow-hidden min-h-0 max-h-full">
         {/* Activity Rail - Always visible */}
         <div className="h-full flex-shrink-0">
           <ActivityRail />
