@@ -45,37 +45,49 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
   // Right panel gets a larger proportion of the window
   const factor = side === 'left' ? 0.25 : 0.35;
 
-  const windowWidth = typeof window !== 'undefined' ? window.innerWidth : 1024;
+  const [winWidth, setWinWidth] = useState(
+    typeof window !== 'undefined' ? window.innerWidth : 1024
+  );
+  useEffect(() => {
+    const handleResize = () => {
+      setWinWidth(window.innerWidth);
+    };
+    window.addEventListener('resize', handleResize);
+    handleResize();
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const effectiveMinWidth = useMemo(() => {
     // Allow the panel to go down to a percentage of the window,
     // but never more than the canonical min width.
     if (isNarrow) {
-      return Math.min(minPanelWidth, windowWidth * 0.18);
+      return Math.min(minPanelWidth, winWidth * 0.18);
     }
     return minPanelWidth;
-  }, [isNarrow, minPanelWidth, windowWidth]);
+  }, [isNarrow, minPanelWidth, winWidth]);
 
   const effectiveMaxWidth = useMemo(() => {
-    const proportional = windowWidth * factor;
+    const proportional = winWidth * factor;
     if (isNarrow) {
-      return Math.min(maxPanelWidth, proportional, windowWidth * 0.30);
+      return Math.min(maxPanelWidth, proportional, winWidth * 0.30);
     }
     return Math.min(maxPanelWidth, proportional);
-  }, [isNarrow, maxPanelWidth, factor, windowWidth]);
+  }, [isNarrow, maxPanelWidth, factor, winWidth]);
 
-  // Clamp panel width when layout mode changes (e.g., window resize)
+  // Auto‑size the panel width when the window is resized (unless the user is dragging).
   useEffect(() => {
-    const clamped = Math.max(minPanelWidth, Math.min(maxPanelWidth, panelWidth));
-    if (clamped !== panelWidth) {
+    if (isResizing) return;
+    // Compute a width that fits inside the allowed bounds.
+    const target = Math.max(effectiveMinWidth, Math.min(effectiveMaxWidth, winWidth * factor));
+    if (Math.abs(target - panelWidth) > 5) {
       if (side === 'left') {
-        setLeftPanelWidth(clamped);
+        setLeftPanelWidth(target);
       } else {
-        setRightPanelWidth(clamped);
+        setRightPanelWidth(target);
       }
     }
-    // We intentionally only react to layoutMode and the min/max values.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [layoutMode, minPanelWidth, maxPanelWidth]);
+  }, [winWidth, effectiveMinWidth, effectiveMaxWidth, factor, side]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -145,16 +157,19 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
     };
   }, []);
 
-  // Inject styles that force all direct children of the right panel to
-  // respect the available width (critical for the assistant panel).
+  // Inject styles that force all children of the right panel to
+  // respect the available width and wrap content correctly.
   useEffect(() => {
     if (side !== 'right') return;
     const style = document.createElement('style');
     style.textContent = `
-      .panel-host-right > * {
+      .panel-host-right * {
         max-width: 100% !important;
         min-width: 0 !important;
         box-sizing: border-box !important;
+        word-break: break-word !important;
+        overflow-wrap: break-word !important;
+        white-space: normal !important;
       }
     `;
     document.head.appendChild(style);
