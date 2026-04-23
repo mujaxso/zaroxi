@@ -41,7 +41,7 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
   const maxPanelWidth = isNarrow
     ? (side === 'left' ? LAYOUT.panelLeft.maxNarrowWidth : LAYOUT.panelRight.maxNarrowWidth)
     : (side === 'left' ? LAYOUT.panelLeft.maxWidth : LAYOUT.panelRight.maxWidth);
-  const factor = side === 'left' ? 0.30 : 0.25;
+  const factor = side === 'left' ? 0.25 : 0.22;
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -134,9 +134,9 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
         )}
         style={{
           flex: '0 0 auto',
-          maxWidth: `min(${maxPanelWidth}px, ${factor * 100}vw)`,
+          width: panelWidth,
           minWidth: `${minPanelWidth}px`,
-          width: '100%',
+          maxWidth: `min(${maxPanelWidth}px, ${factor * 100}vw)`,
         }}
       >
         {/* Resize handle */}
