@@ -35,6 +35,7 @@ export function CodeEditor({
   const [containerHeight, setContainerHeight] = useState(600);
   const [visibleLines, setVisibleLines] = useState<{ index: number; text: string }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [scrollVersion, setScrollVersion] = useState(0);
   const onRequestLinesRef = useRef(onRequestLines);
   onRequestLinesRef.current = onRequestLines;
 
@@ -53,7 +54,7 @@ export function CodeEditor({
     return Math.max(0, Math.floor(scrollTop / LINE_HEIGHT));
   }, [scrollTop]);
 
-  // Fetch visible lines when range changes
+  // Fetch visible lines when range changes OR when scrollVersion increments
   useEffect(() => {
     const fetchFn = onRequestLinesRef.current;
     if (!fetchFn) return;
@@ -75,11 +76,12 @@ export function CodeEditor({
     };
     
     fetchLines();
-  }, [visibleRangeKey]);
+  }, [visibleRangeKey, scrollVersion]);
 
-  // Handle scroll
+  // Handle scroll – also bump scrollVersion to force re-fetch even if range key doesn't change
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     setScrollTop(e.currentTarget.scrollTop);
+    setScrollVersion((v) => v + 1);
   }, []);
 
   // Observe container size
@@ -152,9 +154,9 @@ export function CodeEditor({
   // Render a read‑only line‑by‑line view when virtual scrolling is active
   const renderVirtualLines = () => {
     if (!isVirtualScrolling) return null;
-    // Use the first fetched line index for offset to align with overscan
-    const firstFetchedLine = visibleLines.length > 0 ? visibleLines[0].index : 0;
-    const offsetY = firstFetchedLine * LINE_HEIGHT;
+    // Use the current scrollTop to position content, not the first fetched line index.
+    // This ensures the content always aligns with the gutter, even if visibleLines is stale.
+    const offsetY = actualFirstVisibleLine * LINE_HEIGHT;
     return (
       <div
         className="absolute left-8 top-0 right-0 pr-4 font-mono"
