@@ -134,11 +134,11 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
       {
         name: 'workspace-ui-storage',
         partialize: (state) => ({
-          // Only persist UI state
+          // Only persist UI state (excluding activeFilePath to avoid reopening large files)
           explorerUI: {
             expandedPaths: Array.from(state.explorerUI.expandedPaths),
             selectedPath: state.explorerUI.selectedPath,
-            activeFilePath: state.explorerUI.activeFilePath,
+            // activeFilePath is intentionally excluded to prevent reopening large files on startup
           },
         }),
         merge: (persistedState: any, currentState: any) => {
