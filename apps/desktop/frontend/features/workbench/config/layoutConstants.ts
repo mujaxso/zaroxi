@@ -11,9 +11,9 @@ export const LAYOUT = {
     defaultWidth: 220,
     maxWidth: 300,
     /** Minimum width when the window is narrow (< breakpoints.narrow). */
-    minNarrowWidth: 100,
+    minNarrowWidth: 200,
     /** Maximum width when the window is narrow. */
-    maxNarrowWidth: 180,
+    maxNarrowWidth: 280,
   },
 
   /** Right‑side panel (assistant, extensions etc.) */
@@ -22,9 +22,9 @@ export const LAYOUT = {
     defaultWidth: 420,
     maxWidth: 500,
     /** Minimum width when the window is narrow. */
-    minNarrowWidth: 300,
+    minNarrowWidth: 350,
     /** Maximum width when the window is narrow. */
-    maxNarrowWidth: 450,
+    maxNarrowWidth: 500,
   },
 
   /** Height of the compact top bar (px) */
