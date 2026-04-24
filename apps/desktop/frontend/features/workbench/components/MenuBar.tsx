@@ -20,8 +20,18 @@ export function MenuBar() {
       if (result.selected_path) {
         await invoke('open_workspace', { path: result.selected_path });
         // Update the workspace store so the explorer panel knows the current root path
-        const { setRootPath } = useWorkspaceStore.getState();
+        const { setRootPath, setTree } = useWorkspaceStore.getState();
         setRootPath(result.selected_path);
+        // Fetch the workspace tree and store it
+        try {
+          const tree = await invoke('get_workspace_tree', {
+            workspaceId: '',
+            rootPath: result.selected_path,
+          });
+          setTree(tree);
+        } catch (e) {
+          console.error('Failed to fetch workspace tree:', e);
+        }
         const { togglePanel } = useWorkbenchStore.getState();
         togglePanel('explorer');
       }

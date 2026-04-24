@@ -5,10 +5,13 @@ import { ActivityRail } from '@/features/workbench/components/ActivityRail';
 import { PanelHost } from '@/features/workbench/components/PanelHost';
 import { TopBar } from '@/features/workbench/components/TopBar';
 import { useWorkbenchStore } from '@/features/workbench/store/workbenchStore';
+import { useWorkspaceStore } from '@/features/workspace/stores/useWorkspaceStore';
 import { getActivityItem } from '@/features/workbench/config/activityRegistry';
 import { useLayoutMode } from '@/hooks/useLayoutMode';
 import { Suspense, lazy, useEffect, useRef } from 'react';
 import { setupWindowControls } from '@/lib/platform/windowControls';
+import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
 import { LAYOUT } from '@/features/workbench/config/layoutConstants';
 import { TabStrip } from '@/features/tabs/TabStrip';
 
@@ -58,6 +61,37 @@ export function AppShell() {
   const showRightPanel = isRightPanelVisible && activeRightPanel;
   // Show main content when not showing settings
   const showMainContent = !isSettingsActive;
+
+  // Listen for workspace:opened event and automatically set root path + fetch tree
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    const setup = async () => {
+      try {
+        unlisten = await listen<{ workspace_id: string; root_path: string }>(
+          'workspace:opened',
+          (event) => {
+            const rootPath = event.payload.root_path;
+            const { setRootPath, setTree } = useWorkspaceStore.getState();
+            setRootPath(rootPath);
+            // Fetch tree for the newly opened workspace
+            invoke('get_workspace_tree', {
+              workspaceId: event.payload.workspace_id,
+              rootPath,
+            })
+              .then((tree: any) => setTree(tree))
+              .catch((e) => console.error('Failed to fetch tree after event:', e));
+          }
+        );
+      } catch {
+        // ignore
+      }
+    };
+    setup();
+
+    return () => {
+      if (unlisten) unlisten();
+    };
+  }, []);
 
   useEffect(() => {
     let cleanup: (() => void) | undefined;
