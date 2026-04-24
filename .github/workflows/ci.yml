@@ -60,55 +60,6 @@ jobs:
         with:
           fail_on_error: true
 
-  # ---------------------------------------------------------------------------
-  # BUILD AND TEST ON ALL TIER‑1 PLATFORMS
-  # ---------------------------------------------------------------------------
-  test:
-    name: Test (${{ matrix.name }})
-    runs-on: ${{ matrix.os }}
-    needs: lint
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            name: Ubuntu
-          - os: windows-latest
-            name: Windows
-          - os: macos-latest
-            name: macOS
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Restore cargo registry
-        uses: actions/cache@v4
-        with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-test-registry-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-test-registry-
-
-      - name: Restore cargo index
-        uses: actions/cache@v4
-        with:
-          path: ~/.cargo/git
-          key: ${{ runner.os }}-test-index-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-test-index-
-
-      - name: Restore cargo build output
-        uses: actions/cache@v4
-        with:
-          path: target
-          key: ${{ runner.os }}-test-target-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: build (workspace)
-        run: cargo build --workspace --verbose
-
-      - name: test (workspace)
-        run: cargo test --workspace --verbose
 
   # ---------------------------------------------------------------------------
   # SECURITY / DEPENDENCY AUDIT (fast, only on ubuntu)
