@@ -20,10 +20,7 @@ export function ExplorerTree({
   depth = 0,
 }: ExplorerTreeProps) {
   const handleNodeClick = (node: ExplorerTreeNode) => {
-    // For empty directories, do nothing to avoid misleading expansions
-    if (node.isDir && node.children && node.children.length === 0) {
-      return;
-    }
+    // Allow click for all directories; children will be loaded by the container
     onNodeClick(node);
   };
 
