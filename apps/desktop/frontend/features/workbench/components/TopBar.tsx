@@ -4,6 +4,7 @@ import { useWorkbenchStore } from '../store/workbenchStore';
 import { useEffect, useState } from 'react';
 import { isTauri, getWindowInstance, windowControlActions } from '@/lib/platform/windowControls';
 import { useLayoutMode } from '@/hooks/useLayoutMode';
+import { MenuBar } from './MenuBar';
 
 interface TopBarProps {
   className?: string;
@@ -14,6 +15,9 @@ export function TopBar({ className }: TopBarProps) {
   const { togglePanel } = useWorkbenchStore();
   const [isMaximized, setIsMaximized] = useState(false);
   const [isTauriEnv, setIsTauriEnv] = useState(false);
+
+  // macOS gets native menu bar, other platforms get the React MenuBar
+  const isMac = navigator.platform?.toLowerCase().includes('mac') ?? false;
 
   useEffect(() => {
     const checkTauri = async () => {
@@ -96,6 +100,7 @@ export function TopBar({ className }: TopBarProps) {
             <span className="font-semibold text-sm text-primary leading-tight">Zaroxi Studio</span>
           )}
         </div>
+        {!isMac && <MenuBar />}
       </div>
 
 
