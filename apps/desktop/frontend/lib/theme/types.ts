@@ -35,6 +35,11 @@ export interface SemanticColors {
   border: string;
   border_subtle: string;
   divider: string;
+  divider_subtle: string;
+  panel_header_background: string;
+  nested_surface_background: string;
+  app_chrome_background: string;
+  tab_strip_background: string;
   accent: string;
   accent_hover: string;
   accent_soft: string;

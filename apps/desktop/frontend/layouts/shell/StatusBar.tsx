@@ -289,10 +289,10 @@ export function StatusBar({ className }: StatusBarProps) {
     <div
       className={cn(
         'h-6 flex items-center justify-between px-3 text-[11px] font-sans leading-none',
-        'text-primary',
+        'text-primary border-t',
         className
       )}
-      style={{ backgroundColor: 'var(--status-bar-background)' }}
+      style={{ backgroundColor: 'var(--status-bar-background)', borderTop: '0.5px solid var(--color-divider-subtle)' }}
     >
       {/* ── Left side: workspace / operational state ── */}
       <div className="flex items-center space-x-3">

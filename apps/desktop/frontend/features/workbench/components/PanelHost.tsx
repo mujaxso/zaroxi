@@ -155,7 +155,6 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
         ref={panelRef}
         className={cn(
           'h-full bg-panel overflow-hidden flex flex-col relative min-h-0',
-          side === 'left' ? 'border-r' : 'border-l',
           side === 'right' ? 'panel-host-right' : '',
           className
         )}
@@ -166,6 +165,8 @@ export function PanelHost({ className, side = 'left' }: PanelHostProps) {
           minWidth: `${minPanelWidth}px`,
           maxWidth: `min(${maxPanelWidth}px, ${(factor * 100).toFixed(0)}vw)`,
           order: side === 'right' ? 2 : 0,
+          borderRight: side === 'left' ? '1px solid var(--color-divider-subtle)' : 'none',
+          borderLeft: side === 'right' ? '1px solid var(--color-divider-subtle)' : 'none',
         }}
       >
         {/* Resize handle */}

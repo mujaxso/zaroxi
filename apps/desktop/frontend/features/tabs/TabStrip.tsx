@@ -10,8 +10,8 @@ export function TabStrip() {
 
   return (
     <div
-      className="flex items-start h-9 overflow-x-auto overflow-y-hidden bg-activity-rail text-activity-rail-foreground border-b border-border"
-      style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      className="flex items-start h-9 overflow-x-auto overflow-y-hidden bg-activity-rail text-activity-rail-foreground"
+      style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', borderBottom: '0.5px solid var(--color-divider-subtle)' }}
       data-no-drag="true"
     >
       {tabs.map((tab) => (

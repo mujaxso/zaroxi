@@ -77,12 +77,13 @@ export function TopBar({ className }: TopBarProps) {
   return (
     <div 
       className={cn(
-        'h-10 flex items-center justify-between px-4 border-b',
+        'h-10 flex items-center justify-between px-4',
         'bg-title-bar text-title-bar-foreground',
         'select-none',
         isTauriEnv ? 'cursor-default' : 'cursor-auto',
         className
       )}
+      style={{ borderBottom: '0.5px solid var(--color-divider-subtle)' }}
       {...(isTauriEnv ? { 'data-tauri-drag-region': 'true' } : {})}
     >
       {/* Left section: Brand and menu */}

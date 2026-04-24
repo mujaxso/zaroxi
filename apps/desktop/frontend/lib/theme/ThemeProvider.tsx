@@ -43,6 +43,11 @@ function applyThemeColors(colors: SemanticColors) {
   root.style.setProperty('--color-border', colors.border);
   root.style.setProperty('--color-border-subtle', colors.border_subtle);
   root.style.setProperty('--color-divider', colors.divider);
+  root.style.setProperty('--color-divider-subtle', colors.divider_subtle);
+  root.style.setProperty('--color-panel-header-background', colors.panel_header_background);
+  root.style.setProperty('--color-nested-surface-background', colors.nested_surface_background);
+  root.style.setProperty('--color-app-chrome-background', colors.app_chrome_background);
+  root.style.setProperty('--color-tab-strip-background', colors.tab_strip_background);
   root.style.setProperty('--color-accent', colors.accent);
   root.style.setProperty('--color-accent-hover', colors.accent_hover);
   root.style.setProperty('--color-accent-soft', colors.accent_soft);
