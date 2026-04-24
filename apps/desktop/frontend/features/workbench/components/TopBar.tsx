@@ -4,6 +4,7 @@ import { useWorkbenchStore } from '../store/workbenchStore';
 import { useEffect, useState } from 'react';
 import { isTauri, getWindowInstance, windowControlActions } from '@/lib/platform/windowControls';
 import { useLayoutMode } from '@/hooks/useLayoutMode';
+import { useWorkspaceStore } from '@/features/workspace/stores/useWorkspaceStore';
 
 interface TopBarProps {
   className?: string;
@@ -12,6 +13,7 @@ interface TopBarProps {
 export function TopBar({ className }: TopBarProps) {
   const layoutMode = useLayoutMode();
   const { togglePanel } = useWorkbenchStore();
+  const { rootPath } = useWorkspaceStore();
   const [isMaximized, setIsMaximized] = useState(false);
   const [isTauriEnv, setIsTauriEnv] = useState(false);
 
@@ -106,28 +108,28 @@ export function TopBar({ className }: TopBarProps) {
         >
           <button
             onClick={() => togglePanel('explorer')}
-            className="px-2 py-1.5 text-xs hover:bg-hover-bg transition-colors text-secondary rounded-sm font-medium"
+            className="px-2 py-1.5 text-xs hover:bg-hover-bg transition-colors text-primary rounded-sm font-medium"
             data-no-drag="true"
           >
             File
           </button>
           <button
             onClick={() => togglePanel('search')}
-            className="px-2 py-1.5 text-xs hover:bg-hover-bg transition-colors text-secondary rounded-sm font-medium"
+            className="px-2 py-1.5 text-xs hover:bg-hover-bg transition-colors text-primary rounded-sm font-medium"
             data-no-drag="true"
           >
             Edit
           </button>
           <button
             onClick={() => togglePanel('settings')}
-            className="px-2 py-1.5 text-xs hover:bg-hover-bg transition-colors text-secondary rounded-sm font-medium"
+            className="px-2 py-1.5 text-xs hover:bg-hover-bg transition-colors text-primary rounded-sm font-medium"
             data-no-drag="true"
           >
             View
           </button>
           <button
             onClick={() => togglePanel('assistant')}
-            className="px-2 py-1.5 text-xs hover:bg-hover-bg transition-colors text-secondary rounded-sm font-medium"
+            className="px-2 py-1.5 text-xs hover:bg-hover-bg transition-colors text-primary rounded-sm font-medium"
             data-no-drag="true"
           >
             Tools
@@ -141,7 +143,7 @@ export function TopBar({ className }: TopBarProps) {
         {...(isTauriEnv ? { 'data-tauri-drag-region': 'true' } : {})}
       >
         <span className="text-sm text-muted-foreground truncate max-w-md">
-          No workspace open
+          {rootPath ? rootPath.split('/').pop() ?? rootPath : 'No project open'}
         </span>
       </div>
 
