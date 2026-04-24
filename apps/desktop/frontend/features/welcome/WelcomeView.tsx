@@ -77,7 +77,7 @@ export function WelcomeView() {
   };
 
   return (
-    <div className="h-full w-full flex items-start justify-center overflow-y-auto bg-editor">
+    <div className="h-full w-full flex items-start justify-center overflow-hidden bg-editor">
       <div className="max-w-xl w-full px-10 py-10 space-y-6">
         {/* Title / Brand */}
         <div className="pt-2 pb-4 border-b border-divider">
@@ -138,31 +138,6 @@ export function WelcomeView() {
           </ul>
         </Section>
 
-        {/* Keyboard Shortcuts */}
-        <Section title="Keyboard Shortcuts">
-          <div className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 text-sm">
-            <span className="text-muted-foreground">Open file</span>
-            <kbd className="font-mono text-xs text-primary text-right">
-              Ctrl+O
-            </kbd>
-            <span className="text-muted-foreground">Save file</span>
-            <kbd className="font-mono text-xs text-primary text-right">
-              Ctrl+S
-            </kbd>
-            <span className="text-muted-foreground">Command palette</span>
-            <kbd className="font-mono text-xs text-primary text-right">
-              Ctrl+Shift+P
-            </kbd>
-            <span className="text-muted-foreground">Toggle sidebar</span>
-            <kbd className="font-mono text-xs text-primary text-right">
-              Ctrl+B
-            </kbd>
-            <span className="text-muted-foreground">AI Assistant</span>
-            <kbd className="font-mono text-xs text-primary text-right">
-              Ctrl+Shift+A
-            </kbd>
-          </div>
-        </Section>
       </div>
     </div>
   );
