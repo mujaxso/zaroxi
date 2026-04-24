@@ -98,7 +98,6 @@ export function ExplorerContainer() {
   };
 
   const handleLoadChildren = async (path: string): Promise<void> => {
-    setLoading(true);
     try {
       const children = await WorkspaceService.loadDirectoryChildren(path);
       // Update the tree with loaded children
@@ -141,8 +140,6 @@ export function ExplorerContainer() {
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to load directory children');
       console.error('Failed to load directory children:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
