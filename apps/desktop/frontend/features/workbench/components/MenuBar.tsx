@@ -20,9 +20,14 @@ export function MenuBar() {
   const handleOpenWorkspace = async () => {
     if (!isTauriEnv) return;
     try {
-      const path = await invoke<string | null>('open_file_dialog', { directory: true });
-      if (path) {
-        await invoke('open_workspace', { path });
+      // Using the already-existing open_file_dialog command
+      const result: { selected_path: string | null } = await invoke('open_file_dialog');
+      if (result.selected_path) {
+        // open_workspace expects an OpenWorkspaceRequest { path }
+        await invoke('open_workspace', { path: result.selected_path });
+        // Open the explorer panel to show the opened workspace
+        const { togglePanel } = useWorkbenchStore.getState();
+        togglePanel('explorer');
       }
     } catch (e) {
       console.error('Failed to open workspace:', e);
