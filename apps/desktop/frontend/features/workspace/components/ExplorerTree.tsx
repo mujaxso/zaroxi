@@ -107,6 +107,7 @@ export function ExplorerTree({
         const isExpanded = node.isDir && expandedPaths.has(node.path);
         const isSelected = selectedPath === node.path;
         const isActive = activeFilePath === node.path;
+        const hasChildren = node.isDir && node.children && node.children.length > 0;
         
         return (
           <div key={node.id} className="relative">
