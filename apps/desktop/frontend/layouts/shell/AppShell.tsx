@@ -75,8 +75,8 @@ export function AppShell() {
             setRootPath(rootPath);
             // Fetch tree for the newly opened workspace
             invoke<{ tree: any[] }>('get_workspace_tree', {
-              workspaceId: event.payload.workspace_id,
-              rootPath,
+              workspace_id: event.payload.workspace_id,
+              root_path: rootPath,
             })
               .then((treeResult) => {
                 const treeData = treeResult?.tree ?? [];

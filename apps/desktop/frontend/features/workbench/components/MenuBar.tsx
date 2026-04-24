@@ -19,23 +19,11 @@ export function MenuBar() {
       console.log('Dialog result:', result);
       if (result.selected_path) {
         const selectedPath = result.selected_path;
-        // 1. Open workspace via backend (emits workspace:opened event)
+        // Open workspace via backend (emits workspace:opened event)
         await invoke('open_workspace', { path: selectedPath });
 
-        // 2. Fetch the full workspace tree using the backend command
-        const treeResult = await invoke<{ tree: any[] }>('get_workspace_tree', {
-          workspaceId: '',
-          rootPath: selectedPath,
-        });
-        const treeData = treeResult?.tree ?? [];
-
-        // 3. Update the workspace store with root path and tree
-        const { setRootPath, setTree } = useWorkspaceStore.getState();
-        setRootPath(selectedPath);
-        setTree(treeData);
-        console.log(`Workspace tree fetched: ${treeData.length} nodes`);
-
-        // 4. Open the explorer panel
+        // The workspace:opened event listener (in AppShell) will fetch the tree.
+        // We only need to open the explorer panel.
         useWorkbenchStore.getState().togglePanel('explorer');
       }
     } catch (e) {
