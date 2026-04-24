@@ -107,17 +107,21 @@ export function ExplorerContainer() {
           if (node.path === path && node.isDir) {
             return {
               ...node,
-              children: children.map(child => ({
-                id: child.path,
-                path: child.path,
-                name: child.name,
-                isDir: child.isDir,
-                fileType: child.fileType,
-                size: child.size,
-                modified: child.modified,
-                children: child.isDir ? [] : undefined,
-                parentPath: path,
-              }))
+              children: children.map(child => {
+                // Normalise camelCase / snake_case from Tauri backend
+                const isDir = child.isDir ?? child.is_dir ?? false;
+                return {
+                  id: child.path,
+                  path: child.path,
+                  name: child.name,
+                  isDir,
+                  fileType: child.fileType ?? child.file_type ?? undefined,
+                  size: child.size ?? child.size_bytes ?? undefined,
+                  modified: child.modified ?? child.modified_at ?? undefined,
+                  children: isDir ? [] : undefined,
+                  parentPath: path,
+                };
+              })
             };
           }
           if (node.children) {
