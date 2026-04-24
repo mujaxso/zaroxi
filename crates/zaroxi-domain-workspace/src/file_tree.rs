@@ -36,11 +36,7 @@ impl FileTreeNode {
             .and_then(|n| n.to_str())
             .map(|s| s.to_string())
             .unwrap_or_else(|| "".to_string());
-        Self::Directory {
-            path,
-            name,
-            children: Vec::new(),
-        }
+        Self::Directory { path, name, children: Vec::new() }
     }
 
     /// Create a file node.
@@ -50,16 +46,8 @@ impl FileTreeNode {
             .and_then(|n| n.to_str())
             .map(|s| s.to_string())
             .unwrap_or_else(|| "".to_string());
-        let extension = path
-            .extension()
-            .and_then(|e| e.to_str())
-            .map(|s| s.to_string());
-        Self::File {
-            path,
-            name,
-            extension,
-            size,
-        }
+        let extension = path.extension().and_then(|e| e.to_str()).map(|s| s.to_string());
+        Self::File { path, name, extension, size }
     }
 
     /// Get the path of the node.

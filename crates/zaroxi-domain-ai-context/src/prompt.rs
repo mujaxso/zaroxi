@@ -1,7 +1,7 @@
 //! Prompt construction.
 
-use super::packing::ContextPacker;
 use super::context::ContextCollection;
+use super::packing::ContextPacker;
 
 /// Build a prompt from context and a query.
 pub struct PromptBuilder {
@@ -26,9 +26,7 @@ impl PromptBuilder {
         let packer = ContextPacker::new(max_tokens);
         let packed = packer.pack(context);
 
-        let user = self.user_template
-            .replace("{context}", &packed)
-            .replace("{query}", query);
+        let user = self.user_template.replace("{context}", &packed).replace("{query}", query);
 
         format!("{}\n\n{}", self.system_template, user)
     }

@@ -5,8 +5,8 @@
 //! Only used on macOS (top screen bar). On Linux/Windows the React menu is used.
 
 use tauri::{
-    menu::{MenuBuilder, MenuItemBuilder, PredefinedMenuItem, SubmenuBuilder},
     AppHandle,
+    menu::{MenuBuilder, MenuItemBuilder, PredefinedMenuItem, SubmenuBuilder},
 };
 
 /// Build and set the application menu.
@@ -20,12 +20,10 @@ pub fn build_menu(app: &AppHandle) -> tauri::Result<()> {
     let file_open = MenuItemBuilder::with_id("file_open", "Open Workspace…")
         .accelerator("CmdOrCtrl+O")
         .build(app)?;
-    let file_new = MenuItemBuilder::with_id("file_new", "New File")
-        .accelerator("CmdOrCtrl+N")
-        .build(app)?;
-    let file_save = MenuItemBuilder::with_id("file_save", "Save")
-        .accelerator("CmdOrCtrl+S")
-        .build(app)?;
+    let file_new =
+        MenuItemBuilder::with_id("file_new", "New File").accelerator("CmdOrCtrl+N").build(app)?;
+    let file_save =
+        MenuItemBuilder::with_id("file_save", "Save").accelerator("CmdOrCtrl+S").build(app)?;
     let file_save_as = MenuItemBuilder::with_id("file_save_as", "Save As…")
         .accelerator("CmdOrCtrl+Shift+S")
         .build(app)?;
@@ -67,18 +65,14 @@ pub fn build_menu(app: &AppHandle) -> tauri::Result<()> {
         .accelerator("CmdOrCtrl+B")
         .build(app)?;
 
-    let view_submenu = SubmenuBuilder::new(app, "View")
-        .item(&view_toggle_sidebar)
-        .build()?;
+    let view_submenu = SubmenuBuilder::new(app, "View").item(&view_toggle_sidebar).build()?;
 
     // ---- Tools submenu ----
     let tools_settings = MenuItemBuilder::with_id("tools_settings", "Settings…")
         .accelerator("CmdOrCtrl+,")
         .build(app)?;
 
-    let tools_submenu = SubmenuBuilder::new(app, "Tools")
-        .item(&tools_settings)
-        .build()?;
+    let tools_submenu = SubmenuBuilder::new(app, "Tools").item(&tools_settings).build()?;
 
     // ---- Combine everything ----
     let menu = MenuBuilder::new(app)

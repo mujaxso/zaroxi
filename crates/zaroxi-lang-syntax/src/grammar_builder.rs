@@ -1,12 +1,12 @@
 //! Download and compile Tree-sitter grammars.
 
+use serde_json;
 use std::fs;
 use std::process::Command;
-use serde_json;
 use tempfile;
 
-use crate::runtime::Runtime;
 use crate::grammar_registry;
+use crate::runtime::Runtime;
 
 /// Try to locate tree-sitter include directory containing parser.h
 fn find_tree_sitter_include_path() -> Result<String, String> {
@@ -23,20 +23,26 @@ fn find_tree_sitter_include_path() -> Result<String, String> {
             return Ok(path.to_string());
         }
     }
-    
+
     // Try to find via cargo metadata
-    if let Ok(output) = std::process::Command::new("cargo")
-        .args(["metadata", "--format-version=1"])
-        .output()
+    if let Ok(output) =
+        std::process::Command::new("cargo").args(["metadata", "--format-version=1"]).output()
     {
         if output.status.success() {
             let metadata: serde_json::Value = serde_json::from_slice(&output.stdout)
                 .map_err(|e| format!("Failed to parse cargo metadata: {}", e))?;
-            if let Some(packages) = metadata.get("packages").and_then(|p: &serde_json::Value| p.as_array()) {
+            if let Some(packages) =
+                metadata.get("packages").and_then(|p: &serde_json::Value| p.as_array())
+            {
                 for package in packages {
-                    if let Some(name) = package.get("name").and_then(|n: &serde_json::Value| n.as_str()) {
+                    if let Some(name) =
+                        package.get("name").and_then(|n: &serde_json::Value| n.as_str())
+                    {
                         if name == "tree-sitter" {
-                            if let Some(manifest_path) = package.get("manifest_path").and_then(|m: &serde_json::Value| m.as_str()) {
+                            if let Some(manifest_path) = package
+                                .get("manifest_path")
+                                .and_then(|m: &serde_json::Value| m.as_str())
+                            {
                                 let manifest = std::path::Path::new(manifest_path);
                                 if let Some(root) = manifest.parent() {
                                     let include_path = root.join("lib").join("include");
@@ -51,7 +57,7 @@ fn find_tree_sitter_include_path() -> Result<String, String> {
             }
         }
     }
-    
+
     // Try to find in target directory
     if let Ok(cargo_manifest_dir) = std::env::var("CARGO_MANIFEST_DIR") {
         let manifest_path = std::path::Path::new(&cargo_manifest_dir);
@@ -83,11 +89,10 @@ fn find_tree_sitter_include_path() -> Result<String, String> {
             }
         }
     }
-    
+
     // Last resort: try to use pkg-config
-    if let Ok(output) = std::process::Command::new("pkg-config")
-        .args(["--cflags", "tree-sitter"])
-        .output()
+    if let Ok(output) =
+        std::process::Command::new("pkg-config").args(["--cflags", "tree-sitter"]).output()
     {
         if output.status.success() {
             let stdout = String::from_utf8_lossy(&output.stdout);
@@ -99,7 +104,7 @@ fn find_tree_sitter_include_path() -> Result<String, String> {
             }
         }
     }
-    
+
     Err("Could not find tree-sitter include path".to_string())
 }
 
@@ -107,97 +112,97 @@ fn find_tree_sitter_include_path() -> Result<String, String> {
 pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
     let grammar_info = grammar_registry::for_language(language_id)
         .ok_or_else(|| format!("No grammar info available for {}", language_id))?;
-    
+
     // Create temporary directory
-    let temp_dir = tempfile::tempdir()
-        .map_err(|e| format!("Failed to create temp directory: {}", e))?;
-    
+    let temp_dir =
+        tempfile::tempdir().map_err(|e| format!("Failed to create temp directory: {}", e))?;
+
     // Download source as zip instead of using git clone
     println!("Downloading {} grammar source...", language_id);
     let repo_dir = temp_dir.path().join("repo");
-    
+
     // Create repo directory
     fs::create_dir_all(&repo_dir)
         .map_err(|e| format!("Failed to create directory {}: {}", repo_dir.display(), e))?;
-    
+
     // Special handling for markdown to ensure correct URL and structure
     let (repo_url, subdirectory) = if language_id == "markdown" {
         println!("Using corrected markdown repository URL and structure...");
         (
             "https://github.com/tree-sitter-grammars/tree-sitter-markdown".to_string(),
-            Some("tree-sitter-markdown-inline".to_string())
+            Some("tree-sitter-markdown-inline".to_string()),
         )
     } else {
         (grammar_info.repo_url.clone(), grammar_info.subdirectory.clone())
     };
-    
+
     println!("Cloning {}...", repo_url);
-    
+
     // Clone repository with git
     println!("Cloning {}...", repo_url);
-    
+
     let mut cmd = Command::new("git");
     cmd.args(["clone", "--depth", "1"]);
     cmd.env("GIT_TERMINAL_PROMPT", "0");
     cmd.args([&repo_url, repo_dir.to_str().unwrap()]);
-    
-    let status = cmd.status()
-        .map_err(|e| format!("Failed to run git clone: {}", e))?;
-    
+
+    let status = cmd.status().map_err(|e| format!("Failed to run git clone: {}", e))?;
+
     if !status.success() {
         return Err(format!("Failed to clone repository. Exit code: {:?}", status.code()));
     }
-    
+
     println!("Successfully cloned repository");
-    
+
     // No zip extraction needed - we cloned directly into repo_dir
-    
+
     // We cloned directly into repo_dir, so source_dir is repo_dir
     // Navigate to subdirectory if needed
-    let source_dir = if let Some(subdir) = &subdirectory {
-        repo_dir.join(subdir)
-    } else {
-        repo_dir.clone()
-    };
-    
+    let source_dir =
+        if let Some(subdir) = &subdirectory { repo_dir.join(subdir) } else { repo_dir.clone() };
+
     // Verify source directory exists
     if !source_dir.exists() {
         return Err(format!("Source directory does not exist: {:?}", source_dir));
     }
-    
+
     // For languages with subdirectories, we need to check if the source files exist
     // relative to the source_dir, not the repo root
     // The source_files in grammar_info are relative to the subdirectory
     // So we don't need to adjust them
-    
+
     // Check if tree-sitter CLI is available and at a compatible version
-    let has_tree_sitter_cli = Command::new("tree-sitter")
-        .arg("--version")
-        .output()
-        .is_ok_and(|output| {
+    let has_tree_sitter_cli =
+        Command::new("tree-sitter").arg("--version").output().is_ok_and(|output| {
             if output.status.success() {
                 let version_str = String::from_utf8_lossy(&output.stdout);
                 // Check if version is at least 0.20.0
-                version_str.contains("0.20") || version_str.contains("0.21") || 
-                version_str.contains("0.22") || version_str.contains("0.23") ||
-                version_str.contains("0.24") || version_str.contains("0.25") ||
-                version_str.contains("0.26")
+                version_str.contains("0.20")
+                    || version_str.contains("0.21")
+                    || version_str.contains("0.22")
+                    || version_str.contains("0.23")
+                    || version_str.contains("0.24")
+                    || version_str.contains("0.25")
+                    || version_str.contains("0.26")
             } else {
                 false
             }
         });
-    
+
     let lib_path;
-    
+
     if has_tree_sitter_cli {
         // Use tree-sitter CLI
         println!("Using tree-sitter CLI to build {}...", language_id);
-        
+
         // For TypeScript/TSX, the grammar.json is in the source_dir itself, not in a further src subdirectory
         // Determine the directory to run tree-sitter build in
-        let build_dir: &std::path::Path = if repo_dir.join("grammar.js").exists() || repo_dir.join("grammar.json").exists() {
+        let build_dir: &std::path::Path = if repo_dir.join("grammar.js").exists()
+            || repo_dir.join("grammar.json").exists()
+        {
             &repo_dir
-        } else if source_dir.join("grammar.js").exists() || source_dir.join("grammar.json").exists() {
+        } else if source_dir.join("grammar.js").exists() || source_dir.join("grammar.json").exists()
+        {
             &source_dir
         } else {
             // For TypeScript/TSX, check if grammar.json exists in the parent directory
@@ -216,7 +221,7 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
                 &source_dir
             }
         };
-        
+
         // Check if package.json exists and install dependencies if needed
         if build_dir.join("package.json").exists() {
             println!("Installing npm dependencies...");
@@ -225,7 +230,7 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
                 .arg("install")
                 .output()
                 .map_err(|e| format!("Failed to run npm install: {}", e))?;
-            
+
             if !install_output.status.success() {
                 let stderr = String::from_utf8_lossy(&install_output.stderr);
                 let stdout = String::from_utf8_lossy(&install_output.stdout);
@@ -235,17 +240,17 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
                 println!("npm dependencies installed successfully");
             }
         }
-        
+
         // Run tree-sitter generate if needed
         // Check if parser.c exists in the source directory
-        let parser_c_exists = source_dir.join("parser.c").exists() || 
-                             source_dir.join("src/parser.c").exists();
-        
+        let parser_c_exists =
+            source_dir.join("parser.c").exists() || source_dir.join("src/parser.c").exists();
+
         if !parser_c_exists {
             // Check if grammar.js or grammar.json exists in build_dir
             let grammar_js_exists = build_dir.join("grammar.js").exists();
             let grammar_json_exists = build_dir.join("grammar.json").exists();
-            
+
             if grammar_js_exists || grammar_json_exists {
                 println!("Running tree-sitter generate in {}...", build_dir.display());
                 let generate_output = Command::new("tree-sitter")
@@ -253,11 +258,14 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
                     .arg("generate")
                     .output()
                     .map_err(|e| format!("Failed to run tree-sitter generate: {}", e))?;
-                
+
                 if !generate_output.status.success() {
                     let stderr = String::from_utf8_lossy(&generate_output.stderr);
                     let stdout = String::from_utf8_lossy(&generate_output.stdout);
-                    eprintln!("tree-sitter generate failed:\nstdout: {}\nstderr: {}", stdout, stderr);
+                    eprintln!(
+                        "tree-sitter generate failed:\nstdout: {}\nstderr: {}",
+                        stdout, stderr
+                    );
                     // Continue anyway, maybe parser.c already exists elsewhere
                 } else {
                     println!("tree-sitter generate succeeded");
@@ -268,32 +276,39 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
         } else {
             println!("parser.c already exists, skipping tree-sitter generate");
         }
-        
+
         // Always run tree-sitter build when CLI is available
         println!("Running tree-sitter build for {} in {}...", language_id, build_dir.display());
-        
+
         // For TypeScript/TSX, we need to run tree-sitter build in the subdirectory
         let mut cmd = Command::new("tree-sitter");
         cmd.current_dir(build_dir);
-        
+
         // Always use "build" command without --grammar flag
         cmd.arg("build");
-        
-        let build_output = cmd
-            .output()
-            .map_err(|e| format!("Failed to run tree-sitter build: {}", e))?;
-        
+
+        let build_output =
+            cmd.output().map_err(|e| format!("Failed to run tree-sitter build: {}", e))?;
+
         if !build_output.status.success() {
             let stderr = String::from_utf8_lossy(&build_output.stderr);
             let stdout = String::from_utf8_lossy(&build_output.stdout);
             eprintln!("tree-sitter build failed:\nstdout: {}\nstderr: {}", stdout, stderr);
-            
+
             // Fall back to manual compilation
             println!("tree-sitter build failed, falling back to manual compilation...");
-            let lib_path = manual_compile(&grammar_info, &source_dir, &repo_dir, language_id, &temp_dir)?;
-            return install_library_and_queries(&grammar_info, &source_dir, &repo_dir, language_id, &temp_dir, lib_path);
+            let lib_path =
+                manual_compile(&grammar_info, &source_dir, &repo_dir, language_id, &temp_dir)?;
+            return install_library_and_queries(
+                &grammar_info,
+                &source_dir,
+                &repo_dir,
+                language_id,
+                &temp_dir,
+                lib_path,
+            );
         }
-        
+
         // Print build output for debugging
         let build_stdout = String::from_utf8_lossy(&build_output.stdout);
         let build_stderr = String::from_utf8_lossy(&build_output.stderr);
@@ -303,7 +318,7 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
         if !build_stderr.trim().is_empty() {
             println!("tree-sitter build stderr: {}", build_stderr);
         }
-        
+
         // Find the built library
         let lib_name = get_library_name(language_id);
         let parser_lib_name = if cfg!(windows) {
@@ -313,7 +328,7 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
         } else {
             "parser.so"
         };
-        
+
         // Check common locations
         let possible_paths = vec![
             source_dir.join(parser_lib_name),
@@ -325,7 +340,7 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
             build_dir.join("target").join("release").join(parser_lib_name),
             build_dir.join("target").join("release").join(&lib_name),
         ];
-        
+
         // For markdown, also check markdown-inline.so
         let markdown_paths = if language_id == "markdown" {
             let markdown_lib_name = if cfg!(windows) {
@@ -344,9 +359,10 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
         } else {
             vec![]
         };
-        
-        let all_paths: Vec<std::path::PathBuf> = possible_paths.into_iter().chain(markdown_paths.into_iter()).collect();
-        
+
+        let all_paths: Vec<std::path::PathBuf> =
+            possible_paths.into_iter().chain(markdown_paths.into_iter()).collect();
+
         let mut found = None;
         for path in &all_paths {
             if path.exists() {
@@ -354,42 +370,56 @@ pub fn build_and_install_grammar(language_id: &str) -> Result<(), String> {
                 break;
             }
         }
-        
-        lib_path = found.ok_or_else(|| {
-            format!("Could not find built library after tree-sitter build")
-        })?;
+
+        lib_path =
+            found.ok_or_else(|| format!("Could not find built library after tree-sitter build"))?;
     } else {
         // Manual compilation with cc
         println!("Using cc to build {}...", language_id);
-        let lib_path = manual_compile(&grammar_info, &source_dir, &repo_dir, language_id, &temp_dir)?;
-        return install_library_and_queries(&grammar_info, &source_dir, &repo_dir, language_id, &temp_dir, lib_path);
+        let lib_path =
+            manual_compile(&grammar_info, &source_dir, &repo_dir, language_id, &temp_dir)?;
+        return install_library_and_queries(
+            &grammar_info,
+            &source_dir,
+            &repo_dir,
+            language_id,
+            &temp_dir,
+            lib_path,
+        );
     }
-    
+
     // Use the helper function to install library and queries
-    install_library_and_queries(&grammar_info, &source_dir, &repo_dir, language_id, &temp_dir, lib_path)
+    install_library_and_queries(
+        &grammar_info,
+        &source_dir,
+        &repo_dir,
+        language_id,
+        &temp_dir,
+        lib_path,
+    )
 }
 
 /// Generate default language.toml content for a language
-fn generate_language_toml(language_id: &str, grammar_info: &crate::grammar_registry::GrammarInfo) -> String {
+fn generate_language_toml(
+    language_id: &str,
+    grammar_info: &crate::grammar_registry::GrammarInfo,
+) -> String {
     // Determine comment syntax based on language
     let (comment_line, comment_start, comment_end) = match language_id {
-        "rust" | "c" | "cpp" | "c_sharp" | "java" | "javascript" | "typescript" | "tsx" | "go" => 
-            ("//", "/*", "*/"),
-        "python" | "bash" | "ruby" | "yaml" | "dockerfile" | "cmake" | "toml" =>
-            ("#", "", ""),
-        "lua" =>
-            ("--", "--[[", "]]"),
-        "html" | "css" =>
-            ("", "<!--", "-->"),
-        "markdown" =>
-            ("", "", ""),
-        _ =>
-            ("//", "/*", "*/"), // Default
+        "rust" | "c" | "cpp" | "c_sharp" | "java" | "javascript" | "typescript" | "tsx" | "go" => {
+            ("//", "/*", "*/")
+        }
+        "python" | "bash" | "ruby" | "yaml" | "dockerfile" | "cmake" | "toml" => ("#", "", ""),
+        "lua" => ("--", "--[[", "]]"),
+        "html" | "css" => ("", "<!--", "-->"),
+        "markdown" => ("", "", ""),
+        _ => ("//", "/*", "*/"), // Default
     };
-    
+
     // Basic template with common zaroxi_infra_settings
     // This can be expanded based on language-specific needs
-    format!(r#"[language]
+    format!(
+        r#"[language]
 id = "{}"
 name = "{}"
 extensions = [{}]
@@ -412,7 +442,9 @@ use_tabs = false
 "#,
         language_id,
         grammar_info.name,
-        grammar_info.extensions.iter()
+        grammar_info
+            .extensions
+            .iter()
             .map(|ext| format!("\"{}\"", ext))
             .collect::<Vec<_>>()
             .join(", "),
@@ -432,17 +464,18 @@ fn install_library_and_queries(
     lib_path: std::path::PathBuf,
 ) -> Result<(), String> {
     let runtime = Runtime::new();
-    
+
     // Install library to runtime directory
     let target_dir = runtime.grammar_dir();
     fs::create_dir_all(&target_dir)
         .map_err(|e| format!("Failed to create target directory: {}", e))?;
-    
+
     let target_lib_path = target_dir.join(get_library_name(language_id));
-    
+
     // For markdown, if the built library has a different name, rename it
     let source_lib_path = if language_id == "markdown" {
-        let has_inline_name = lib_path.file_name()
+        let has_inline_name = lib_path
+            .file_name()
             .and_then(|n: &std::ffi::OsStr| n.to_str())
             .map(|n: &str| n.contains("markdown-inline"))
             .unwrap_or(false);
@@ -458,12 +491,12 @@ fn install_library_and_queries(
     } else {
         lib_path
     };
-    
+
     fs::copy(&source_lib_path, &target_lib_path)
         .map_err(|e| format!("Failed to copy library: {}", e))?;
-    
+
     println!("Installed library to: {}", target_lib_path.display());
-    
+
     // Install query files
     // For markdown, queries are in the parent directory (tree-sitter-markdown/queries)
     // But the markdown grammar uses tree-sitter-markdown-inline subdirectory
@@ -478,7 +511,7 @@ fn install_library_and_queries(
             // Look in source_dir/queries (unlikely but possible)
             source_dir.join("queries"),
         ];
-        
+
         // Find the first existing directory
         let mut found_dir = None;
         for dir in possible_dirs {
@@ -493,18 +526,18 @@ fn install_library_and_queries(
     } else {
         // For all languages, try multiple possible query locations
         let mut possible_dirs = Vec::new();
-        
+
         // 1. Check source_dir/queries (most common)
         possible_dirs.push(source_dir.join("queries"));
-        
+
         // 2. Check parent directory queries (for languages in subdirectories)
         if let Some(parent) = source_dir.parent() {
             possible_dirs.push(parent.join("queries"));
         }
-        
+
         // 3. Check repo root queries
         possible_dirs.push(repo_dir.join("queries"));
-        
+
         // 4. For all languages, check language-specific query subdirectories
         // Many grammars store queries in queries/{language_id}/ directory
         if let Some(parent) = source_dir.parent() {
@@ -518,13 +551,13 @@ fn install_library_and_queries(
                 // Also add the root queries directory (already added above, but keep for clarity)
             }
         }
-        
+
         // 5. Also check for queries in the source directory itself (some grammars have queries in src/queries)
         let source_queries_dir = source_dir.join("queries");
         if source_queries_dir.exists() {
             possible_dirs.push(source_queries_dir);
         }
-        
+
         // 6. For TypeScript/TSX, also check the specific structure
         if language_id == "typescript" || language_id == "tsx" {
             // In tree-sitter-typescript, queries might be in the language subdirectory directly
@@ -537,7 +570,7 @@ fn install_library_and_queries(
                 possible_dirs.push(repo_queries_subdir);
             }
         }
-        
+
         // Find the first existing directory
         let mut found_dir = None;
         for dir in &possible_dirs {
@@ -547,30 +580,30 @@ fn install_library_and_queries(
                 break;
             }
         }
-        
+
         // If none found, use source_dir/queries as default (even if it doesn't exist)
         found_dir.unwrap_or_else(|| source_dir.join("queries"))
     };
-    
+
     // Always create the query target directory
     let query_target_dir = runtime.language_dir(language_id).join("queries");
     fs::create_dir_all(&query_target_dir)
         .map_err(|e| format!("Failed to create query directory: {}", e))?;
-        
+
     // Collect all potential query source directories to check
     let mut potential_dirs = Vec::new();
-        
+
     // Add the primary query source directory
     if query_source_dir.exists() {
         potential_dirs.push(query_source_dir.clone());
     }
-        
+
     // Add the repo root queries directory
     let repo_queries_dir = temp_dir.path().join("repo").join("queries");
     if repo_queries_dir.exists() {
         potential_dirs.push(repo_queries_dir);
     }
-        
+
     // For languages with subdirectories, also check the parent directory's queries
     if let Some(_subdir) = &grammar_info.subdirectory {
         let parent_dir = temp_dir.path().join("repo");
@@ -579,18 +612,22 @@ fn install_library_and_queries(
             potential_dirs.push(parent_queries);
         }
     }
-        
+
     // Try to copy each query file from any potential directory
     for query_file in &grammar_info.query_files {
         let mut copied = false;
-            
+
         for source_dir in &potential_dirs {
             let source_path = source_dir.join(query_file);
             if source_path.exists() {
                 let target_path = query_target_dir.join(query_file);
                 match fs::copy(&source_path, &target_path) {
                     Ok(_) => {
-                        println!("Installed query file: {} from {}", query_file, source_dir.display());
+                        println!(
+                            "Installed query file: {} from {}",
+                            query_file,
+                            source_dir.display()
+                        );
                         copied = true;
                         break;
                     }
@@ -600,13 +637,15 @@ fn install_library_and_queries(
                 }
             }
         }
-            
+
         if !copied {
-            println!("Note: Query file {} not found for {} (this may be normal if the grammar doesn't provide it)", 
-                     query_file, language_id);
+            println!(
+                "Note: Query file {} not found for {} (this may be normal if the grammar doesn't provide it)",
+                query_file, language_id
+            );
         }
     }
-    
+
     // Create language.toml if it doesn't exist
     let language_toml_path = query_target_dir.join("language.toml");
     if !language_toml_path.exists() {
@@ -618,7 +657,7 @@ fn install_library_and_queries(
     } else {
         println!("language.toml already exists for {}", language_id);
     }
-    
+
     println!("Successfully installed {} grammar!", language_id);
     Ok(())
 }
@@ -632,7 +671,7 @@ fn manual_compile(
     temp_dir: &tempfile::TempDir,
 ) -> Result<std::path::PathBuf, String> {
     println!("Compiling {} manually with cc...", language_id);
-    
+
     // Check if source files exist
     let mut source_files_exist = true;
     for source_file in &grammar_info.source_files {
@@ -641,11 +680,11 @@ fn manual_compile(
             source_files_exist = false;
         }
     }
-    
+
     if !source_files_exist {
         return Err(format!("Some source files are missing for {}", language_id));
     }
-    
+
     // Compile all source files
     let mut object_files = Vec::new();
     for source_file in &grammar_info.source_files {
@@ -654,17 +693,17 @@ fn manual_compile(
             println!("Warning: Source file {} does not exist, skipping", source_file);
             continue; // Skip missing files (some grammars don't have scanner.c)
         }
-            
+
         let object_file = temp_dir.path().join(format!("{}.o", source_file.replace('/', "_")));
-            
+
         println!("Compiling {}...", source_file);
         // Try to find tree-sitter include path
         let mut include_args = vec!["-c", "-fPIC"];
-            
+
         // Add include path for the source directory
         include_args.push("-I");
         include_args.push(source_dir.to_str().unwrap());
-            
+
         // For TypeScript/TSX, we need to include the common directory which is two levels up
         if language_id == "typescript" || language_id == "tsx" {
             if let Some(parent) = source_dir.parent() {
@@ -677,16 +716,16 @@ fn manual_compile(
                 }
             }
         }
-            
+
         // Store tree-sitter include path in a variable that lives long enough
         let tree_sitter_include = find_tree_sitter_include_path().ok();
-            
+
         // Add include path for tree-sitter headers if available
         if let Some(tree_sitter_include) = &tree_sitter_include {
             include_args.push("-I");
             include_args.push(tree_sitter_include);
         }
-            
+
         // Add include path for the repo root (for common/ directory)
         if let Some(repo_root) = source_dir.parent() {
             if repo_root.join("common").exists() {
@@ -694,49 +733,47 @@ fn manual_compile(
                 include_args.push(repo_root.to_str().unwrap());
             }
         }
-            
+
         include_args.extend_from_slice(&["-o", object_file.to_str().unwrap()]);
-            
+
         let output = std::process::Command::new("cc")
             .args(&include_args)
             .arg(&source_path)
             .current_dir(&source_dir)
             .output()
             .map_err(|e| format!("Failed to compile {}: {}", source_file, e))?;
-            
+
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
             return Err(format!("Failed to compile {}: {}", source_file, stderr));
         }
-            
+
         object_files.push(object_file);
     }
-    
+
     if object_files.is_empty() {
         return Err("No source files compiled".to_string());
     }
-    
+
     // Link shared library
     let lib_name = get_library_name(language_id);
     let lib_path = temp_dir.path().join(&lib_name);
-    
+
     let mut cmd = std::process::Command::new("cc");
-    cmd.args(["-shared", "-fPIC", "-o"])
-        .arg(&lib_path);
-    
+    cmd.args(["-shared", "-fPIC", "-o"]).arg(&lib_path);
+
     for obj in &object_files {
         cmd.arg(obj);
     }
-    
+
     cmd.arg("-lstdc++");
-    
-    let status = cmd.status()
-        .map_err(|e| format!("Failed to link library: {}", e))?;
-    
+
+    let status = cmd.status().map_err(|e| format!("Failed to link library: {}", e))?;
+
     if !status.success() {
         return Err("Failed to link shared library".to_string());
     }
-    
+
     Ok(lib_path)
 }
 
@@ -750,14 +787,14 @@ fn get_library_name(language_id: &str) -> String {
     } else {
         ".so"
     };
-    
+
     // Some language IDs use underscores but the library uses hyphens
     // For example: "c_sharp" -> "c-sharp" in library name
     let lib_name = match language_id {
         "c_sharp" => "c-sharp",
         _ => language_id,
     };
-    
+
     format!("{}tree-sitter-{}{}", prefix, lib_name, extension)
 }
 
@@ -771,7 +808,7 @@ pub fn is_grammar_installed(language_id: &str) -> bool {
 /// Install missing grammars for a list of languages
 pub fn install_missing_grammars(language_ids: &[&str]) -> Vec<String> {
     let mut installed = Vec::new();
-    
+
     for &language_id in language_ids {
         if !is_grammar_installed(language_id) {
             println!("Grammar for {} is not installed. Installing...", language_id);
@@ -789,6 +826,6 @@ pub fn install_missing_grammars(language_ids: &[&str]) -> Vec<String> {
             println!("Grammar for {} is already installed", language_id);
         }
     }
-    
+
     installed
 }

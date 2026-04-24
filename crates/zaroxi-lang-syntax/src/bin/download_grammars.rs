@@ -34,10 +34,10 @@ fn main() -> Result<(), String> {
                 eprintln!("Example: cargo run --bin download_grammars -- install rust typescript");
                 return Ok(());
             }
-            
+
             let language_ids: Vec<&str> = languages.iter().map(|s| s.as_str()).collect();
             let installed = grammar_builder::install_missing_grammars(&language_ids);
-            
+
             if installed.is_empty() {
                 println!("All specified grammars are already installed.");
             } else {
@@ -61,6 +61,6 @@ fn main() -> Result<(), String> {
             }
         }
     }
-    
+
     Ok(())
 }

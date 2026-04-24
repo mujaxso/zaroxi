@@ -1,20 +1,21 @@
 //! Dynamic loading of Tree-sitter grammars from bundled runtime.
 
-use std::collections::HashMap;
-use std::sync::{OnceLock, Mutex};
-use tree_sitter;
 use libloading::Library;
+use std::collections::HashMap;
+use std::sync::{Mutex, OnceLock};
+use tree_sitter;
 
-use crate::runtime::Runtime;
 use crate::grammar_registry::GrammarRegistry;
+use crate::runtime::Runtime;
 
 /// Global cache for loaded languages
-static LANGUAGE_CACHE: OnceLock<Mutex<HashMap<String, Option<tree_sitter::Language>>>> = OnceLock::new();
+static LANGUAGE_CACHE: OnceLock<Mutex<HashMap<String, Option<tree_sitter::Language>>>> =
+    OnceLock::new();
 
 /// Load a Tree-sitter language dynamically from the runtime directory
 pub fn load_language(language_id: &str) -> Option<tree_sitter::Language> {
     let cache = LANGUAGE_CACHE.get_or_init(|| Mutex::new(HashMap::new()));
-    
+
     // Check cache first
     {
         let cache_guard = cache.lock().unwrap();
@@ -22,14 +23,14 @@ pub fn load_language(language_id: &str) -> Option<tree_sitter::Language> {
             return cached.clone();
         }
     }
-    
+
     // Not in cache, try to load
     let result = load_language_impl(language_id);
-    
+
     // Store in cache
     let mut cache_guard = cache.lock().unwrap();
     cache_guard.insert(language_id.to_string(), result.clone());
-    
+
     result
 }
 
@@ -40,18 +41,18 @@ fn load_language_impl(language_id: &str) -> Option<tree_sitter::Language> {
         eprintln!("DEBUG: Language {} not in registry", language_id);
         return None;
     }
-    
+
     let runtime = Runtime::new();
-    
+
     // Check if the grammar library exists
     let library_path = runtime.grammar_library_path(language_id);
     if !library_path.exists() {
         eprintln!("DEBUG: Library path doesn't exist: {}", library_path.display());
         return None;
     }
-    
+
     println!("DEBUG: Loading language {} from {}", language_id, library_path.display());
-    
+
     // Load the library
     unsafe {
         match Library::new(&library_path) {
@@ -59,22 +60,24 @@ fn load_language_impl(language_id: &str) -> Option<tree_sitter::Language> {
                 // For markdown, try multiple symbol names in order
                 let symbol_names: Vec<String> = if language_id == "markdown" {
                     vec![
-                        "tree_sitter_markdown".to_string(),  // Try non-inline first
+                        "tree_sitter_markdown".to_string(), // Try non-inline first
                         "tree_sitter_markdown_inline".to_string(),
                         format!("tree_sitter_{}", language_id),
                     ]
                 } else {
                     vec![format!("tree_sitter_{}", language_id)]
                 };
-                
+
                 let mut last_error = None;
-                
+
                 for symbol_name in symbol_names {
                     println!("DEBUG: Looking for symbol: {}", symbol_name);
-                    
-                    let language_fn: Result<libloading::Symbol<unsafe extern "C" fn() -> tree_sitter::Language>, _> = 
-                        lib.get(symbol_name.as_bytes());
-                    
+
+                    let language_fn: Result<
+                        libloading::Symbol<unsafe extern "C" fn() -> tree_sitter::Language>,
+                        _,
+                    > = lib.get(symbol_name.as_bytes());
+
                     match language_fn {
                         Ok(func) => {
                             println!("DEBUG: Found symbol {} for {}", symbol_name, language_id);
@@ -82,8 +85,12 @@ fn load_language_impl(language_id: &str) -> Option<tree_sitter::Language> {
                             // Leak the library to keep it loaded
                             std::mem::forget(lib);
                             // Print some info about the language
-                            println!("DEBUG: Language {} loaded successfully via {}, node count: {}", 
-                                     language_id, symbol_name, language.node_kind_count());
+                            println!(
+                                "DEBUG: Language {} loaded successfully via {}, node count: {}",
+                                language_id,
+                                symbol_name,
+                                language.node_kind_count()
+                            );
                             // Print node types for debugging
                             if language_id == "markdown" {
                                 for i in 0..language.node_kind_count() {
@@ -104,7 +111,7 @@ fn load_language_impl(language_id: &str) -> Option<tree_sitter::Language> {
                         }
                     }
                 }
-                
+
                 // If we get here, all symbols failed
                 if let Some(e) = last_error {
                     eprintln!("DEBUG: All symbols failed for {}: {}", language_id, e);
@@ -143,12 +150,12 @@ impl DynamicGrammarLoader {
     pub fn load(language_id: &str) -> Option<tree_sitter::Language> {
         load_language(language_id)
     }
-    
+
     /// Check if a grammar is available
     pub fn is_available(language_id: &str) -> bool {
         is_grammar_available(language_id)
     }
-    
+
     /// Preload all grammars
     pub fn preload_all() {
         preload_available_grammars();

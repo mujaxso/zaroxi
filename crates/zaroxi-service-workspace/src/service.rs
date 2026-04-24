@@ -1,11 +1,11 @@
 //! Workspace service implementation.
 
+use anyhow::Result;
+use chrono::{DateTime, Utc};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tracing::info;
-use anyhow::Result;
 use uuid::Uuid;
-use chrono::{DateTime, Utc};
 
 /// Workspace service for handling workspace operations.
 pub struct WorkspaceService {
@@ -21,9 +21,7 @@ struct WorkspaceServiceState {
 impl WorkspaceService {
     /// Create a new workspace service.
     pub fn new() -> Self {
-        Self {
-            state: Arc::new(Mutex::new(WorkspaceServiceState { running: false })),
-        }
+        Self { state: Arc::new(Mutex::new(WorkspaceServiceState { running: false })) }
     }
 
     /// Start the workspace service.
@@ -55,11 +53,14 @@ impl WorkspaceService {
     }
 
     /// Open a workspace at the given path
-    pub async fn open_workspace(&self, path: std::path::PathBuf) -> Result<zaroxi_domain_workspace::workspace::Workspace> {
-        use zaroxi_domain_workspace::workspace::Workspace;
-        use uuid::Uuid;
+    pub async fn open_workspace(
+        &self,
+        path: std::path::PathBuf,
+    ) -> Result<zaroxi_domain_workspace::workspace::Workspace> {
         use chrono::Utc;
-        
+        use uuid::Uuid;
+        use zaroxi_domain_workspace::workspace::Workspace;
+
         // Validate path exists
         if !path.exists() {
             return Err(anyhow::anyhow!("Path does not exist: {:?}", path));
@@ -76,15 +77,12 @@ impl WorkspaceService {
         let workspace = Workspace {
             id: Uuid::new_v4(),
             root_path: path.to_string_lossy().to_string(),
-            name: path.file_name()
-                .and_then(|n| n.to_str())
-                .unwrap_or("workspace")
-                .to_string(),
+            name: path.file_name().and_then(|n| n.to_str()).unwrap_or("workspace").to_string(),
             is_open: true,
             created_at: now,
             last_accessed_at: now,
         };
-        
+
         info!("Opened workspace: {} at {:?}", workspace.name, workspace.root_path);
         Ok(workspace)
     }
@@ -92,12 +90,7 @@ impl WorkspaceService {
     /// Get workspace metadata (future enhancement)
     pub async fn get_workspace_metadata(&self, workspace_id: Uuid) -> Result<WorkspaceMetadata> {
         // TODO: Implement actual metadata retrieval
-        Ok(WorkspaceMetadata {
-            id: workspace_id,
-            file_count: 0,
-            total_size: 0,
-            last_indexed: None,
-        })
+        Ok(WorkspaceMetadata { id: workspace_id, file_count: 0, total_size: 0, last_indexed: None })
     }
 }
 

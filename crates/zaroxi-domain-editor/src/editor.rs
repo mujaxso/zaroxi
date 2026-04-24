@@ -1,10 +1,10 @@
 //! Minimal editor state: document, cursor, viewport.
 
-use crate::document::Document;
 use crate::cursor::{Cursor, CursorMovement};
-use crate::viewport::Viewport;
+use crate::document::Document;
 use crate::document::LargeFileMode;
 use crate::thresholds::FileClass;
+use crate::viewport::Viewport;
 
 /// The main editor state, combining document, cursor, and viewport.
 #[derive(Debug)]
@@ -28,12 +28,7 @@ impl EditorState {
 
     /// Create editor state from an existing document.
     pub fn from_document(document: Document) -> Self {
-        Self {
-            document,
-            cursor: Cursor::new(),
-            viewport: Viewport::new(),
-            scroll_offset_y: 0.0,
-        }
+        Self { document, cursor: Cursor::new(), viewport: Viewport::new(), scroll_offset_y: 0.0 }
     }
 
     // ---------- document ----------

@@ -10,11 +10,7 @@ pub struct Selection {
 impl Selection {
     /// Create a new selection.
     pub fn new(start: usize, end: usize) -> Self {
-        let (start, end) = if start <= end {
-            (start, end)
-        } else {
-            (end, start)
-        };
+        let (start, end) = if start <= end { (start, end) } else { (end, start) };
         Self { start, end }
     }
 

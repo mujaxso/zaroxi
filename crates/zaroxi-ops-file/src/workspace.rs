@@ -1,5 +1,5 @@
-use std::path::Path;
 use std::fs;
+use std::path::Path;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -39,20 +39,13 @@ impl WorkspaceLoader {
         for entry in fs::read_dir(dir_path)? {
             let entry = entry?;
             let path = entry.path();
-            let name = path.file_name()
-                .unwrap_or_default()
-                .to_string_lossy()
-                .to_string();
-            
+            let name = path.file_name().unwrap_or_default().to_string_lossy().to_string();
+
             let is_dir = path.is_dir();
-            
-            entries.push(DirectoryEntry {
-                path: path.to_string_lossy().to_string(),
-                name,
-                is_dir,
-            });
+
+            entries.push(DirectoryEntry { path: path.to_string_lossy().to_string(), name, is_dir });
         }
-        
+
         Ok(entries)
     }
 
@@ -83,7 +76,7 @@ impl WorkspaceLoader {
         if !path_obj.exists() {
             return Err(WorkspaceError::NotFound(path.to_string()));
         }
-        
+
         if path_obj.is_dir() {
             fs::remove_dir_all(path_obj)?;
         } else {

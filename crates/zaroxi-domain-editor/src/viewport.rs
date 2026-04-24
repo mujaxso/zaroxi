@@ -31,13 +31,7 @@ impl Viewport {
     pub fn with_dimensions(width: f32, height: f32) -> Self {
         let line_height = 22.0;
         let visible_line_count = (height / line_height).ceil() as usize + 1;
-        Self {
-            line_height,
-            first_visible_line: 0,
-            visible_line_count,
-            width,
-            height,
-        }
+        Self { line_height, first_visible_line: 0, visible_line_count, width, height }
     }
 
     /// Set the viewport dimensions and recompute the visible‑line count.

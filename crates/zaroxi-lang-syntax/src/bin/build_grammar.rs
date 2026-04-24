@@ -7,10 +7,10 @@ fn main() {
         eprintln!("Usage: build-grammar <language-id>");
         std::process::exit(1);
     }
-    
+
     let language_id = &args[1];
     println!("Building grammar for {}...", language_id);
-    
+
     match grammar_builder::build_and_install_grammar(language_id) {
         Ok(_) => {
             println!("Successfully built grammar for {}", language_id);

@@ -28,10 +28,10 @@ impl Runtime {
             PathBuf::from("./runtime/treesitter")
         });
         let runtime = Self { root };
-        
+
         // Try to fix nested structure if it exists
         let _ = runtime.fix_nested_structure();
-        
+
         runtime
     }
 
@@ -68,16 +68,18 @@ impl Runtime {
             if candidate.is_dir() {
                 return Some(candidate);
             }
-            
+
             // Check for nested runtime/treesitter/runtime/treesitter (incorrect structure)
             let nested_candidate = candidate.join("runtime/treesitter");
             if nested_candidate.is_dir() {
                 // This is the incorrect nested structure, use the parent instead
-                eprintln!("WARNING: Found nested runtime directory at {:?}. Using parent directory {:?} instead.", 
-                         nested_candidate, candidate);
+                eprintln!(
+                    "WARNING: Found nested runtime directory at {:?}. Using parent directory {:?} instead.",
+                    nested_candidate, candidate
+                );
                 return Some(candidate);
             }
-            
+
             // Try to find the runtime directory by walking up
             let mut current = cwd.clone();
             while current.parent().is_some() {
@@ -97,7 +99,7 @@ impl Runtime {
                 if candidate.is_dir() {
                     return Some(candidate);
                 }
-                
+
                 // Try walking up from executable
                 let mut current = exe_dir.to_path_buf();
                 while current.parent().is_some() {
@@ -160,7 +162,7 @@ impl Runtime {
     #[cfg(feature = "dynamic-loading")]
     pub fn load_language(&self, language_id: &str) -> Result<tree_sitter::Language, String> {
         use libloading::{Library, Symbol};
-        
+
         let library_path = self.grammar_library_path(language_id);
         if !library_path.exists() {
             return Err(format!(
@@ -176,20 +178,20 @@ impl Runtime {
         unsafe {
             let lib = Library::new(&library_path)
                 .map_err(|e| format!("Failed to load library {}: {}", library_path.display(), e))?;
-            
+
             let symbol_name = format!("tree_sitter_{}", language_id);
             let language_fn: Symbol<unsafe extern "C" fn() -> tree_sitter::Language> = lib
                 .get(symbol_name.as_bytes())
                 .map_err(|e| format!("Failed to get symbol {}: {}", symbol_name, e))?;
-            
+
             // Call the function to get the language before we forget the library
             let language = language_fn();
-            
+
             // The library must not be unloaded while the language is in use.
             // We leak the library handle to keep it loaded for the lifetime of the program.
             // The language_fn symbol is no longer needed after we've called it.
             std::mem::forget(lib);
-            
+
             Ok(language)
         }
     }
@@ -211,20 +213,20 @@ impl Runtime {
     pub fn exists(&self) -> bool {
         self.root.is_dir()
     }
-    
+
     /// Fix nested runtime directory structure if found
     pub fn fix_nested_structure(&self) -> std::io::Result<()> {
         let nested_path = self.root.join("runtime/treesitter");
         if nested_path.is_dir() {
             eprintln!("Found nested runtime directory at {:?}. Attempting to fix...", nested_path);
-            
+
             // Move contents from nested to parent
             let grammars_nested = nested_path.join("grammars");
             let languages_nested = nested_path.join("languages");
-            
+
             let grammars_target = self.root.join("grammars");
             let languages_target = self.root.join("languages");
-            
+
             // Move grammars if they exist
             if grammars_nested.exists() {
                 if !grammars_target.exists() {
@@ -232,7 +234,7 @@ impl Runtime {
                 }
                 move_dir_contents(&grammars_nested, &grammars_target)?;
             }
-            
+
             // Move languages if they exist
             if languages_nested.exists() {
                 if !languages_target.exists() {
@@ -240,7 +242,7 @@ impl Runtime {
                 }
                 move_dir_contents(&languages_nested, &languages_target)?;
             }
-            
+
             // Try to remove the now-empty nested directory
             let _ = std::fs::remove_dir_all(&nested_path);
             eprintln!("Fixed nested runtime structure.");
@@ -254,12 +256,12 @@ fn move_dir_contents(src: &std::path::Path, dst: &std::path::Path) -> std::io::R
     if !dst.exists() {
         std::fs::create_dir_all(dst)?;
     }
-    
+
     for entry in std::fs::read_dir(src)? {
         let entry = entry?;
         let src_path = entry.path();
         let dst_path = dst.join(entry.file_name());
-        
+
         if src_path.is_dir() {
             move_dir_contents(&src_path, &dst_path)?;
             // Try to remove the now-empty source directory

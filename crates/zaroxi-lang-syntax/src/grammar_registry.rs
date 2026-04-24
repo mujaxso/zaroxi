@@ -1,8 +1,8 @@
 //! Registry of available Tree-sitter grammars and their download/compile instructions.
 
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::OnceLock;
-use serde::{Deserialize, Serialize};
 
 /// Information needed to download and compile a Tree-sitter grammar
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -41,14 +41,12 @@ impl GrammarRegistry {
     pub fn global() -> &'static Self {
         static REGISTRY: OnceLock<GrammarRegistry> = OnceLock::new();
         REGISTRY.get_or_init(|| {
-            let mut registry = GrammarRegistry {
-                languages: HashMap::new(),
-            };
+            let mut registry = GrammarRegistry { languages: HashMap::new() };
             registry.load_defaults();
             registry
         })
     }
-    
+
     fn load_defaults(&mut self) {
         // Rust
         self.add_language(GrammarInfo {
@@ -60,11 +58,16 @@ impl GrammarRegistry {
             revision: "v0.24.0".to_string(),
             subdirectory: None,
             source_files: vec!["src/parser.c".to_string(), "src/scanner.c".to_string()],
-            query_files: vec!["highlights.scm".to_string(), "injections.scm".to_string(), "locals.scm".to_string(), "language.toml".to_string()],
+            query_files: vec![
+                "highlights.scm".to_string(),
+                "injections.scm".to_string(),
+                "locals.scm".to_string(),
+                "language.toml".to_string(),
+            ],
             has_scanner: true,
             scanner_lang: Some("c".to_string()),
         });
-        
+
         // TOML - moved to tree-sitter-grammars organization
         self.add_language(GrammarInfo {
             language_id: "toml".to_string(),
@@ -79,7 +82,7 @@ impl GrammarRegistry {
             has_scanner: false,
             scanner_lang: None,
         });
-        
+
         // Markdown - using tree-sitter-markdown-inline directory
         // Note: This is the inline-only grammar, which only handles inline elements
         // Block-level elements like headings, lists, etc. are not parsed by this grammar
@@ -96,7 +99,7 @@ impl GrammarRegistry {
             has_scanner: true,
             scanner_lang: Some("c".to_string()),
         });
-        
+
         // JavaScript
         self.add_language(GrammarInfo {
             language_id: "javascript".to_string(),
@@ -107,11 +110,15 @@ impl GrammarRegistry {
             revision: "v0.22.0".to_string(),
             subdirectory: None,
             source_files: vec!["src/parser.c".to_string(), "src/scanner.c".to_string()],
-            query_files: vec!["highlights.scm".to_string(), "injections.scm".to_string(), "locals.scm".to_string()],
+            query_files: vec![
+                "highlights.scm".to_string(),
+                "injections.scm".to_string(),
+                "locals.scm".to_string(),
+            ],
             has_scanner: true,
             scanner_lang: Some("c".to_string()),
         });
-        
+
         // Python
         self.add_language(GrammarInfo {
             language_id: "python".to_string(),
@@ -122,11 +129,15 @@ impl GrammarRegistry {
             revision: "v0.22.0".to_string(),
             subdirectory: None,
             source_files: vec!["src/parser.c".to_string(), "src/scanner.c".to_string()],
-            query_files: vec!["highlights.scm".to_string(), "injections.scm".to_string(), "locals.scm".to_string()],
+            query_files: vec![
+                "highlights.scm".to_string(),
+                "injections.scm".to_string(),
+                "locals.scm".to_string(),
+            ],
             has_scanner: true,
             scanner_lang: Some("c".to_string()),
         });
-        
+
         // JSON
         self.add_language(GrammarInfo {
             language_id: "json".to_string(),
@@ -141,7 +152,7 @@ impl GrammarRegistry {
             has_scanner: false,
             scanner_lang: None,
         });
-        
+
         // CSS
         self.add_language(GrammarInfo {
             language_id: "css".to_string(),
@@ -152,11 +163,15 @@ impl GrammarRegistry {
             revision: "v0.21.0".to_string(),
             subdirectory: None,
             source_files: vec!["src/parser.c".to_string()],
-            query_files: vec!["highlights.scm".to_string(), "locals.scm".to_string(), "injections.scm".to_string()],
+            query_files: vec![
+                "highlights.scm".to_string(),
+                "locals.scm".to_string(),
+                "injections.scm".to_string(),
+            ],
             has_scanner: false,
             scanner_lang: None,
         });
-        
+
         // HTML
         self.add_language(GrammarInfo {
             language_id: "html".to_string(),
@@ -167,11 +182,15 @@ impl GrammarRegistry {
             revision: "v0.21.0".to_string(),
             subdirectory: None,
             source_files: vec!["src/parser.c".to_string()],
-            query_files: vec!["highlights.scm".to_string(), "locals.scm".to_string(), "injections.scm".to_string()],
+            query_files: vec![
+                "highlights.scm".to_string(),
+                "locals.scm".to_string(),
+                "injections.scm".to_string(),
+            ],
             has_scanner: false,
             scanner_lang: None,
         });
-        
+
         // Go
         self.add_language(GrammarInfo {
             language_id: "go".to_string(),
@@ -182,11 +201,15 @@ impl GrammarRegistry {
             revision: "v0.21.0".to_string(),
             subdirectory: None,
             source_files: vec!["src/parser.c".to_string()],
-            query_files: vec!["highlights.scm".to_string(), "locals.scm".to_string(), "injections.scm".to_string()],
+            query_files: vec![
+                "highlights.scm".to_string(),
+                "locals.scm".to_string(),
+                "injections.scm".to_string(),
+            ],
             has_scanner: false,
             scanner_lang: None,
         });
-        
+
         // Java
         self.add_language(GrammarInfo {
             language_id: "java".to_string(),
@@ -197,11 +220,15 @@ impl GrammarRegistry {
             revision: "v0.21.0".to_string(),
             subdirectory: None,
             source_files: vec!["src/parser.c".to_string()],
-            query_files: vec!["highlights.scm".to_string(), "locals.scm".to_string(), "injections.scm".to_string()],
+            query_files: vec![
+                "highlights.scm".to_string(),
+                "locals.scm".to_string(),
+                "injections.scm".to_string(),
+            ],
             has_scanner: false,
             scanner_lang: None,
         });
-        
+
         // Bash
         self.add_language(GrammarInfo {
             language_id: "bash".to_string(),
@@ -212,11 +239,15 @@ impl GrammarRegistry {
             revision: "v0.21.0".to_string(),
             subdirectory: None,
             source_files: vec!["src/parser.c".to_string()],
-            query_files: vec!["highlights.scm".to_string(), "locals.scm".to_string(), "injections.scm".to_string()],
+            query_files: vec![
+                "highlights.scm".to_string(),
+                "locals.scm".to_string(),
+                "injections.scm".to_string(),
+            ],
             has_scanner: false,
             scanner_lang: None,
         });
-        
+
         // C
         self.add_language(GrammarInfo {
             language_id: "c".to_string(),
@@ -227,26 +258,41 @@ impl GrammarRegistry {
             revision: "v0.21.0".to_string(),
             subdirectory: None,
             source_files: vec!["src/parser.c".to_string()],
-            query_files: vec!["highlights.scm".to_string(), "locals.scm".to_string(), "injections.scm".to_string()],
+            query_files: vec![
+                "highlights.scm".to_string(),
+                "locals.scm".to_string(),
+                "injections.scm".to_string(),
+            ],
             has_scanner: false,
             scanner_lang: None,
         });
-        
+
         // C++
         self.add_language(GrammarInfo {
             language_id: "cpp".to_string(),
             name: "C++".to_string(),
-            extensions: vec!["cpp".to_string(), "cc".to_string(), "cxx".to_string(), "hpp".to_string(), "hh".to_string(), "hxx".to_string()],
+            extensions: vec![
+                "cpp".to_string(),
+                "cc".to_string(),
+                "cxx".to_string(),
+                "hpp".to_string(),
+                "hh".to_string(),
+                "hxx".to_string(),
+            ],
             filenames: vec![],
             repo_url: "https://github.com/tree-sitter/tree-sitter-cpp".to_string(),
             revision: "v0.21.0".to_string(),
             subdirectory: None,
             source_files: vec!["src/parser.c".to_string()],
-            query_files: vec!["highlights.scm".to_string(), "locals.scm".to_string(), "injections.scm".to_string()],
+            query_files: vec![
+                "highlights.scm".to_string(),
+                "locals.scm".to_string(),
+                "injections.scm".to_string(),
+            ],
             has_scanner: false,
             scanner_lang: None,
         });
-        
+
         // C#
         self.add_language(GrammarInfo {
             language_id: "c_sharp".to_string(),
@@ -257,11 +303,15 @@ impl GrammarRegistry {
             revision: "master".to_string(),
             subdirectory: None,
             source_files: vec!["src/parser.c".to_string()],
-            query_files: vec!["highlights.scm".to_string(), "locals.scm".to_string(), "injections.scm".to_string()],
+            query_files: vec![
+                "highlights.scm".to_string(),
+                "locals.scm".to_string(),
+                "injections.scm".to_string(),
+            ],
             has_scanner: false,
             scanner_lang: None,
         });
-        
+
         // Ruby
         self.add_language(GrammarInfo {
             language_id: "ruby".to_string(),
@@ -272,11 +322,15 @@ impl GrammarRegistry {
             revision: "master".to_string(),
             subdirectory: None,
             source_files: vec!["src/parser.c".to_string()],
-            query_files: vec!["highlights.scm".to_string(), "locals.scm".to_string(), "injections.scm".to_string()],
+            query_files: vec![
+                "highlights.scm".to_string(),
+                "locals.scm".to_string(),
+                "injections.scm".to_string(),
+            ],
             has_scanner: false,
             scanner_lang: None,
         });
-        
+
         // TypeScript
         self.add_language(GrammarInfo {
             language_id: "typescript".to_string(),
@@ -287,11 +341,15 @@ impl GrammarRegistry {
             revision: "master".to_string(),
             subdirectory: Some("typescript".to_string()),
             source_files: vec!["src/parser.c".to_string(), "src/scanner.c".to_string()],
-            query_files: vec!["highlights.scm".to_string(), "locals.scm".to_string(), "injections.scm".to_string()],
+            query_files: vec![
+                "highlights.scm".to_string(),
+                "locals.scm".to_string(),
+                "injections.scm".to_string(),
+            ],
             has_scanner: true,
             scanner_lang: Some("c".to_string()),
         });
-        
+
         // TSX
         self.add_language(GrammarInfo {
             language_id: "tsx".to_string(),
@@ -302,11 +360,15 @@ impl GrammarRegistry {
             revision: "master".to_string(),
             subdirectory: Some("tsx".to_string()),
             source_files: vec!["src/parser.c".to_string(), "src/scanner.c".to_string()],
-            query_files: vec!["highlights.scm".to_string(), "locals.scm".to_string(), "injections.scm".to_string()],
+            query_files: vec![
+                "highlights.scm".to_string(),
+                "locals.scm".to_string(),
+                "injections.scm".to_string(),
+            ],
             has_scanner: true,
             scanner_lang: Some("c".to_string()),
         });
-        
+
         // Lua
         self.add_language(GrammarInfo {
             language_id: "lua".to_string(),
@@ -317,11 +379,15 @@ impl GrammarRegistry {
             revision: "master".to_string(),
             subdirectory: None,
             source_files: vec!["src/parser.c".to_string()],
-            query_files: vec!["highlights.scm".to_string(), "locals.scm".to_string(), "injections.scm".to_string()],
+            query_files: vec![
+                "highlights.scm".to_string(),
+                "locals.scm".to_string(),
+                "injections.scm".to_string(),
+            ],
             has_scanner: false,
             scanner_lang: None,
         });
-        
+
         // YAML
         self.add_language(GrammarInfo {
             language_id: "yaml".to_string(),
@@ -332,11 +398,15 @@ impl GrammarRegistry {
             revision: "master".to_string(),
             subdirectory: None,
             source_files: vec!["src/parser.c".to_string()],
-            query_files: vec!["highlights.scm".to_string(), "locals.scm".to_string(), "injections.scm".to_string()],
+            query_files: vec![
+                "highlights.scm".to_string(),
+                "locals.scm".to_string(),
+                "injections.scm".to_string(),
+            ],
             has_scanner: false,
             scanner_lang: None,
         });
-        
+
         // Zig
         self.add_language(GrammarInfo {
             language_id: "zig".to_string(),
@@ -347,11 +417,15 @@ impl GrammarRegistry {
             revision: "master".to_string(),
             subdirectory: None,
             source_files: vec!["src/parser.c".to_string()],
-            query_files: vec!["highlights.scm".to_string(), "locals.scm".to_string(), "injections.scm".to_string()],
+            query_files: vec![
+                "highlights.scm".to_string(),
+                "locals.scm".to_string(),
+                "injections.scm".to_string(),
+            ],
             has_scanner: false,
             scanner_lang: None,
         });
-        
+
         // CMake
         self.add_language(GrammarInfo {
             language_id: "cmake".to_string(),
@@ -362,11 +436,15 @@ impl GrammarRegistry {
             revision: "master".to_string(),
             subdirectory: None,
             source_files: vec!["src/parser.c".to_string()],
-            query_files: vec!["highlights.scm".to_string(), "locals.scm".to_string(), "injections.scm".to_string()],
+            query_files: vec![
+                "highlights.scm".to_string(),
+                "locals.scm".to_string(),
+                "injections.scm".to_string(),
+            ],
             has_scanner: false,
             scanner_lang: None,
         });
-        
+
         // Dockerfile
         self.add_language(GrammarInfo {
             language_id: "dockerfile".to_string(),
@@ -377,11 +455,15 @@ impl GrammarRegistry {
             revision: "master".to_string(),
             subdirectory: None,
             source_files: vec!["src/parser.c".to_string()],
-            query_files: vec!["highlights.scm".to_string(), "locals.scm".to_string(), "injections.scm".to_string()],
+            query_files: vec![
+                "highlights.scm".to_string(),
+                "locals.scm".to_string(),
+                "injections.scm".to_string(),
+            ],
             has_scanner: false,
             scanner_lang: None,
         });
-        
+
         // Elixir
         self.add_language(GrammarInfo {
             language_id: "elixir".to_string(),
@@ -392,11 +474,15 @@ impl GrammarRegistry {
             revision: "master".to_string(),
             subdirectory: None,
             source_files: vec!["src/parser.c".to_string()],
-            query_files: vec!["highlights.scm".to_string(), "locals.scm".to_string(), "injections.scm".to_string()],
+            query_files: vec![
+                "highlights.scm".to_string(),
+                "locals.scm".to_string(),
+                "injections.scm".to_string(),
+            ],
             has_scanner: false,
             scanner_lang: None,
         });
-        
+
         // Nix
         self.add_language(GrammarInfo {
             language_id: "nix".to_string(),
@@ -407,31 +493,35 @@ impl GrammarRegistry {
             revision: "master".to_string(),
             subdirectory: None,
             source_files: vec!["src/parser.c".to_string()],
-            query_files: vec!["highlights.scm".to_string(), "locals.scm".to_string(), "injections.scm".to_string()],
+            query_files: vec![
+                "highlights.scm".to_string(),
+                "locals.scm".to_string(),
+                "injections.scm".to_string(),
+            ],
             has_scanner: false,
             scanner_lang: None,
         });
     }
-    
+
     fn add_language(&mut self, info: GrammarInfo) {
         self.languages.insert(Box::leak(info.language_id.clone().into_boxed_str()), info);
     }
-    
+
     /// Get information for a specific language
     pub fn get(&self, language_id: &str) -> Option<&GrammarInfo> {
         self.languages.get(language_id)
     }
-    
+
     /// Check if a language is in the registry
     pub fn contains_language(&self, language_id: &str) -> bool {
         self.languages.contains_key(language_id)
     }
-    
+
     /// Get all language IDs
     pub fn language_ids(&self) -> Vec<&str> {
         self.languages.keys().copied().collect()
     }
-    
+
     /// Get all languages
     pub fn languages(&self) -> &HashMap<&'static str, GrammarInfo> {
         &self.languages

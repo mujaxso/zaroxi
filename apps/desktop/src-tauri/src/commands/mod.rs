@@ -1,6 +1,6 @@
-pub mod workspace;
-pub mod editor;
 pub mod assistant;
-pub mod search;
+pub mod editor;
 pub mod preview;
+pub mod search;
+pub mod workspace;
 pub mod zaroxi_infra_settings;

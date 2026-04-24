@@ -42,11 +42,7 @@ pub const NORMAL_MAX_LINE_LEN: usize = 2_000;
 pub const MEDIUM_MAX_LINE_LEN: usize = 20_000;
 
 /// Classify a file based on byte size, line count, and maximum line length.
-pub fn classify_file(
-    byte_size: u64,
-    line_count: usize,
-    max_line_len: usize,
-) -> FileClass {
+pub fn classify_file(byte_size: u64, line_count: usize, max_line_len: usize) -> FileClass {
     // Large threshold checks (any metric beyond medium makes it Large)
     if byte_size > MEDIUM_BYTE_LIMIT
         || line_count > MEDIUM_LINE_LIMIT

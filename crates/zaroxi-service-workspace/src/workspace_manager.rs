@@ -17,11 +17,7 @@ pub struct ManagedWorkspace {
 impl ManagedWorkspace {
     /// Create a new managed workspace.
     pub fn new(root_path: String) -> Self {
-        Self {
-            id: Uuid::new_v4(),
-            root_path,
-            active: true,
-        }
+        Self { id: Uuid::new_v4(), root_path, active: true }
     }
 
     /// Deactivate the workspace.

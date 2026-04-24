@@ -2,7 +2,7 @@
 
 use crate::error::SyntaxError;
 use crate::language::LanguageId;
-use tree_sitter::{Query, QueryCursor, Tree, StreamingIterator};
+use tree_sitter::{Query, QueryCursor, StreamingIterator, Tree};
 
 /// A highlight span in the document
 #[derive(Debug, Clone)]
@@ -127,26 +127,25 @@ fn highlight_with_query(
             let end = node.end_byte();
             let capture_name = &query.capture_names()[capture.index as usize];
             let highlight = map_capture_name(capture_name);
-            
-            spans.push(HighlightSpan {
-                start,
-                end,
-                highlight,
-            });
+
+            spans.push(HighlightSpan { start, end, highlight });
         }
     }
 
     // Sort spans by start position
     spans.sort_by_key(|span| span.start);
-    
+
     // Filter out plain spans that are completely covered by other spans
     let mut filtered_spans = Vec::new();
     for (i, span) in spans.iter().enumerate() {
         if span.highlight == Highlight::Plain {
             let mut covered = false;
             for (j, other) in spans.iter().enumerate() {
-                if i != j && other.highlight != Highlight::Plain &&
-                   other.start <= span.start && other.end >= span.end {
+                if i != j
+                    && other.highlight != Highlight::Plain
+                    && other.start <= span.start
+                    && other.end >= span.end
+                {
                     covered = true;
                     break;
                 }
@@ -158,17 +157,20 @@ fn highlight_with_query(
             filtered_spans.push(span.clone());
         }
     }
-    
+
     if language.as_str() == "markdown" {
-        eprintln!("DEBUG: Generated {} highlight spans for markdown (filtered to {})", spans.len(), filtered_spans.len());
+        eprintln!(
+            "DEBUG: Generated {} highlight spans for markdown (filtered to {})",
+            spans.len(),
+            filtered_spans.len()
+        );
         for span in filtered_spans.iter().take(5) {
             eprintln!("DEBUG: Span {}..{} -> {:?}", span.start, span.end, span.highlight);
         }
     }
-    
+
     Ok(filtered_spans)
 }
-
 
 pub fn map_capture_name(name: &str) -> Highlight {
     match name {
@@ -196,8 +198,8 @@ pub fn map_capture_name(name: &str) -> Highlight {
         "constructor" => Highlight::Type,
         "label" => Highlight::Variable,
         "mutable_specifier" => Highlight::Keyword,
-        "lifetime" => Highlight::Type,  // Lifetimes use type color
-        
+        "lifetime" => Highlight::Type, // Lifetimes use type color
+
         // Markdown-specific captures (based on tree-sitter-markdown-inline grammar)
         // Based on debug output showing actual node types
         "emphasis" => Highlight::Comment,
@@ -294,15 +296,15 @@ pub fn map_capture_name(name: &str) -> Highlight {
 
 pub fn get_query_for_language(language: LanguageId) -> Result<&'static str, SyntaxError> {
     let language_id = language.as_str();
-    
+
     // For plaintext, return an empty query
     if language_id == "plaintext" {
         return Ok("");
     }
-    
+
     let runtime = crate::runtime::Runtime::new();
     let query_path = runtime.language_dir(language_id).join("queries/highlights.scm");
-    
+
     if query_path.exists() {
         match std::fs::read_to_string(&query_path) {
             Ok(query_text) => {
@@ -311,8 +313,7 @@ pub fn get_query_for_language(language: LanguageId) -> Result<&'static str, Synt
                     eprintln!("DEBUG: Query file for {} is empty", language_id);
                     return Ok("");
                 }
-                
-                
+
                 // Leak the string to make it static
                 let leaked = Box::leak(query_text.into_boxed_str());
                 Ok(leaked)

@@ -18,9 +18,7 @@ struct AiServiceState {
 impl AiService {
     /// Create a new AI service.
     pub fn new() -> Self {
-        Self {
-            state: Arc::new(Mutex::new(AiServiceState { running: false })),
-        }
+        Self { state: Arc::new(Mutex::new(AiServiceState { running: false })) }
     }
 
     /// Start the AI service.

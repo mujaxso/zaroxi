@@ -30,11 +30,7 @@ pub enum TaskStatus {
 impl AiTask {
     /// Create a new AI task.
     pub fn new(prompt: String) -> Self {
-        Self {
-            id: Uuid::new_v4(),
-            prompt,
-            status: TaskStatus::Pending,
-        }
+        Self { id: Uuid::new_v4(), prompt, status: TaskStatus::Pending }
     }
 
     /// Start the task.

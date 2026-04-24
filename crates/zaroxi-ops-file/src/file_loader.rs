@@ -1,7 +1,7 @@
+use memmap2::Mmap;
 use std::fs;
 use std::io::Read;
 use thiserror::Error;
-use memmap2::Mmap;
 
 use crate::metadata::FileMetadata;
 
@@ -90,7 +90,10 @@ impl FileLoader {
     }
 
     /// Load a file with a specific strategy.
-    pub fn load_file_with_strategy(path: &str, strategy: FileLoadStrategy) -> Result<(FileSource, u64), FileLoadError> {
+    pub fn load_file_with_strategy(
+        path: &str,
+        strategy: FileLoadStrategy,
+    ) -> Result<(FileSource, u64), FileLoadError> {
         let metadata = fs::metadata(path)?;
         let size = metadata.len();
 

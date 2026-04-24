@@ -1,7 +1,7 @@
 //! Syntax manager for coordinating multiple documents and languages.
 
 use crate::error::SyntaxError;
-use crate::highlight::{highlight, HighlightSpan};
+use crate::highlight::{HighlightSpan, highlight};
 use crate::language::LanguageId;
 use std::collections::HashMap;
 use std::path::Path;
@@ -23,11 +23,7 @@ struct SyntaxDocument {
 
 impl SyntaxManager {
     pub fn new() -> Self {
-        Self {
-            documents: HashMap::new(),
-            parsers: HashMap::new(),
-            large_file_mode: false,
-        }
+        Self { documents: HashMap::new(), parsers: HashMap::new(), large_file_mode: false }
     }
 
     /// Set large file mode for the manager.
@@ -54,14 +50,10 @@ impl SyntaxManager {
         path: &Path,
     ) -> Result<(), SyntaxError> {
         let language = LanguageId::from_path(path);
-        
+
         // If in large file mode, store document without a tree
         if self.large_file_mode {
-            let doc = SyntaxDocument {
-                text: text.to_string(),
-                language,
-                tree: None,
-            };
+            let doc = SyntaxDocument { text: text.to_string(), language, tree: None };
             self.documents.insert(doc_id.to_string(), doc);
             return Ok(());
         }
@@ -71,11 +63,7 @@ impl SyntaxManager {
             Some(lang) => lang,
             None => {
                 // If no language is available, store document without a tree
-                let doc = SyntaxDocument {
-                    text: text.to_string(),
-                    language,
-                    tree: None,
-                };
+                let doc = SyntaxDocument { text: text.to_string(), language, tree: None };
                 self.documents.insert(doc_id.to_string(), doc);
                 return Ok(());
             }
@@ -92,11 +80,7 @@ impl SyntaxManager {
         // Parse the document
         let tree = parser.parse(text, None);
 
-        let doc = SyntaxDocument {
-            text: text.to_string(),
-            language,
-            tree,
-        };
+        let doc = SyntaxDocument { text: text.to_string(), language, tree };
         self.documents.insert(doc_id.to_string(), doc);
         Ok(())
     }
@@ -115,7 +99,7 @@ impl SyntaxManager {
             if start_byte <= old_end_byte && old_end_byte <= text.len() {
                 text.replace_range(start_byte..old_end_byte, new_text);
                 doc.text = text;
-                
+
                 // Re-parse the document only if not in large file mode
                 if !self.large_file_mode {
                     // For now, we'll clear the tree and it will be re-parsed on next highlight
@@ -136,30 +120,25 @@ impl SyntaxManager {
             return Ok(Vec::new());
         }
 
-        let doc = self
-            .documents
-            .get(doc_id)
-            .ok_or(SyntaxError::DocumentNotFound)?;
+        let doc = self.documents.get(doc_id).ok_or(SyntaxError::DocumentNotFound)?;
         match &doc.tree {
             Some(tree) => {
                 // Use the global query cache
                 // For now, just use the standard highlight function which uses the query cache
                 highlight(doc.language, &doc.text, tree)
             }
-            None => {
-                Ok(Vec::new())
-            }
+            None => Ok(Vec::new()),
         }
     }
-    
+
     /// Initialize dynamic grammars and preload queries
     pub fn initialize_dynamic_grammars(&mut self) {
         use crate::dynamic_loader::preload_available_grammars;
         use crate::query_cache::preload_queries;
-        
+
         // Preload available grammars
         preload_available_grammars();
-        
+
         // Preload queries
         preload_queries();
     }

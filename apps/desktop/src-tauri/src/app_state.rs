@@ -10,16 +10,14 @@ pub struct AppState {
 
 impl AppState {
     pub fn new() -> Self {
-        Self {
-            theme_manager: Mutex::new(ThemeManager::new()),
-        }
+        Self { theme_manager: Mutex::new(ThemeManager::new()) }
     }
-    
+
     #[allow(dead_code)]
     pub fn get_theme_manager(&self) -> &Mutex<ThemeManager> {
         &self.theme_manager
     }
-    
+
     #[allow(dead_code)]
     pub fn update_theme_settings(&self, settings: ThemeSettings) -> Result<(), String> {
         let mut manager = self.theme_manager.lock().map_err(|e| e.to_string())?;

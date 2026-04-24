@@ -1,10 +1,10 @@
 //! Workspace domain models for Zaroxi.
 
-pub mod workspace;
 pub mod file_tree;
+pub mod workspace;
 
 /// Prelude for convenient imports.
 pub mod prelude {
-    pub use super::workspace::*;
     pub use super::file_tree::*;
+    pub use super::workspace::*;
 }

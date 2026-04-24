@@ -1,7 +1,7 @@
-use tauri::command;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Mutex;
+use tauri::command;
 use zaroxi_domain_editor::Document;
 use zaroxi_domain_editor::LargeFileMode;
 use zaroxi_ops_file::FileLoader;
@@ -68,13 +68,13 @@ pub struct EditRequest {
 #[command]
 pub async fn open_document(path: String) -> Result<OpenDocumentResponse, String> {
     // 1. Get file size before loading contents (avoids reading huge files fully)
-    let metadata = std::fs::metadata(&path)
-        .map_err(|e| format!("Failed to get file metadata: {}", e))?;
+    let metadata =
+        std::fs::metadata(&path).map_err(|e| format!("Failed to get file metadata: {}", e))?;
     let size = metadata.len();
     let large_file_mode = LargeFileMode::from_size(size);
     let is_read_only = large_file_mode.is_read_only();
-    let content_truncated = large_file_mode == LargeFileMode::Large
-        || large_file_mode == LargeFileMode::VeryLarge;
+    let content_truncated =
+        large_file_mode == LargeFileMode::Large || large_file_mode == LargeFileMode::VeryLarge;
 
     // 2. Decide loading strategy based on size
     let strategy = if content_truncated {
@@ -102,10 +102,7 @@ pub async fn open_document(path: String) -> Result<OpenDocumentResponse, String>
 
     // 4. Build the response content (only the first TRUNCATE_CHARS characters)
     let content: String = if content_truncated {
-        file_source.as_str()
-            .chars()
-            .take(TRUNCATE_CHARS)
-            .collect()
+        file_source.as_str().chars().take(TRUNCATE_CHARS).collect()
     } else {
         // small file – safe to copy whole content
         file_source.as_str().to_string()
@@ -133,10 +130,12 @@ pub async fn open_document(path: String) -> Result<OpenDocumentResponse, String>
 
 /// Get visible lines for a document.
 #[command]
-pub async fn get_visible_lines(request: VisibleLinesRequest) -> Result<VisibleLinesResponse, String> {
+pub async fn get_visible_lines(
+    request: VisibleLinesRequest,
+) -> Result<VisibleLinesResponse, String> {
     let docs = DOCUMENTS.lock().map_err(|e| format!("Lock error: {}", e))?;
-    let document = docs.get(&request.document_id)
-        .ok_or_else(|| "Document not found".to_string())?;
+    let document =
+        docs.get(&request.document_id).ok_or_else(|| "Document not found".to_string())?;
 
     let total_lines = document.len_lines();
     let mut lines = Vec::new();
@@ -146,25 +145,19 @@ pub async fn get_visible_lines(request: VisibleLinesRequest) -> Result<VisibleLi
     let end_line = (start_line + request.count).min(total_lines);
     for line_idx in start_line..end_line {
         if let Some(text) = document.line(line_idx) {
-            lines.push(LineDto {
-                index: line_idx,
-                text: text.to_string(),
-            });
+            lines.push(LineDto { index: line_idx, text: text.to_string() });
         }
     }
 
-    Ok(VisibleLinesResponse {
-        lines,
-        total_lines,
-    })
+    Ok(VisibleLinesResponse { lines, total_lines })
 }
 
 /// Apply an edit to a document.
 #[command]
 pub async fn apply_edit(request: EditRequest) -> Result<(), String> {
     let mut docs = DOCUMENTS.lock().map_err(|e| format!("Lock error: {}", e))?;
-    let document = docs.get_mut(&request.document_id)
-        .ok_or_else(|| "Document not found".to_string())?;
+    let document =
+        docs.get_mut(&request.document_id).ok_or_else(|| "Document not found".to_string())?;
 
     // Reject edits for read‑only documents (very large files)
     if document.large_file_mode().is_read_only() {
@@ -199,15 +192,12 @@ pub async fn apply_edit(request: EditRequest) -> Result<(), String> {
 #[command]
 pub async fn save_document(document_id: String) -> Result<(), String> {
     let docs = DOCUMENTS.lock().map_err(|e| format!("Lock error: {}", e))?;
-    let document = docs.get(&document_id)
-        .ok_or_else(|| "Document not found".to_string())?;
+    let document = docs.get(&document_id).ok_or_else(|| "Document not found".to_string())?;
 
-    let path = document.path()
-        .ok_or_else(|| "Document has no path".to_string())?;
+    let path = document.path().ok_or_else(|| "Document has no path".to_string())?;
 
     let text = document.text();
-    std::fs::write(path, &text)
-        .map_err(|e| format!("Failed to save file: {}", e))?;
+    std::fs::write(path, &text).map_err(|e| format!("Failed to save file: {}", e))?;
 
     Ok(())
 }
@@ -216,8 +206,7 @@ pub async fn save_document(document_id: String) -> Result<(), String> {
 #[command]
 pub async fn get_line_count(document_id: String) -> Result<usize, String> {
     let docs = DOCUMENTS.lock().map_err(|e| format!("Lock error: {}", e))?;
-    let document = docs.get(&document_id)
-        .ok_or_else(|| "Document not found".to_string())?;
+    let document = docs.get(&document_id).ok_or_else(|| "Document not found".to_string())?;
     Ok(document.len_lines())
 }
 
@@ -226,7 +215,6 @@ pub async fn get_line_count(document_id: String) -> Result<usize, String> {
 #[command]
 pub async fn get_document_content(document_id: String) -> Result<String, String> {
     let docs = DOCUMENTS.lock().map_err(|e| format!("Lock error: {}", e))?;
-    let document = docs.get(&document_id)
-        .ok_or_else(|| "Document not found".to_string())?;
+    let document = docs.get(&document_id).ok_or_else(|| "Document not found".to_string())?;
     Ok(document.text().to_string())
 }

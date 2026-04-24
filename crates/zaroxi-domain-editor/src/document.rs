@@ -1,10 +1,10 @@
 //! Minimal text document model backed by a Rope (ropey::Rope).
 //! No hand‑rolled line‑start caching; the rope provides O(log n) line access.
 
-use std::path::PathBuf;
+use crate::thresholds::{self, FileClass};
 use memmap2::Mmap;
 use ropey::Rope;
-use crate::thresholds::{self, FileClass};
+use std::path::PathBuf;
 
 /// Large file mode indicator (kept for backward compatibility, but classification
 /// now uses the richer `FileClass` enum from `thresholds`).
@@ -58,13 +58,7 @@ impl Document {
     pub fn from_text(text: &str) -> Self {
         let rope = Rope::from_str(text);
         let file_class = Self::compute_file_class(&rope, text.len() as u64);
-        Self {
-            rope,
-            version: 0,
-            dirty: false,
-            path: None,
-            file_class,
-        }
+        Self { rope, version: 0, dirty: false, path: None, file_class }
     }
 
     /// Create a document from text with an associated file path.
@@ -99,9 +93,7 @@ impl Document {
         self.rope.get_line(idx).map(|slice| {
             let s = slice.to_string();
             // Remove only the final line terminator; preserve intentional blank lines.
-            let trimmed = s.strip_suffix('\n')
-                .or_else(|| s.strip_suffix("\r\n"))
-                .unwrap_or(&s);
+            let trimmed = s.strip_suffix('\n').or_else(|| s.strip_suffix("\r\n")).unwrap_or(&s);
             trimmed.to_owned()
         })
     }
@@ -251,13 +243,7 @@ impl Document {
         let text = unsafe { std::str::from_utf8_unchecked(&mmap) };
         let rope = Rope::from_str(text);
         let file_class = Self::compute_file_class(&rope, size);
-        Self {
-            rope,
-            version: 0,
-            dirty: false,
-            path: Some(PathBuf::from(path)),
-            file_class,
-        }
+        Self { rope, version: 0, dirty: false, path: Some(PathBuf::from(path)), file_class }
     }
 
     // ------------------------------------------------------------------

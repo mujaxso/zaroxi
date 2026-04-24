@@ -8,26 +8,16 @@ use tauri::Emitter;
 #[serde(tag = "type", content = "payload")]
 pub enum WorkspaceEvent {
     /// Emitted when a workspace is opened
-    WorkspaceOpened {
-        workspace_id: String,
-        root_path: String,
-    },
+    WorkspaceOpened { workspace_id: String, root_path: String },
     /// Emitted when a workspace is closed
     #[allow(dead_code)]
-    WorkspaceClosed {
-        workspace_id: String,
-    },
+    WorkspaceClosed { workspace_id: String },
     /// Emitted when directory contents change
     #[allow(dead_code)]
-    DirectoryChanged {
-        path: String,
-    },
+    DirectoryChanged { path: String },
     /// Emitted when a file is created/modified/deleted
     #[allow(dead_code)]
-    FileSystemChanged {
-        path: String,
-        change_type: FileSystemChangeType,
-    },
+    FileSystemChanged { path: String, change_type: FileSystemChangeType },
 }
 
 /// Type of file system change
@@ -67,9 +57,7 @@ impl<'a> WorkspaceEventEmitter<'a> {
     pub fn emit_directory_changed(&self, path: &str) -> tauri::Result<()> {
         self.app_handle.emit(
             "workspace:directory_changed",
-            WorkspaceEvent::DirectoryChanged {
-                path: path.to_string(),
-            },
+            WorkspaceEvent::DirectoryChanged { path: path.to_string() },
         )
     }
 }

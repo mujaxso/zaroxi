@@ -1,10 +1,9 @@
-/// Settings commands for Tauri.
-
-use tauri::command;
-use zaroxi_theme::{ThemeSettings, ZaroxiTheme};
+use std::env;
 use std::fs;
 use std::path::PathBuf;
-use std::env;
+/// Settings commands for Tauri.
+use tauri::command;
+use zaroxi_theme::{ThemeSettings, ZaroxiTheme};
 
 fn get_config_dir() -> Result<PathBuf, String> {
     // Try to get config directory using platform-specific methods
@@ -32,7 +31,7 @@ fn get_config_dir() -> Result<PathBuf, String> {
             })
             .ok_or_else(|| "Could not find config directory".to_string())?
     };
-    
+
     config_dir.push("zaroxi");
     Ok(config_dir)
 }
@@ -61,16 +60,14 @@ pub async fn load_theme_settings() -> Result<ThemeSettings, String> {
     match get_config_dir() {
         Ok(config_dir) => {
             let theme_path = config_dir.join("theme_settings.json");
-            
+
             if !theme_path.exists() {
-                return Ok(ThemeSettings {
-                    theme_mode: zaroxi_theme::ZaroxiTheme::Light,
-                });
+                return Ok(ThemeSettings { theme_mode: zaroxi_theme::ZaroxiTheme::Light });
             }
-            
+
             let content = fs::read_to_string(&theme_path)
                 .map_err(|e| format!("Failed to read theme settings: {}", e))?;
-            
+
             serde_json::from_str(&content)
                 .map_err(|e| format!("Failed to parse theme settings: {}", e))
         }
@@ -90,15 +87,15 @@ pub async fn save_theme_settings(settings: ThemeSettings) -> Result<(), String> 
             // Create config directory if it doesn't exist
             fs::create_dir_all(&config_dir)
                 .map_err(|e| format!("Failed to create config directory: {}", e))?;
-            
+
             let theme_path = config_dir.join("theme_settings.json");
-            
+
             let content = serde_json::to_string_pretty(&settings)
                 .map_err(|e| format!("Failed to serialize theme settings: {}", e))?;
-            
+
             fs::write(&theme_path, content)
                 .map_err(|e| format!("Failed to write theme settings: {}", e))?;
-            
+
             Ok(())
         }
         Err(e) => {
@@ -117,8 +114,6 @@ pub async fn get_current_theme() -> Result<ZaroxiTheme, String> {
 
 #[command]
 pub async fn set_theme(theme: ZaroxiTheme) -> Result<(), String> {
-    let settings = ThemeSettings {
-        theme_mode: theme,
-    };
+    let settings = ThemeSettings { theme_mode: theme };
     save_theme_settings(settings).await
 }

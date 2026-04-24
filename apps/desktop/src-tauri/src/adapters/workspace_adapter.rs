@@ -1,12 +1,12 @@
-use crate::services::workspace_service::{FileEntry, ExplorerTreeNode};
+use crate::services::workspace_service::{ExplorerTreeNode, FileEntry};
 use chrono::{DateTime, Utc};
 
 /// Convert domain workspace to DTO
 pub fn domain_workspace_to_dto(
     workspace: &zaroxi_domain_workspace::workspace::Workspace,
 ) -> crate::commands::workspace::OpenWorkspaceResponse {
-    use tracing::{info, error};
-    
+    use tracing::{error, info};
+
     // Count files in the workspace directory
     let file_count = match std::fs::read_dir(&workspace.root_path) {
         Ok(entries) => {
@@ -19,16 +19,18 @@ pub fn domain_workspace_to_dto(
             0
         }
     };
-    
+
     let response = crate::commands::workspace::OpenWorkspaceResponse {
         workspace_id: workspace.id.to_string(),
         root_path: workspace.root_path.clone(),
         file_count,
     };
-    
-    info!("Created DTO: workspace_id={}, root_path={}, file_count={}", 
-          response.workspace_id, response.root_path, response.file_count);
-    
+
+    info!(
+        "Created DTO: workspace_id={}, root_path={}, file_count={}",
+        response.workspace_id, response.root_path, response.file_count
+    );
+
     response
 }
 
@@ -39,7 +41,7 @@ pub fn file_entry_to_dto(entry: &FileEntry) -> crate::commands::workspace::Direc
         let datetime: DateTime<Utc> = time.into();
         Some(datetime.format("%Y-%m-%d %H:%M:%S").to_string())
     });
-    
+
     crate::commands::workspace::DirectoryEntryDto {
         path: entry.path.clone(),
         name: entry.name.clone(),
@@ -57,7 +59,7 @@ pub fn file_entry_to_tree_node(entry: &FileEntry) -> ExplorerTreeNode {
         let datetime: DateTime<Utc> = time.into();
         Some(datetime.format("%Y-%m-%d %H:%M:%S").to_string())
     });
-    
+
     ExplorerTreeNode {
         id: entry.path.clone(),
         path: entry.path.clone(),
@@ -66,17 +68,13 @@ pub fn file_entry_to_tree_node(entry: &FileEntry) -> ExplorerTreeNode {
         file_type: entry.file_type.clone(),
         size: entry.size,
         modified: modified_str,
-        children: if entry.is_dir {
-            Some(Vec::new())
-        } else {
-            None
-        },
+        children: if entry.is_dir { Some(Vec::new()) } else { None },
         parent_path: Some(
             std::path::Path::new(&entry.path)
                 .parent()
                 .and_then(|p| p.to_str())
                 .unwrap_or("")
-                .to_string()
+                .to_string(),
         ),
     }
 }
@@ -86,12 +84,11 @@ pub fn file_entry_to_tree_node(entry: &FileEntry) -> ExplorerTreeNode {
 pub fn dto_to_domain_workspace(
     dto: &crate::commands::workspace::OpenWorkspaceResponse,
 ) -> zaroxi_domain_workspace::workspace::Workspace {
-    use uuid::Uuid;
     use chrono::Utc;
-    
+    use uuid::Uuid;
+
     zaroxi_domain_workspace::workspace::Workspace {
-        id: Uuid::parse_str(&dto.workspace_id)
-            .unwrap_or_else(|_| Uuid::new_v4()),
+        id: Uuid::parse_str(&dto.workspace_id).unwrap_or_else(|_| Uuid::new_v4()),
         root_path: dto.root_path.clone(),
         name: std::path::Path::new(&dto.root_path)
             .file_name()

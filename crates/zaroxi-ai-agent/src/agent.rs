@@ -13,10 +13,7 @@ pub struct AiAgent {
 impl AiAgent {
     /// Create a new AI agent.
     pub fn new(name: String) -> Self {
-        Self {
-            id: Uuid::new_v4(),
-            name,
-        }
+        Self { id: Uuid::new_v4(), name }
     }
 
     /// Execute a task.

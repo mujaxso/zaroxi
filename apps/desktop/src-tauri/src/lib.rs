@@ -9,13 +9,13 @@ mod bootstrap;
 mod commands;
 mod events;
 mod menu;
-mod zaroxi_infra_permissions;
 mod services;
 mod windows;
+mod zaroxi_infra_permissions;
 
-use tauri::{Manager, RunEvent};
-use std::sync::Arc;
 use crate::services::workspace_service::WorkspaceService;
+use std::sync::Arc;
+use tauri::{Manager, RunEvent};
 
 /// Main entry point for Tauri application
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -23,46 +23,47 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize tracing subscriber for logging
     #[cfg(debug_assertions)]
     {
-        use tracing_subscriber::{fmt, prelude::*, EnvFilter};
-        
+        use tracing_subscriber::{EnvFilter, fmt, prelude::*};
+
         let filter = EnvFilter::try_from_default_env()
             .unwrap_or_else(|_| EnvFilter::new("info,workspace_service=debug,tauri=warn"));
-        
+
         tracing_subscriber::registry()
             .with(fmt::layer().with_writer(std::io::stdout))
             .with(filter)
             .init();
-        
+
         tracing::info!("Tracing initialized for Zaroxi Desktop");
     }
-    
+
     tauri::Builder::default()
         .setup(|app| {
             // No menu created - using custom UI menu only
-            
+
             // Initialize and manage the workspace service
             let workspace_service = Arc::new(WorkspaceService::new());
             app.manage(workspace_service);
-            
+
             // Initialize theme service
-            let theme_service = crate::services::theme_service::ThemeService::new(app.handle().clone());
-            
+            let theme_service =
+                crate::services::theme_service::ThemeService::new(app.handle().clone());
+
             // Apply initial theme before moving
             let theme_service_clone = theme_service.clone();
             tauri::async_runtime::spawn(async move {
                 theme_service_clone.apply_theme().await;
             });
-            
+
             // Manage the theme service
             app.manage(theme_service);
-            
+
             // Initialize app state
             let app_state = crate::app_state::AppState::new();
             app.manage(app_state);
-            
+
             // Get the main window and set it up
             let main_window = app.get_webview_window("main").expect("Failed to get main window");
-            
+
             // Call our window setup function to ensure decorations are removed
             if let Err(e) = windows::setup_window(&main_window) {
                 tracing::error!("Failed to setup window: {}", e);
@@ -74,7 +75,7 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
             }
 
             tracing::info!("Zaroxi Desktop app setup complete");
-            
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -108,12 +109,12 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
         .run(|app_handle, event| match event {
             RunEvent::Ready => {
                 tracing::info!("App is ready");
-                
+
                 // Initialize services after app is ready
                 if let Err(e) = bootstrap::setup::on_app_ready(app_handle) {
                     tracing::error!("Failed to initialize app: {}", e);
                 }
-                
+
                 // Start the workspace service
                 // We can get the workspace service from app state
                 // For now, we'll start it when needed
@@ -125,6 +126,6 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
             }
             _ => {}
         });
-    
+
     Ok(())
 }
