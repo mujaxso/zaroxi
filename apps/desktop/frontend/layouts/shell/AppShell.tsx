@@ -74,11 +74,14 @@ export function AppShell() {
             const { setRootPath, setTree } = useWorkspaceStore.getState();
             setRootPath(rootPath);
             // Fetch tree for the newly opened workspace
-            invoke('get_workspace_tree', {
+            invoke<{ tree: any[] }>('get_workspace_tree', {
               workspaceId: event.payload.workspace_id,
               rootPath,
             })
-              .then((tree: any) => setTree(tree))
+              .then((treeResult) => {
+                const treeData = treeResult?.tree ?? [];
+                setTree(treeData);
+              })
               .catch((e) => console.error('Failed to fetch tree after event:', e));
           }
         );

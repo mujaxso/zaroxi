@@ -24,11 +24,13 @@ export function MenuBar() {
         setRootPath(result.selected_path);
         // Fetch the workspace tree and store it
         try {
-          const tree = await invoke('get_workspace_tree', {
+          const treeResult = await invoke<{ tree: any[] }>('get_workspace_tree', {
             workspaceId: '',
             rootPath: result.selected_path,
           });
-          setTree(tree);
+          const treeData = treeResult?.tree ?? [];
+          setTree(treeData);
+          console.log('Workspace tree fetched successfully, nodes:', treeData.length);
         } catch (e) {
           console.error('Failed to fetch workspace tree:', e);
         }
