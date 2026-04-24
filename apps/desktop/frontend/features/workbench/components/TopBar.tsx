@@ -4,8 +4,7 @@ import { useWorkbenchStore } from '../store/workbenchStore';
 import { useEffect, useState } from 'react';
 import { isTauri, getWindowInstance, windowControlActions } from '@/lib/platform/windowControls';
 import { useLayoutMode } from '@/hooks/useLayoutMode';
-import { useWorkspaceStore } from '@/features/workspace/stores/useWorkspaceStore';
-import { useWorkspaceName } from '@/hooks/useWorkspaceName';
+import { useTabsStore } from '@/features/tabs/store';
 import { MenuBar } from './MenuBar';
 
 interface TopBarProps {
@@ -15,16 +14,25 @@ interface TopBarProps {
 export function TopBar({ className }: TopBarProps) {
   const layoutMode = useLayoutMode();
   const { togglePanel } = useWorkbenchStore();
-  const { rootPath } = useWorkspaceStore();
-  const workspacePath = useWorkspaceName();
+  const { tabs } = useTabsStore();
   const [isMaximized, setIsMaximized] = useState(false);
   const [isTauriEnv, setIsTauriEnv] = useState(false);
 
-  const resolvedDisplayName = workspacePath
-    ? workspacePath.split('/').pop() ?? workspacePath
-    : rootPath
-      ? rootPath.split('/').pop() ?? rootPath
-      : 'No project open';
+  // Derive project name from the first open tab's parent directory.
+  const resolvedDisplayName = (() => {
+    if (tabs.length === 0) return 'No project open';
+    const firstId = tabs[0].id; // typically the absolute file path
+    // Split the path into segments and extract the parent folder name.
+    const parts = firstId.split('/').filter(Boolean);
+    // The project folder is the segment just before the last (file) segment.
+    // For a path like /home/user/project/index.js -> parts = ["home","user","project","index.js"]
+    // we want "project".
+    if (parts.length >= 2) {
+      return parts[parts.length - 2] || parts[parts.length - 1];
+    }
+    // fallback to the whole firstId (shouldn't happen)
+    return firstId;
+  })();
 
   useEffect(() => {
     const checkTauri = async () => {
