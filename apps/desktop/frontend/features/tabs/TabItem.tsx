@@ -1,18 +1,21 @@
-import { useTabsStore } from './store';
+import { useTabsStore, type Tab } from './store';
 import { cn } from '@/lib/utils';
 import { useWorkspaceStore } from '@/features/workspace/stores/useWorkspaceStore';
 import { WorkspaceService } from '@/features/workspace/services/workspaceService';
-import { Icon } from '@/components/ui/Icon';
+import { Icon, type IconName } from '@/components/ui/Icon';
 import { getLanguageIcon } from './languageIcons';
 
 interface TabItemProps {
-  tab: { id: string; title: string; isDirty: boolean };
+  tab: Tab;
   isActive: boolean;
 }
 
 export function TabItem({ tab, isActive }: TabItemProps) {
   const { setActiveTab, closeTab } = useTabsStore();
-  const langIcon = getLanguageIcon(tab.id);
+
+  // Welcome tab gets a dedicated icon; file tabs use the language icon.
+  const iconName: IconName =
+    tab.kind === 'welcome' ? 'star' : getLanguageIcon(tab.id);
 
   const handleTabClick = async () => {
     setActiveTab(tab.id);
@@ -46,8 +49,8 @@ export function TabItem({ tab, isActive }: TabItemProps) {
       data-tab-id={tab.id}
       data-no-drag="true"
     >
-      {/* language icon */}
-      <Icon name={langIcon} size={12} className="flex-shrink-0" />
+      {/* language/home icon */}
+      <Icon name={iconName} size={12} className="flex-shrink-0" />
 
       {/* file name – truncated */}
       <span className="truncate max-w-[140px]" title={tab.title}>

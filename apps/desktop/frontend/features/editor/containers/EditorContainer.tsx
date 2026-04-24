@@ -1,11 +1,28 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { CodeEditor } from '@/components/editor/CodeEditor';
 import { WorkspaceService } from '@/features/workspace/services/workspaceService';
 import { useWorkspaceStore } from '@/features/workspace/stores/useWorkspaceStore';
 import { Icon } from '@/components/ui/Icon';
 import { useTabsStore } from '@/features/tabs/store';
+import { WelcomeView } from '@/features/welcome/WelcomeView';
 
 export function EditorContainer() {
+  const { tabs, activeTabId } = useTabsStore();
+  // Determine which tab is currently active (if any)
+  const activeTab = useMemo(
+    () => tabs.find((t) => t.id === activeTabId) ?? null,
+    [tabs, activeTabId],
+  );
+
+  // For the Welcome tab we short‑circuit and render a completely different view.
+  if (activeTab?.kind === 'welcome') {
+    return (
+      <div className="h-full flex flex-col bg-editor min-h-0 w-full min-w-0">
+        <WelcomeView />
+      </div>
+    );
+  }
+
   const [content, setContent] = useState<string>('');
   const [language, setLanguage] = useState<string>('plaintext');
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -22,10 +39,11 @@ export function EditorContainer() {
   const activeFilePath = explorerUI.activeFilePath;
 
   useEffect(() => {
-    if (activeFilePath) {
+    // Only try to load a real file when we have a path to load.
+    if (activeFilePath && activeTab?.kind === 'file') {
       loadFile(activeFilePath);
-    } else {
-      // Default placeholder content
+    } else if (!activeFilePath) {
+      // Default placeholder content (shown when no file is open)
       setContent(`// Welcome to Zaroxi Editor
 // Open a file from the workspace explorer to start editing
 
@@ -49,7 +67,7 @@ export function EditorContainer() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [activeFilePath]);
+  }, [activeFilePath, activeTab]);
 
 
   const loadFile = async (path: string) => {

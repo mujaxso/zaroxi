@@ -1,16 +1,22 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
+export type TabKind = 'file' | 'welcome';
+
 export interface Tab {
   id: string;
   title: string;
   isDirty: boolean;
+  kind: TabKind;
 }
+
+/** The reserved id for the built‑in Welcome tab. */
+export const WELCOME_TAB_ID = '__welcome__';
 
 interface TabsState {
   tabs: Tab[];
   activeTabId: string | null;
-  openFile: (id: string, title: string) => void;
+  openFile: (id: string, title: string, kind?: TabKind) => void;
   closeTab: (id: string) => void;
   setActiveTab: (id: string) => void;
   markDirty: (id: string) => void;
@@ -23,14 +29,19 @@ export const useTabsStore = create<TabsState>()(
       tabs: [],
       activeTabId: null,
 
-      openFile: (id, title) => {
+      openFile: (id, title, kind = 'file') => {
         const { tabs } = get();
         const existing = tabs.find((t) => t.id === id);
         if (existing) {
           set({ activeTabId: id });
           return;
         }
-        const newTab: Tab = { id, title, isDirty: false };
+        const newTab: Tab = {
+          id,
+          title,
+          isDirty: kind === 'file' ? false : false, // special tabs are never dirty
+          kind,
+        };
         set({
           tabs: [...tabs, newTab],
           activeTabId: id,
@@ -60,6 +71,11 @@ export const useTabsStore = create<TabsState>()(
           }
         }
         set({ tabs: newTabs, activeTabId: newActive });
+
+        // If the last tab was closed, re‑open the Welcome tab automatically.
+        if (newTabs.length === 0) {
+          get().openFile(WELCOME_TAB_ID, 'Welcome', 'welcome');
+        }
       },
 
       setActiveTab: (id) => {

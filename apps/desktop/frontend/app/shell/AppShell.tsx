@@ -7,6 +7,7 @@ import { useWorkbenchStore } from '@/features/workbench/store/workbenchStore';
 import { getActivityItem } from '@/features/workbench/config/activityRegistry';
 import { Suspense, lazy, useEffect, useRef } from 'react';
 import { LAYOUT } from '@/features/workbench/config/layoutConstants';
+import { useTabsStore, WELCOME_TAB_ID } from '@/features/tabs/store';
 
 // Lazy load full-width panel components
 const SettingsPanel = lazy(() => import('@/features/settings/panel/SettingsPanel'));
@@ -27,6 +28,15 @@ export function AppShell() {
   // so the editor always gets enough room. The right (assistant) panel stays open
   // and shrinks via its own responsive min‑width rules.
   const prevWidth = useRef(window.innerWidth);
+
+  // Open the Welcome tab on first mount if there are no tabs yet.
+  const { tabs, openFile } = useTabsStore();
+  useEffect(() => {
+    if (tabs.length === 0) {
+      openFile(WELCOME_TAB_ID, 'Welcome', 'welcome');
+    }
+  }, []);
+
   useEffect(() => {
     const handleResize = () => {
       const currentWidth = window.innerWidth;
