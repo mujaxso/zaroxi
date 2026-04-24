@@ -17,7 +17,7 @@ pub fn build_menu(app: &AppHandle) -> tauri::Result<()> {
     }
 
     // ---- File submenu ----
-    let file_open = MenuItemBuilder::with_id("file_open", "Open Folder…")
+    let file_open = MenuItemBuilder::with_id("file_open", "Open Workspace…")
         .accelerator("CmdOrCtrl+O")
         .build(app)?;
     let file_new = MenuItemBuilder::with_id("file_new", "New File")

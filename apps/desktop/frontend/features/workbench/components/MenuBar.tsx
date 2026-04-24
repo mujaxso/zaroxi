@@ -11,7 +11,7 @@ const menus: { label: string; items: MenuItem[] }[] = [
   {
     label: 'File',
     items: [
-      { label: 'Open Folder', action: () => {} },
+      { label: 'Open Workspace', action: () => {} },
       { label: 'New File', action: () => {} },
       { label: 'Save', action: () => {} },
     ],
