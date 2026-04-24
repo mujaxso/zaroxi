@@ -80,10 +80,15 @@ export function WelcomeView() {
     <div className="h-full w-full flex items-center justify-center overflow-hidden bg-editor">
       <div className="max-w-xl w-full px-10 py-10 space-y-6">
         {/* Title / Brand */}
-        <div className="space-y-3 pb-5 border-b border-divider">
-          <h1 className="text-2xl font-bold tracking-tight text-primary">
-            Zaroxi Studio
-          </h1>
+        <div className="space-y-3 pb-6 border-b border-divider">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-accent flex items-center justify-center text-on-accent font-bold text-xl shrink-0">
+              Z
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight text-primary">
+              Zaroxi Studio
+            </h1>
+          </div>
           <p className="text-sm text-muted-foreground">
             Welcome · start working with your workspace
           </p>
