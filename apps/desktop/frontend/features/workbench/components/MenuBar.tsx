@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useWorkbenchStore } from '../store/workbenchStore';
 import { invoke } from '@tauri-apps/api/core';
+import { useWorkspaceStore } from '@/features/workspace/stores/useWorkspaceStore';
 
 interface MenuItem {
   label: string;
@@ -18,6 +19,9 @@ export function MenuBar() {
       console.log('Dialog result:', result);
       if (result.selected_path) {
         await invoke('open_workspace', { path: result.selected_path });
+        // Update the workspace store so the explorer panel knows the current root path
+        const { setRootPath } = useWorkspaceStore.getState();
+        setRootPath(result.selected_path);
         const { togglePanel } = useWorkbenchStore.getState();
         togglePanel('explorer');
       }
