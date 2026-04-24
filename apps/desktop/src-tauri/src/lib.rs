@@ -8,7 +8,7 @@ mod app_state;
 mod bootstrap;
 mod commands;
 mod events;
-// mod menu; // No longer needed
+mod menu;
 mod zaroxi_infra_permissions;
 mod services;
 mod windows;
@@ -67,7 +67,14 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
             if let Err(e) = windows::setup_window(&main_window) {
                 tracing::error!("Failed to setup window: {}", e);
             }
-            
+
+            // Build native macOS menu (does nothing on other platforms)
+            if cfg!(target_os = "macos") {
+                if let Err(e) = menu::build_menu(app.handle()) {
+                    tracing::error!("Failed to build native menu: {}", e);
+                }
+            }
+
             tracing::info!("Zaroxi Desktop app setup complete");
             
             Ok(())

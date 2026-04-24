@@ -4,7 +4,6 @@ import { useWorkbenchStore } from '../store/workbenchStore';
 import { useEffect, useState } from 'react';
 import { isTauri, getWindowInstance, windowControlActions } from '@/lib/platform/windowControls';
 import { useLayoutMode } from '@/hooks/useLayoutMode';
-import { MenuBar } from './MenuBar';
 
 interface TopBarProps {
   className?: string;
@@ -97,7 +96,6 @@ export function TopBar({ className }: TopBarProps) {
             <span className="font-semibold text-sm text-primary leading-tight">Zaroxi Studio</span>
           )}
         </div>
-        <MenuBar />
       </div>
 
 
