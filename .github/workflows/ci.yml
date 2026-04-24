@@ -6,79 +6,131 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+
 env:
   CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
 
 jobs:
-  linux:
-    name: Linux
+  # ---------------------------------------------------------------------------
+  # QUICK STATIC CHECKS (fmt, clippy, actionlint)
+  # ---------------------------------------------------------------------------
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Restore cargo registry
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-lint-registry-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-lint-registry-
+
+      - name: Restore cargo index
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-lint-index-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-lint-index-
+
+      - name: Restore cargo build output
+        uses: actions/cache@v4
+        with:
+          path: target
+          key: ${{ runner.os }}-lint-target-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: cargo fmt
+        run: cargo fmt --all -- --check
+
+      - name: cargo clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      # Validate the YAML of our own workflows
+      - name: actionlint
+        uses: reviewdog/action-actionlint@v1
+        with:
+          fail_on_error: true
+
+  # ---------------------------------------------------------------------------
+  # BUILD AND TEST ON ALL TIER‑1 PLATFORMS
+  # ---------------------------------------------------------------------------
+  test:
+    name: Test (${{ matrix.name }})
     runs-on: ${{ matrix.os }}
+    needs: lint
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, ubuntu-22.04]
         include:
           - os: ubuntu-latest
-            name: Ubuntu Latest
-          - os: ubuntu-22.04
-            name: Ubuntu 22.04
+            name: Ubuntu
+          - os: windows-latest
+            name: Windows
+          - os: macos-latest
+            name: macOS
+
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Install Rust
-      uses: dtolnay/rust-toolchain@stable
-      with:
-        components: clippy, rustfmt
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
 
-    - name: Cache cargo registry
-      uses: actions/cache@v4
-      with:
-        path: ~/.cargo/registry
-        key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-cargo-registry-
+      - name: Restore cargo registry
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-test-registry-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-test-registry-
 
-    - name: Cache cargo index
-      uses: actions/cache@v4
-      with:
-        path: ~/.cargo/git
-        key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-cargo-index-
+      - name: Restore cargo index
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-test-index-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-test-index-
 
-    - name: Cache cargo build
-      uses: actions/cache@v4
-      with:
-        path: target
-        key: ${{ runner.os }}-cargo-build-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-cargo-build-
+      - name: Restore cargo build output
+        uses: actions/cache@v4
+        with:
+          path: target
+          key: ${{ runner.os }}-test-target-${{ hashFiles('**/Cargo.lock') }}
 
-    - name: Check formatting
-      run: cargo fmt --all -- --check
+      - name: build (workspace)
+        run: cargo build --workspace --verbose
 
-    - name: Clippy
-      run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: test (workspace)
+        run: cargo test --workspace --verbose
 
-    - name: Build
-      run: cargo build --workspace --verbose
-
-    - name: Run tests
-      run: cargo test --workspace --verbose
-
-  windows:
-    name: Windows
-    runs-on: windows-latest
+  # ---------------------------------------------------------------------------
+  # SECURITY / DEPENDENCY AUDIT (fast, only on ubuntu)
+  # ---------------------------------------------------------------------------
+  audit:
+    name: Security (cargo audit)
+    runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - uses: dtolnay/rust-toolchain@stable
-    - run: cargo build --workspace
-    - run: cargo test --workspace
+      - uses: actions/checkout@v4
 
-  macos:
-    name: macOS
-    runs-on: macos-latest
-    steps:
-    - uses: actions/checkout@v4
-    - uses: dtolnay/rust-toolchain@stable
-    - run: cargo build --workspace
-    - run: cargo test --workspace
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Restore cargo registry (for Cargo.lock)
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-audit-registry-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-audit-registry-
+
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked
+
+      - name: cargo audit
+        run: cargo audit

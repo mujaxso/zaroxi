@@ -1,6 +1,5 @@
-name-template: 'v$RESOLVED_VERSION 🌈'
+name-template: 'v$RESOLVED_VERSION'
 tag-template: 'v$RESOLVED_VERSION'
-
 categories:
   - title: '🚀 Features'
     labels:
@@ -20,10 +19,8 @@ categories:
     labels:
       - 'documentation'
       - 'docs'
-
-change-template: '- $TITLE (#$NUMBER) by @$AUTHOR'
-change-title-escapes: '\<*_&' # You can add # and @ to disable mentions, and add ` to disable code escaping.
-
+change-template: '- (#$NUMBER) $TITLE'
+change-title-escapes: '\<*_&'
 version-resolver:
   major:
     labels:
@@ -35,12 +32,13 @@ version-resolver:
     labels:
       - 'patch'
   default: patch
-
 template: |
-  ## What's Changed
+  ## 🎉 Zaroxi Studio $RESOLVED_VERSION
 
   $CHANGES
 
-  ## Contributors
+  **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
+
+  ### 👥 Contributors
 
   $CONTRIBUTORS
