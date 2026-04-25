@@ -16,7 +16,7 @@ fn main() {
             eprintln!("  message: {}", msg);
         }
         // Print backtrace if available
-        let backtrace = backtrace::Backtrace::new();
+        let backtrace = std::backtrace::Backtrace::new();
         eprintln!("{:?}", backtrace);
         // Abort to prevent further damage
         std::process::abort();
