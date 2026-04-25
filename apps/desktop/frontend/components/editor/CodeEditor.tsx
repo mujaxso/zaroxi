@@ -145,9 +145,7 @@ function VirtualEditor({
   // Build a map from character offset to color for fast lookup
   const colorMap = useMemo(() => {
     const map = new Map<number, string>();
-    // Use lastValidSpansRef as fallback when styledSpans is empty but we have valid spans
-    const spans = styledSpans.length > 0 ? styledSpans : lastValidSpansRef.current;
-    for (const span of spans) {
+    for (const span of styledSpans) {
       for (let i = span.start; i < span.end; i++) {
         map.set(i, span.color);
       }
