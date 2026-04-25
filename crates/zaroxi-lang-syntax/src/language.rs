@@ -135,6 +135,7 @@ impl LanguageId {
 
     /// Return the Tree-sitter language, loading dynamically if needed.
     pub fn tree_sitter_language(&self) -> Option<tree_sitter::Language> {
+        eprintln!("DEBUG: tree_sitter_language called for {:?}", self);
         let result = match self {
             LanguageId::Rust => crate::dynamic_loader::load_language("rust"),
             LanguageId::Toml => crate::dynamic_loader::load_language("toml"),
@@ -144,6 +145,8 @@ impl LanguageId {
         };
         if result.is_none() {
             eprintln!("DEBUG: tree_sitter_language returned None for {:?}", self);
+        } else {
+            eprintln!("DEBUG: tree_sitter_language returned Some for {:?}", self);
         }
         result
     }

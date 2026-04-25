@@ -46,12 +46,13 @@ fn load_language_impl(language_id: &str) -> Option<tree_sitter::Language> {
 
     // Check if the grammar library exists
     let library_path = runtime.grammar_library_path(language_id);
+    eprintln!("DEBUG: load_language_impl: checking path {:?}", library_path);
     if !library_path.exists() {
-        eprintln!("DEBUG: Library path doesn't exist: {}", library_path.display());
+        eprintln!("DEBUG: load_language_impl: Library path doesn't exist: {}", library_path.display());
         return None;
     }
 
-    println!("DEBUG: Loading language {} from {}", language_id, library_path.display());
+    eprintln!("DEBUG: load_language_impl: Loading language {} from {}", language_id, library_path.display());
 
     // Load the library
     unsafe {
@@ -71,7 +72,7 @@ fn load_language_impl(language_id: &str) -> Option<tree_sitter::Language> {
                 let mut last_error = None;
 
                 for symbol_name in symbol_names {
-                    println!("DEBUG: Looking for symbol: {}", symbol_name);
+                    eprintln!("DEBUG: load_language_impl: Looking for symbol: {}", symbol_name);
 
                     let language_fn: Result<
                         libloading::Symbol<unsafe extern "C" fn() -> tree_sitter::Language>,
@@ -80,13 +81,13 @@ fn load_language_impl(language_id: &str) -> Option<tree_sitter::Language> {
 
                     match language_fn {
                         Ok(func) => {
-                            println!("DEBUG: Found symbol {} for {}", symbol_name, language_id);
+                            eprintln!("DEBUG: load_language_impl: Found symbol {} for {}", symbol_name, language_id);
                             let language = func();
                             // Leak the library to keep it loaded
                             std::mem::forget(lib);
                             // Print some info about the language
-                            println!(
-                                "DEBUG: Language {} loaded successfully via {}, node count: {}",
+                            eprintln!(
+                                "DEBUG: load_language_impl: Language {} loaded successfully via {}, node count: {}",
                                 language_id,
                                 symbol_name,
                                 language.node_kind_count()
@@ -96,7 +97,7 @@ fn load_language_impl(language_id: &str) -> Option<tree_sitter::Language> {
                                 for i in 0..language.node_kind_count() {
                                     let kind = language.node_kind_for_id(i as u16);
                                     if let Some(kind) = kind {
-                                        println!("DEBUG: Node type {}: {}", i, kind);
+                                        eprintln!("DEBUG: Node type {}: {}", i, kind);
                                     }
                                 }
                             }
@@ -106,7 +107,7 @@ fn load_language_impl(language_id: &str) -> Option<tree_sitter::Language> {
                             // Store error message string instead of the error itself
                             let error_msg = format!("{}", e);
                             last_error = Some(error_msg);
-                            println!("DEBUG: Failed to get symbol {}: {}", symbol_name, e);
+                            eprintln!("DEBUG: load_language_impl: Failed to get symbol {}: {}", symbol_name, e);
                             // Try next symbol
                         }
                     }
@@ -114,12 +115,12 @@ fn load_language_impl(language_id: &str) -> Option<tree_sitter::Language> {
 
                 // If we get here, all symbols failed
                 if let Some(e) = last_error {
-                    eprintln!("DEBUG: All symbols failed for {}: {}", language_id, e);
+                    eprintln!("DEBUG: load_language_impl: All symbols failed for {}: {}", language_id, e);
                 }
                 None
             }
             Err(e) => {
-                eprintln!("DEBUG: Failed to load library {}: {}", library_path.display(), e);
+                eprintln!("DEBUG: load_language_impl: Failed to load library {}: {}", library_path.display(), e);
                 None
             }
         }

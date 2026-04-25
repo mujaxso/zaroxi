@@ -50,18 +50,38 @@ impl ParserPool {
         // Try to reuse an existing parser
         if let Some(parsers) = pool.get_mut(language) {
             if let Some(parser) = parsers.pop() {
+                eprintln!("DEBUG: ParserPool::acquire: reusing parser for {:?}", language);
                 return Some(parser);
             }
         }
+
+        eprintln!("DEBUG: ParserPool::acquire: creating new parser for {:?}", language);
 
         // Create a new parser
         let mut parser = Parser::new();
 
         // Set the language for the parser
-        let ts_lang = language.tree_sitter_language()?;
-        parser.set_language(&ts_lang).ok()?;
+        let ts_lang = match language.tree_sitter_language() {
+            Some(lang) => {
+                eprintln!("DEBUG: ParserPool::acquire: got tree_sitter_language for {:?}", language);
+                lang
+            }
+            None => {
+                eprintln!("DEBUG: ParserPool::acquire: tree_sitter_language returned None for {:?}", language);
+                return None;
+            }
+        };
 
-        Some(parser)
+        match parser.set_language(&ts_lang) {
+            Ok(()) => {
+                eprintln!("DEBUG: ParserPool::acquire: set_language succeeded for {:?}", language);
+                Some(parser)
+            }
+            Err(e) => {
+                eprintln!("DEBUG: ParserPool::acquire: set_language failed for {:?}: {}", language, e);
+                None
+            }
+        }
     }
 
     /// Return a parser to the pool for reuse.
@@ -113,16 +133,28 @@ impl SyntaxTree {
         text: &str,
         language: LanguageId,
     ) -> Result<Self, SyntaxError> {
+        eprintln!("DEBUG: SyntaxTree::new: language={:?}, text length={}", language, text.len());
+
         let mut parser = pool
             .acquire(&language)
-            .ok_or_else(|| SyntaxError::GrammarLoadError(format!(
-                "Failed to acquire parser for language '{}'",
-                language.as_str()
-            )))?;
+            .ok_or_else(|| {
+                eprintln!("DEBUG: SyntaxTree::new: failed to acquire parser for {:?}", language);
+                SyntaxError::GrammarLoadError(format!(
+                    "Failed to acquire parser for language '{}'",
+                    language.as_str()
+                ))
+            })?;
+
+        eprintln!("DEBUG: SyntaxTree::new: parser acquired, parsing...");
 
         let tree = parser
             .parse(text, None)
-            .ok_or_else(|| SyntaxError::ParseError)?;
+            .ok_or_else(|| {
+                eprintln!("DEBUG: SyntaxTree::new: parse returned None");
+                SyntaxError::ParseError
+            })?;
+
+        eprintln!("DEBUG: SyntaxTree::new: parse succeeded, root node count: {}", tree.root_node().child_count());
 
         // Return the parser to the pool
         pool.release(&language, parser);
