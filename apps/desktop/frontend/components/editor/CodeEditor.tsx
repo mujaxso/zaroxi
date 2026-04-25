@@ -17,10 +17,17 @@ interface CodeEditorProps {
  * Files exceeding this limit will show a preview of the first lines and forbid editing. */
 const MAX_VISIBLE_LINES = 10_000;
 
-function countLines(text: string): number {
+/** Fast line‑counting that stops scanning once we exceed MAX_VISIBLE_LINES.
+ *  This avoids scanning gigabyte files completely. */
+function fastLineCount(text: string): number | 'exceeds' {
   let lines = 1;
   for (let i = 0; i < text.length; i++) {
-    if (text.charCodeAt(i) === 10) lines++;
+    if (text.charCodeAt(i) === 10) {
+      lines++;
+      if (lines > MAX_VISIBLE_LINES) {
+        return 'exceeds';
+      }
+    }
   }
   return lines;
 }
@@ -49,10 +56,12 @@ export function CodeEditor({
   className,
 }: CodeEditorProps) {
   // Determine whether the file is too large to edit safely.
-  const [isLarge, setIsLarge] = useState<boolean>(false);
+  const [isLarge, setIsLarge] = useState<boolean>(() => {
+    const r = fastLineCount(initialValue);
+    return r === 'exceeds';
+  });
   const [displayValue, setDisplayValue] = useState<string>(() => {
-    if (countLines(initialValue) > MAX_VISIBLE_LINES) {
-      setIsLarge(true);
+    if (isLarge) {
       return truncateToNLines(initialValue, MAX_VISIBLE_LINES);
     }
     return initialValue;
@@ -78,8 +87,8 @@ export function CodeEditor({
     if (initialRef.current !== initialValue) {
       initialRef.current = initialValue;
       fullValueRef.current = initialValue;
-      const newLineCount = countLines(initialValue);
-      if (newLineCount > MAX_VISIBLE_LINES) {
+      const lineCountResult = fastLineCount(initialValue);
+      if (lineCountResult === 'exceeds') {
         setIsLarge(true);
         setDisplayValue(truncateToNLines(initialValue, MAX_VISIBLE_LINES));
       } else {
@@ -105,22 +114,27 @@ export function CodeEditor({
 
   const lineHeight = GUTTER_CONFIG.LINE_HEIGHT;
 
-  // Use native scroll listener for performance and to avoid React re-renders
+  // Use a passive scroll listener to translate the gutter's inner container directly.
+  // This guarantees pixel‑perfect synchronisation without causing React re‑renders.
   useEffect(() => {
     const el = textAreaRef.current;
     if (!el) return;
 
-    const onScroll = () => {
+    const sync = () => {
+      const gutterEl = gutterInnerRef.current;
+      if (!gutterEl) return;
       const st = el.scrollTop;
-      const gutter = gutterInnerRef.current;
-      if (gutter) {
-        gutter.scrollTop = st;
+      // Apply the transform directly to the inner container so that the overflow‑hidden
+      // outer wrapper clips the numbers correctly.
+      const inner = gutterEl.firstChild as HTMLElement | null;
+      if (inner) {
+        inner.style.transform = `translateY(-${st}px)`;
       }
     };
-    // sync initial state
-    onScroll();
-    el.addEventListener('scroll', onScroll, { passive: true });
-    return () => el.removeEventListener('scroll', onScroll);
+
+    sync();
+    el.addEventListener('scroll', sync, { passive: true });
+    return () => el.removeEventListener('scroll', sync);
   }, []);
 
   const handleSelectionChange = useCallback(() => {
@@ -148,7 +162,10 @@ export function CodeEditor({
   };
 
   // Compute the line count of the *displayed* content (used for gutter)
-  const displayLineCount = useMemo(() => countLines(displayValue), [displayValue]);
+  const displayLineCount = useMemo(() => {
+    const r = fastLineCount(displayValue);
+    return r === 'exceeds' ? MAX_VISIBLE_LINES + 1 : r; // fallback if something went wrong
+  }, [displayValue]);
 
   // Common class for the code area (textarea and pre)
   const codeClass = cn(

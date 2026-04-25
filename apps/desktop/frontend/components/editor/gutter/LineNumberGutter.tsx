@@ -51,15 +51,14 @@ export const LineNumberGutter = forwardRef<HTMLDivElement, Props>(
     return (
       <div
         ref={outerRef}
-        className="h-full overflow-y-auto overflow-x-hidden shrink-0 border-r border-[rgba(128,128,128,0.18)]"
+        className="h-full overflow-hidden shrink-0 border-r border-[rgba(128,128,128,0.18)]"
         style={{
           width: gutterWidth,
           pointerEvents: 'none',
-          scrollbarWidth: 'none',
         }}
       >
         <div
-          className="min-w-full"
+          className="min-w-full will-change-transform"
           style={{
             height: lineCount * lineHeight,
           }}
