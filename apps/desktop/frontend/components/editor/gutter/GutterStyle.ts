@@ -14,8 +14,8 @@ export const GUTTER_STYLE = {
   SEPARATOR_WIDTH: 1,
   /** Font family for line numbers */
   FONT_FAMILY: 'inherit',
-  /** Font size for line numbers */
-  FONT_SIZE: 'inherit',
+  /** Font size for line numbers - use a reasonable size that matches the editor */
+  FONT_SIZE: '12px',
   /** Line height for line numbers (should match editor line height) */
   LINE_HEIGHT: 22,
 } as const;

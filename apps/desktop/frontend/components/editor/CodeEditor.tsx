@@ -236,7 +236,13 @@ export function CodeEditor({
   className,
 }: CodeEditorProps) {
   // Determine whether the file is too large to edit safely.
+  // Use a fast heuristic: if the string is longer than a reasonable threshold,
+  // assume it's a large file without scanning every byte.
   const [isLarge, setIsLarge] = useState<boolean>(() => {
+    // If the string is very long, it's likely a large file
+    if (initialValue.length > 10_000_000) {
+      return true;
+    }
     const r = fastLineCount(initialValue);
     return r === 'exceeds';
   });
