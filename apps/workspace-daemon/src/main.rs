@@ -3,13 +3,12 @@
 //! workspace-related services to the desktop app via RPC.
 
 use tracing;
-use tracing_subscriber;
 use workspace_daemon::WorkspaceDaemon;
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
-    // Initialize logging
-    tracing_subscriber::fmt().with_max_level(tracing::Level::INFO).init();
+    // Initialize logging (disabled until tracing_subscriber is added as dependency)
+    // tracing_subscriber::fmt().with_max_level(tracing::Level::INFO).init();
 
     tracing::info!("Starting Zaroxi workspace daemon...");
     tracing::info!("Version: {}", env!("CARGO_PKG_VERSION"));
