@@ -124,6 +124,7 @@ function VirtualEditor({
   onValueChange,
   containerHeightRef,
   filePath,
+  allSpansRef,
 }: {
   displayValue: string;
   cursorLine: number;
@@ -137,6 +138,7 @@ function VirtualEditor({
   onValueChange?: (newValue: string) => void;
   containerHeightRef: React.MutableRefObject<number>;
   filePath?: string;
+  allSpansRef: React.MutableRefObject<Array<{start: number; end: number; color: string}>>;
 }) {
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -210,7 +212,7 @@ function VirtualEditor({
       }
     }
     return map;
-  }, [styledSpans, filePath]);
+  }, [styledSpans, filePath, allSpansRef]);
 
   // Render rows for the computed visible range
   const codeRows = useMemo(() => {
@@ -764,6 +766,7 @@ export function CodeEditor({
       onValueChange={effectiveReadOnly ? undefined : handleValueChange}
       containerHeightRef={containerHeightRef}
       filePath={filePath}
+      allSpansRef={allSpansRef}
     />
   );
 }
