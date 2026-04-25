@@ -5,6 +5,9 @@ use crate::thresholds::{self, FileClass};
 use memmap2::Mmap;
 use ropey::Rope;
 use std::path::PathBuf;
+use std::sync::Arc;
+use zaroxi_lang_syntax::parser::{SyntaxTree, ParserPool};
+use zaroxi_lang_syntax::language::LanguageId;
 
 /// Large file mode indicator (kept for backward compatibility, but classification
 /// now uses the richer `FileClass` enum from `thresholds`).
@@ -33,6 +36,9 @@ impl LargeFileMode {
 }
 
 /// A minimal text document that uses a Rope as its backing storage.
+///
+/// This document also maintains an optional syntax tree for syntax highlighting.
+/// The syntax tree is lazily created and updated as the document is edited.
 #[derive(Debug, Clone)]
 pub struct Document {
     rope: Rope,
@@ -40,6 +46,12 @@ pub struct Document {
     dirty: bool,
     path: Option<PathBuf>,
     file_class: FileClass,
+    /// The syntax tree for syntax highlighting, if available.
+    syntax_tree: Option<SyntaxTree>,
+    /// The parser pool for creating syntax trees.
+    parser_pool: Option<Arc<ParserPool>>,
+    /// The language ID for syntax highlighting.
+    language: LanguageId,
 }
 
 impl Document {
@@ -51,6 +63,9 @@ impl Document {
             dirty: false,
             path: None,
             file_class: FileClass::Normal,
+            syntax_tree: None,
+            parser_pool: None,
+            language: LanguageId::PlainText,
         }
     }
 
@@ -58,13 +73,26 @@ impl Document {
     pub fn from_text(text: &str) -> Self {
         let rope = Rope::from_str(text);
         let file_class = Self::compute_file_class(&rope, text.len() as u64);
-        Self { rope, version: 0, dirty: false, path: None, file_class }
+        Self {
+            rope,
+            version: 0,
+            dirty: false,
+            path: None,
+            file_class,
+            syntax_tree: None,
+            parser_pool: None,
+            language: LanguageId::PlainText,
+        }
     }
 
     /// Create a document from text with an associated file path.
     pub fn from_text_with_path(text: &str, path: String) -> Self {
         let mut doc = Self::from_text(text);
         doc.path = Some(PathBuf::from(path));
+        // Detect language from path
+        if let Some(ref p) = doc.path {
+            doc.language = LanguageId::from_path(p);
+        }
         doc
     }
 
@@ -238,12 +266,95 @@ impl Document {
         self.file_class
     }
 
+    // ---------- syntax tree ----------
+
+    /// Get the language ID for syntax highlighting.
+    pub fn language(&self) -> LanguageId {
+        self.language
+    }
+
+    /// Set the language ID for syntax highlighting.
+    pub fn set_language(&mut self, language: LanguageId) {
+        self.language = language;
+        // Invalidate syntax tree when language changes
+        self.syntax_tree = None;
+    }
+
+    /// Get the syntax tree, if available.
+    pub fn syntax_tree(&self) -> Option<&SyntaxTree> {
+        self.syntax_tree.as_ref()
+    }
+
+    /// Get a mutable reference to the syntax tree, if available.
+    pub fn syntax_tree_mut(&mut self) -> Option<&mut SyntaxTree> {
+        self.syntax_tree.as_mut()
+    }
+
+    /// Ensure a syntax tree exists for this document.
+    ///
+    /// Creates a new syntax tree if one doesn't exist, or re-parses the existing
+    /// one if the document has been edited. Returns `true` if a syntax tree is
+    /// available after this call.
+    ///
+    /// For large files (Medium or Large), this method returns `false` to avoid
+    /// expensive parsing operations.
+    pub fn ensure_syntax_tree(&mut self) -> bool {
+        // Skip syntax tree for large files
+        if self.file_class != FileClass::Normal {
+            self.syntax_tree = None;
+            return false;
+        }
+
+        // If we already have a syntax tree, try to reparse it
+        if let Some(ref mut tree) = self.syntax_tree {
+            // Reparse incrementally
+            if tree.reparse().is_ok() {
+                return true;
+            }
+            // If reparse fails, fall through to create a new tree
+        }
+
+        // Create a new syntax tree
+        let pool = self.parser_pool.get_or_insert_with(|| {
+            Arc::new(ParserPool::new())
+        });
+
+        let text = self.text();
+        match SyntaxTree::new(pool.clone(), &text, self.language) {
+            Ok(tree) => {
+                self.syntax_tree = Some(tree);
+                true
+            }
+            Err(e) => {
+                eprintln!("Warning: Failed to create syntax tree: {}", e);
+                self.syntax_tree = None;
+                false
+            }
+        }
+    }
+
+    /// Invalidate the syntax tree (e.g., after a large edit).
+    pub fn invalidate_syntax_tree(&mut self) {
+        self.syntax_tree = None;
+    }
+
     /// Create a document from a memory‑mapped file.
     pub fn from_mmap(mmap: Mmap, path: String, size: u64) -> Self {
         let text = unsafe { std::str::from_utf8_unchecked(&mmap) };
         let rope = Rope::from_str(text);
         let file_class = Self::compute_file_class(&rope, size);
-        Self { rope, version: 0, dirty: false, path: Some(PathBuf::from(path)), file_class }
+        let path_buf = PathBuf::from(&path);
+        let language = LanguageId::from_path(&path_buf);
+        Self {
+            rope,
+            version: 0,
+            dirty: false,
+            path: Some(path_buf),
+            file_class,
+            syntax_tree: None,
+            parser_pool: None,
+            language,
+        }
     }
 
     // ------------------------------------------------------------------

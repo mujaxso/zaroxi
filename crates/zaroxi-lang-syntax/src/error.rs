@@ -14,6 +14,10 @@ pub enum SyntaxError {
     NoSyntaxTree,
     #[error("invalid edit range")]
     InvalidEditRange,
+    #[error("parser error: {0}")]
+    ParserError(String),
+    #[error("metadata error: {0}")]
+    MetadataError(String),
     #[error("unknown error: {0}")]
     Unknown(String),
 }

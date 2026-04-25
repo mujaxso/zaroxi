@@ -1,18 +1,27 @@
-//! Minimal editor state: document, cursor, viewport.
+//! Minimal editor state: document, cursor, viewport, and syntax highlighting.
 
 use crate::cursor::{Cursor, CursorMovement};
 use crate::document::Document;
 use crate::document::LargeFileMode;
 use crate::thresholds::FileClass;
 use crate::viewport::Viewport;
+use zaroxi_lang_syntax::highlight::{HighlightEngine, HighlightSpan};
+use zaroxi_lang_syntax::theme_map::{StyledSpan, apply_theme};
+use zaroxi_theme::theme::SemanticColors;
 
-/// The main editor state, combining document, cursor, and viewport.
+/// The main editor state, combining document, cursor, viewport, and syntax highlighting.
 #[derive(Debug)]
 pub struct EditorState {
     document: Document,
     cursor: Cursor,
     viewport: Viewport,
     scroll_offset_y: f32, // vertical scroll offset in pixels
+    /// The syntax highlighting engine.
+    highlight_engine: HighlightEngine,
+    /// Cached highlight spans for the current document content.
+    cached_highlights: Vec<HighlightSpan>,
+    /// The version of the document when highlights were last computed.
+    cached_version: u64,
 }
 
 impl EditorState {
@@ -23,12 +32,23 @@ impl EditorState {
             cursor: Cursor::new(),
             viewport: Viewport::new(),
             scroll_offset_y: 0.0,
+            highlight_engine: HighlightEngine::new(),
+            cached_highlights: Vec::new(),
+            cached_version: 0,
         }
     }
 
     /// Create editor state from an existing document.
     pub fn from_document(document: Document) -> Self {
-        Self { document, cursor: Cursor::new(), viewport: Viewport::new(), scroll_offset_y: 0.0 }
+        Self {
+            document,
+            cursor: Cursor::new(),
+            viewport: Viewport::new(),
+            scroll_offset_y: 0.0,
+            highlight_engine: HighlightEngine::new(),
+            cached_highlights: Vec::new(),
+            cached_version: 0,
+        }
     }
 
     // ---------- document ----------
@@ -130,26 +150,74 @@ impl EditorState {
         lines
     }
 
+    // ---------- syntax highlighting ----------
+
+    /// Get the highlight spans for the current document content.
+    ///
+    /// This method caches the highlights and only recomputes them when the
+    /// document version changes. For large files, it returns an empty vector.
+    pub fn highlights(&mut self) -> &[HighlightSpan] {
+        // For large files, return empty highlights
+        if self.document.file_class() != FileClass::Normal {
+            self.cached_highlights.clear();
+            return &self.cached_highlights;
+        }
+
+        // Check if we need to recompute highlights
+        let current_version = self.document.version();
+        if current_version != self.cached_version {
+            self.recompute_highlights();
+        }
+
+        &self.cached_highlights
+    }
+
+    /// Recompute highlight spans for the current document.
+    fn recompute_highlights(&mut self) {
+        self.cached_highlights.clear();
+        self.cached_version = self.document.version();
+
+        // Ensure we have a syntax tree
+        if !self.document.ensure_syntax_tree() {
+            return;
+        }
+
+        // Get the syntax tree and language
+        let tree = match self.document.syntax_tree() {
+            Some(t) => t,
+            None => return,
+        };
+
+        let language = self.document.language();
+
+        // Run the highlighting engine
+        let text = self.document.text();
+        match self.highlight_engine.highlight(language, &text, tree.tree()) {
+            Ok(spans) => {
+                self.cached_highlights = spans;
+            }
+            Err(e) => {
+                eprintln!("Warning: Syntax highlighting failed: {}", e);
+            }
+        }
+    }
+
+    /// Get styled spans for the current document, applying the given theme.
+    ///
+    /// This is the main method for the rendering layer to get syntax-colored spans.
+    pub fn styled_spans(&mut self, colors: &SemanticColors) -> Vec<StyledSpan> {
+        let highlights = self.highlights();
+        apply_theme(highlights, colors)
+    }
+
+    /// Invalidate the highlight cache (e.g., after a large edit).
+    pub fn invalidate_highlights(&mut self) {
+        self.cached_version = 0;
+        self.cached_highlights.clear();
+        self.document.invalidate_syntax_tree();
+    }
+
     // ---------- convenience ----------
-    pub fn text(&self) -> String {
-        self.document.text()
-    }
-
-    pub fn path(&self) -> Option<&std::path::Path> {
-        self.document.path()
-    }
-
-    pub fn large_file_mode(&self) -> LargeFileMode {
-        self.document.large_file_mode()
-    }
-
-    pub fn file_class(&self) -> FileClass {
-        self.document.file_class()
-    }
-
-    pub fn is_large_file(&self) -> bool {
-        self.document.is_large()
-    }
 }
 
 impl Default for EditorState {

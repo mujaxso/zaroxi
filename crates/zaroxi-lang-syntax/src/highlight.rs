@@ -33,143 +33,173 @@ pub enum Highlight {
     Plain,
 }
 
-/// Highlight a syntax tree for a given language.
-pub fn highlight(
-    language: LanguageId,
-    source: &str,
-    tree: &Tree,
-) -> Result<Vec<HighlightSpan>, SyntaxError> {
-    // Always try to highlight with query, regardless of language
-    highlight_with_query(language, source, tree)
+/// The highlighting engine that manages parsing and query execution.
+///
+/// This struct is designed to be reused across multiple highlight operations
+/// to avoid re-creating parsers and queries unnecessarily.
+#[derive(Debug)]
+pub struct HighlightEngine {
+    /// Cached runtime for resolving language resources.
+    runtime: crate::runtime::Runtime,
 }
 
-fn highlight_with_query(
-    language: LanguageId,
-    source: &str,
-    tree: &Tree,
-) -> Result<Vec<HighlightSpan>, SyntaxError> {
-    // Get the Tree-sitter language
-    let ts_lang = match language.tree_sitter_language() {
-        Some(lang) => lang,
-        None => {
-            // No language available, return empty spans
-            return Ok(Vec::new());
+impl HighlightEngine {
+    /// Create a new highlighting engine.
+    pub fn new() -> Self {
+        Self {
+            runtime: crate::runtime::Runtime::new(),
         }
-    };
-
-    // Try to get the query string
-    let query_str = match get_query_for_language(language) {
-        Ok(str) => str,
-        Err(e) => {
-            eprintln!("DEBUG: Failed to get query for {}: {:?}", language.as_str(), e);
-            // Return empty spans when query can't be loaded
-            return Ok(Vec::new());
-        }
-    };
-
-    // Check if query is empty
-    if query_str.trim().is_empty() {
-        eprintln!("DEBUG: Query for {} is empty", language.as_str());
-        return Ok(Vec::new());
     }
 
-    // Try to compile the query
-    let query = match Query::new(&ts_lang, query_str) {
-        Ok(q) => {
-            // Log success for debugging
-            eprintln!("DEBUG: Query compiled successfully for {}", language.as_str());
-            if language.as_str() == "markdown" {
-                eprintln!("DEBUG: Markdown query has {} patterns", q.pattern_count());
-                eprintln!("DEBUG: Markdown query captures: {:?}", q.capture_names());
-            }
-            q
+    /// Highlight a syntax tree for a given language.
+    ///
+    /// Returns a vector of `HighlightSpan`s sorted by start position.
+    /// Returns an empty vector if highlighting is not possible (e.g., unknown
+    /// language, missing query, or large file).
+    pub fn highlight(
+        &self,
+        language: LanguageId,
+        source: &str,
+        tree: &Tree,
+    ) -> Result<Vec<HighlightSpan>, SyntaxError> {
+        // For plaintext or unknown languages, return empty spans
+        if language == LanguageId::PlainText {
+            return Ok(Vec::new());
         }
-        Err(e) => {
-            // Log the error for debugging
-            eprintln!("DEBUG: Tree-sitter query error for {}: {}", language.as_str(), e);
-            // For markdown, also log the query string to help debug
-            if language.as_str() == "markdown" {
-                eprintln!("DEBUG: Markdown query string: {:?}", query_str);
-                eprintln!("DEBUG: Markdown language node count: {}", ts_lang.node_kind_count());
-                // Print ALL node types for debugging
-                for i in 0..ts_lang.node_kind_count() {
-                    let kind = ts_lang.node_kind_for_id(i as u16);
-                    if let Some(kind) = kind {
-                        eprintln!("DEBUG: Node type {}: {}", i, kind);
+
+        // Get the Tree-sitter language
+        let ts_lang = match language.tree_sitter_language() {
+            Some(lang) => lang,
+            None => {
+                // No grammar available, return empty spans
+                return Ok(Vec::new());
+            }
+        };
+
+        // Load and compile the highlighting query
+        let query = match self.load_query(&language) {
+            Some(q) => q,
+            None => {
+                // No query available, return empty spans
+                return Ok(Vec::new());
+            }
+        };
+
+        // Execute the query against the syntax tree
+        let spans = self.execute_query(&query, source, tree);
+
+        // Post-process spans: sort and filter covered plain spans
+        let filtered = self.filter_spans(spans);
+
+        Ok(filtered)
+    }
+
+    /// Load and compile the highlighting query for a language.
+    ///
+    /// Returns `None` if the query cannot be loaded or compiled.
+    fn load_query(&self, language: &LanguageId) -> Option<Query> {
+        let language_id = language.as_str();
+
+        // Get the Tree-sitter language for query compilation
+        let ts_lang = language.tree_sitter_language()?;
+
+        // Read the query file from the runtime directory
+        let query_path = self
+            .runtime
+            .language_dir(language_id)
+            .join("queries")
+            .join("highlights.scm");
+
+        let query_text = match std::fs::read_to_string(&query_path) {
+            Ok(text) => text,
+            Err(_) => {
+                // Query file not found or unreadable
+                return None;
+            }
+        };
+
+        if query_text.trim().is_empty() {
+            return None;
+        }
+
+        // Compile the query
+        match Query::new(&ts_lang, &query_text) {
+            Ok(q) => Some(q),
+            Err(e) => {
+                // Log the error for debugging but don't crash
+                eprintln!(
+                    "Warning: Failed to compile query for {}: {}",
+                    language_id, e
+                );
+                None
+            }
+        }
+    }
+
+    /// Execute a highlighting query against a syntax tree.
+    fn execute_query(
+        &self,
+        query: &Query,
+        source: &str,
+        tree: &Tree,
+    ) -> Vec<HighlightSpan> {
+        let mut cursor = QueryCursor::new();
+        let root_node = tree.root_node();
+        let mut spans = Vec::new();
+
+        // Use StreamingIterator to iterate over query matches
+        let mut matches = cursor.matches(query, root_node, source.as_bytes());
+        while let Some(match_) = StreamingIterator::next(&mut matches) {
+            for capture in match_.captures {
+                let node = capture.node;
+                let start = node.start_byte();
+                let end = node.end_byte();
+                let capture_name = &query.capture_names()[capture.index as usize];
+                let highlight = map_capture_name(capture_name);
+
+                spans.push(HighlightSpan { start, end, highlight });
+            }
+        }
+
+        spans
+    }
+
+    /// Post-process highlight spans: sort and filter covered plain spans.
+    fn filter_spans(&self, mut spans: Vec<HighlightSpan>) -> Vec<HighlightSpan> {
+        // Sort by start position
+        spans.sort_by_key(|span| span.start);
+
+        // Filter out plain spans that are completely covered by other spans
+        let mut filtered = Vec::new();
+        for (i, span) in spans.iter().enumerate() {
+            if span.highlight == Highlight::Plain {
+                let mut covered = false;
+                for (j, other) in spans.iter().enumerate() {
+                    if i != j
+                        && other.highlight != Highlight::Plain
+                        && other.start <= span.start
+                        && other.end >= span.end
+                    {
+                        covered = true;
+                        break;
                     }
                 }
-            }
-            // Try to create an empty query as a fallback
-            match Query::new(&ts_lang, "") {
-                Ok(empty_query) => {
-                    eprintln!("DEBUG: Using empty query as fallback for {}", language.as_str());
-                    empty_query
+                if !covered {
+                    filtered.push(span.clone());
                 }
-                Err(_) => {
-                    // If even an empty query fails, return empty spans
-                    return Ok(Vec::new());
-                }
+            } else {
+                filtered.push(span.clone());
             }
         }
-    };
 
-    let mut cursor = QueryCursor::new();
-    let root_node = tree.root_node();
-    let mut spans = Vec::new();
-
-    // In tree-sitter 0.26.8, QueryCursor::matches() returns QueryMatches which implements StreamingIterator
-    // We need to use a while loop with next()
-    let mut matches = cursor.matches(&query, root_node, source.as_bytes());
-    while let Some(match_) = StreamingIterator::next(&mut matches) {
-        for capture in match_.captures {
-            let node = capture.node;
-            let start = node.start_byte();
-            let end = node.end_byte();
-            let capture_name = &query.capture_names()[capture.index as usize];
-            let highlight = map_capture_name(capture_name);
-
-            spans.push(HighlightSpan { start, end, highlight });
-        }
+        filtered
     }
+}
 
-    // Sort spans by start position
-    spans.sort_by_key(|span| span.start);
-
-    // Filter out plain spans that are completely covered by other spans
-    let mut filtered_spans = Vec::new();
-    for (i, span) in spans.iter().enumerate() {
-        if span.highlight == Highlight::Plain {
-            let mut covered = false;
-            for (j, other) in spans.iter().enumerate() {
-                if i != j
-                    && other.highlight != Highlight::Plain
-                    && other.start <= span.start
-                    && other.end >= span.end
-                {
-                    covered = true;
-                    break;
-                }
-            }
-            if !covered {
-                filtered_spans.push(span.clone());
-            }
-        } else {
-            filtered_spans.push(span.clone());
-        }
+impl Default for HighlightEngine {
+    fn default() -> Self {
+        Self::new()
     }
-
-    if language.as_str() == "markdown" {
-        eprintln!(
-            "DEBUG: Generated {} highlight spans for markdown (filtered to {})",
-            spans.len(),
-            filtered_spans.len()
-        );
-        for span in filtered_spans.iter().take(5) {
-            eprintln!("DEBUG: Span {}..{} -> {:?}", span.start, span.end, span.highlight);
-        }
-    }
-
-    Ok(filtered_spans)
 }
 
 pub fn map_capture_name(name: &str) -> Highlight {
