@@ -1,9 +1,9 @@
 //! Theme and design system for Zaroxi
 //! This crate provides color themes, design tokens, and styling utilities
 
-mod colors;
-mod manager;
-mod theme;
+pub mod colors;
+pub mod manager;
+pub mod theme;
 
 pub use colors::*;
 pub use manager::{ThemeManager, ThemeSettings};

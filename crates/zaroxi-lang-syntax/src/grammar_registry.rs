@@ -607,7 +607,7 @@ pub fn download_and_install_grammar(language_id: &str) -> Result<(), String> {
 
     // Build the C source files into a shared library using the cc crate
     let mut build = cc::Build::new();
-    build.shared_flag(true);
+    // cc only creates static libraries, shared_flag is deprecated
     build.opt_level(2);
     build.cpp(false); // C language, not C++
 

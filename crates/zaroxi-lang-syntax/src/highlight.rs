@@ -68,7 +68,7 @@ impl HighlightEngine {
         }
 
         // Get the Tree-sitter language
-        let ts_lang = match language.tree_sitter_language() {
+        let _ts_lang = match language.tree_sitter_language() {
             Some(lang) => lang,
             None => {
                 // No grammar available, return empty spans
