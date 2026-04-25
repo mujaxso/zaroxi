@@ -294,11 +294,33 @@ impl SemanticColors {
             // Syntax colors - clear, readable, professional
             syntax_keyword: Color::from_hex("#FF6B6B"), // Keywords - soft red
             syntax_function: Color::from_hex("#4CAF50"), // Functions - green
+            syntax_method: Color::from_hex("#4CAF50"),   // Methods - same as functions
             syntax_string: Color::from_hex("#FFB74D"),  // Strings - warm orange
             syntax_comment: Color::from_hex("#7E8794"), // Comments - faint gray
             syntax_type: Color::from_hex("#5B8CFF"),    // Types - accent blue
             syntax_variable: Color::from_hex("#E6EAF2"), // Variables - primary text
             syntax_constant: Color::from_hex("#FFB74D"), // Constants - warm orange
+            syntax_number: Color::from_hex("#B39DDB"),  // Numbers - soft purple
+            syntax_operator: Color::from_hex("#C792EA"), // Operators - soft violet
+            syntax_punctuation: Color::from_hex("#AAB2BF"), // Punctuation - muted gray
+            syntax_attribute: Color::from_hex("#F78C6C"), // Attributes - soft orange
+            syntax_tag: Color::from_hex("#F07178"),     // Tags - soft coral
+            syntax_namespace: Color::from_hex("#82AAFF"), // Namespaces - light blue
+            syntax_macro: Color::from_hex("#C792EA"),   // Macros - soft violet
+            syntax_property: Color::from_hex("#FFCB6B"), // Properties - warm yellow
+            syntax_parameter: Color::from_hex("#F78C6C"), // Parameters - soft orange
+            syntax_builtin: Color::from_hex("#FF5370"),  // Builtins - coral red
+            syntax_escape: Color::from_hex("#89DDFF"),   // Escape sequences - cyan
+            syntax_embedded: Color::from_hex("#C3E88D"), // Embedded languages - light green
+            syntax_regex: Color::from_hex("#89DDFF"),    // Regex - cyan
+            syntax_markup_heading: Color::from_hex("#FF5370"), // Markdown headings - coral
+            syntax_markup_list: Color::from_hex("#89DDFF"), // Markdown lists - cyan
+            syntax_markup_quote: Color::from_hex("#7E8794"), // Markdown quotes - faint gray
+            syntax_markup_link: Color::from_hex("#82AAFF"), // Markdown links - light blue
+            syntax_markup_code: Color::from_hex("#C3E88D"), // Markdown code - light green
+            syntax_markup_bold: Color::from_hex("#E6EAF2"), // Markdown bold - primary text
+            syntax_markup_italic: Color::from_hex("#E6EAF2"), // Markdown italic - primary text
+            syntax_markup_strikethrough: Color::from_hex("#7E8794"), // Markdown strikethrough - faint
         }
     }
 
@@ -371,11 +393,33 @@ impl SemanticColors {
             // Syntax colors - clear, readable, professional
             syntax_keyword: Color::from_hex("#D32F2F"), // Keywords - red
             syntax_function: Color::from_hex("#2E7D32"), // Functions - green
+            syntax_method: Color::from_hex("#2E7D32"),   // Methods - same as functions
             syntax_string: Color::from_hex("#E65100"),  // Strings - warm orange
             syntax_comment: Color::from_hex("#8A919D"), // Comments - faint gray
             syntax_type: Color::from_hex("#426EDB"),    // Types - accent blue
             syntax_variable: Color::from_hex("#22262B"), // Variables - primary text
             syntax_constant: Color::from_hex("#E65100"), // Constants - warm orange
+            syntax_number: Color::from_hex("#7B1FA2"),  // Numbers - purple
+            syntax_operator: Color::from_hex("#6A1B9A"), // Operators - violet
+            syntax_punctuation: Color::from_hex("#616975"), // Punctuation - muted gray
+            syntax_attribute: Color::from_hex("#E65100"), // Attributes - warm orange
+            syntax_tag: Color::from_hex("#C62828"),     // Tags - red
+            syntax_namespace: Color::from_hex("#1565C0"), // Namespaces - blue
+            syntax_macro: Color::from_hex("#6A1B9A"),   // Macros - violet
+            syntax_property: Color::from_hex("#F57F17"), // Properties - amber
+            syntax_parameter: Color::from_hex("#E65100"), // Parameters - warm orange
+            syntax_builtin: Color::from_hex("#C62828"),  // Builtins - red
+            syntax_escape: Color::from_hex("#00838F"),   // Escape sequences - teal
+            syntax_embedded: Color::from_hex("#2E7D32"), // Embedded languages - green
+            syntax_regex: Color::from_hex("#00838F"),    // Regex - teal
+            syntax_markup_heading: Color::from_hex("#C62828"), // Markdown headings - red
+            syntax_markup_list: Color::from_hex("#00838F"), // Markdown lists - teal
+            syntax_markup_quote: Color::from_hex("#8A919D"), // Markdown quotes - faint gray
+            syntax_markup_link: Color::from_hex("#1565C0"), // Markdown links - blue
+            syntax_markup_code: Color::from_hex("#2E7D32"), // Markdown code - green
+            syntax_markup_bold: Color::from_hex("#22262B"), // Markdown bold - primary text
+            syntax_markup_italic: Color::from_hex("#22262B"), // Markdown italic - primary text
+            syntax_markup_strikethrough: Color::from_hex("#8A919D"), // Markdown strikethrough - faint
         }
     }
 }
