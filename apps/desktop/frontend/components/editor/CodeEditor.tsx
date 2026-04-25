@@ -175,7 +175,7 @@ function VirtualEditor({
   const overscan = 5;
   const totalHeight = localLineCount * lineHeight;
   const gutterWidth = computeGutterWidth(displayLineCount);
-  const GUTTER_RIGHT_PADDING = 12; // px
+  const GUTTER_RIGHT_PADDING = 6; // px
 
   // Compute visible range deterministically from scrollTop, containerHeight, lineHeight
   const { firstLine, lastLine } = useMemo(() => {
