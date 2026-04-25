@@ -7,7 +7,9 @@ description = "Editor domain models for Zaroxi Studio"
 
 [dependencies]
 zaroxi-core-ids = { workspace = true }
+zaroxi-ops-file = { workspace = true }
 ropey = "1.6"
 serde = { workspace = true, features = ["derive"] }
 thiserror = { workspace = true }
 memmap2 = "0.9"
+tokio = { workspace = true, features = ["sync"] }
