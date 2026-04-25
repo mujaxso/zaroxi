@@ -209,6 +209,48 @@ impl EditorState {
         apply_theme(highlights, colors)
     }
 
+    /// Get styled spans for a specific line range, applying the given theme.
+    ///
+    /// This is optimized for rendering only visible lines.
+    pub fn styled_spans_for_lines(
+        &mut self,
+        colors: &SemanticColors,
+        start_line: usize,
+        end_line: usize,
+    ) -> Vec<StyledSpan> {
+        let highlights = self.highlights();
+        let text = self.document.text();
+        let mut result = Vec::new();
+
+        // Convert line range to byte range
+        let start_byte = self.document.line_to_char(start_line);
+        let end_byte = if end_line >= self.document.len_lines() {
+            text.len()
+        } else {
+            self.document.line_to_char(end_line)
+        };
+
+        // Filter spans to the requested range
+        for span in highlights {
+            if span.end > start_byte && span.start < end_byte {
+                let clamped_start = span.start.max(start_byte);
+                let clamped_end = span.end.min(end_byte);
+                if clamped_start < clamped_end {
+                    let token_type = zaroxi_lang_syntax::theme_map::SemanticTokenType::from_highlight(span.highlight);
+                    let color = token_type.theme_color(colors);
+                    result.push(zaroxi_lang_syntax::theme_map::StyledSpan {
+                        start: clamped_start,
+                        end: clamped_end,
+                        token_type,
+                        color,
+                    });
+                }
+            }
+        }
+
+        result
+    }
+
     /// Invalidate the highlight cache (e.g., after a large edit).
     pub fn invalidate_highlights(&mut self) {
         self.cached_version = 0;

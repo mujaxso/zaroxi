@@ -60,7 +60,7 @@ impl Runtime {
             }
         }
 
-        // 3. Check for the correct structure: look for runtime/treesitter directory
+        // 4. Check for the correct structure: look for runtime/treesitter directory
         // First, try current working directory
         if let Ok(cwd) = env::current_dir() {
             // Check for runtime/treesitter directly
@@ -91,7 +91,7 @@ impl Runtime {
             }
         }
 
-        // 4. Sibling to executable (development mode)
+        // 5. Sibling to executable (development mode)
         if let Ok(exe_path) = env::current_exe() {
             if let Some(exe_dir) = exe_path.parent() {
                 // Try development layout: ../runtime/treesitter
@@ -109,6 +109,44 @@ impl Runtime {
                     }
                     current = current.parent().unwrap().to_path_buf();
                 }
+            }
+        }
+
+        // 6. Fallback: look for runtime directory relative to the project root
+        // This handles the case where the runtime directory is at the workspace root
+        if let Ok(cwd) = env::current_dir() {
+            // Try to find the project root by looking for Cargo.toml
+            let mut current = cwd.clone();
+            while current.parent().is_some() {
+                let cargo_toml = current.join("Cargo.toml");
+                if cargo_toml.exists() {
+                    // Found project root, look for runtime/treesitter relative to it
+                    let candidate = current.join("runtime/treesitter");
+                    if candidate.is_dir() {
+                        return Some(candidate);
+                    }
+                    // Also try just "runtime" directory
+                    let runtime_dir = current.join("runtime");
+                    if runtime_dir.is_dir() {
+                        // Check if runtime contains treesitter subdirectory
+                        let ts_dir = runtime_dir.join("treesitter");
+                        if ts_dir.is_dir() {
+                            return Some(ts_dir);
+                        }
+                        // If runtime exists but no treesitter subdir, use runtime itself
+                        return Some(runtime_dir);
+                    }
+                    break;
+                }
+                current = current.parent().unwrap().to_path_buf();
+            }
+        }
+
+        // 7. Last resort: check if runtime directory exists in the current directory
+        if let Ok(cwd) = env::current_dir() {
+            let runtime_dir = cwd.join("runtime");
+            if runtime_dir.is_dir() {
+                return Some(runtime_dir);
             }
         }
 

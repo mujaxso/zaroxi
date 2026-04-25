@@ -33,6 +33,42 @@ impl SemanticTokenType {
         }
     }
 
+    /// Get all available token types for debugging/configuration
+    pub fn all_types() -> Vec<Self> {
+        vec![
+            SemanticTokenType::Keyword,
+            SemanticTokenType::Function,
+            SemanticTokenType::Method,
+            SemanticTokenType::String,
+            SemanticTokenType::Comment,
+            SemanticTokenType::Type,
+            SemanticTokenType::Variable,
+            SemanticTokenType::Constant,
+            SemanticTokenType::Number,
+            SemanticTokenType::Operator,
+            SemanticTokenType::Punctuation,
+            SemanticTokenType::Attribute,
+            SemanticTokenType::Tag,
+            SemanticTokenType::Namespace,
+            SemanticTokenType::Macro,
+            SemanticTokenType::Property,
+            SemanticTokenType::Parameter,
+            SemanticTokenType::Builtin,
+            SemanticTokenType::Escape,
+            SemanticTokenType::Embedded,
+            SemanticTokenType::Regex,
+            SemanticTokenType::MarkupHeading,
+            SemanticTokenType::MarkupList,
+            SemanticTokenType::MarkupQuote,
+            SemanticTokenType::MarkupLink,
+            SemanticTokenType::MarkupCode,
+            SemanticTokenType::MarkupBold,
+            SemanticTokenType::MarkupItalic,
+            SemanticTokenType::MarkupStrikethrough,
+            SemanticTokenType::Plain,
+        ]
+    }
+
     pub fn theme_color(&self, colors: &SemanticColors) -> Color {
         match self {
             SemanticTokenType::Keyword => colors.syntax_keyword,

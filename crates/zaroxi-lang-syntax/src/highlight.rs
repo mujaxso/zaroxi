@@ -64,13 +64,20 @@ impl HighlightEngine {
     ) -> Result<Vec<HighlightSpan>, SyntaxError> {
         // For plaintext or unknown languages, return empty spans
         if language == LanguageId::PlainText {
+            eprintln!("DEBUG: PlainText language, returning empty highlights");
             return Ok(Vec::new());
         }
 
+        eprintln!("DEBUG: Highlighting for language: {:?}", language);
+
         // Get the Tree-sitter language
         let _ts_lang = match language.tree_sitter_language() {
-            Some(lang) => lang,
+            Some(lang) => {
+                eprintln!("DEBUG: Got Tree-sitter language for {:?}", language);
+                lang
+            }
             None => {
+                eprintln!("DEBUG: No Tree-sitter language available for {:?}", language);
                 // No grammar available, return empty spans
                 return Ok(Vec::new());
             }
@@ -80,6 +87,7 @@ impl HighlightEngine {
         let query = match self.load_query(&language) {
             Some(q) => q,
             None => {
+                eprintln!("DEBUG: No query available for {:?}", language);
                 // No query available, return empty spans
                 return Ok(Vec::new());
             }
@@ -87,9 +95,11 @@ impl HighlightEngine {
 
         // Execute the query against the syntax tree
         let spans = self.execute_query(&query, source, tree);
+        eprintln!("DEBUG: Got {} raw highlight spans", spans.len());
 
         // Post-process spans: sort and filter covered plain spans
         let filtered = self.filter_spans(spans);
+        eprintln!("DEBUG: After filtering: {} highlight spans", filtered.len());
 
         Ok(filtered)
     }
@@ -110,21 +120,42 @@ impl HighlightEngine {
             .join("queries")
             .join("highlights.scm");
 
+        eprintln!("DEBUG: Looking for query at: {}", query_path.display());
+
         let query_text = match std::fs::read_to_string(&query_path) {
-            Ok(text) => text,
-            Err(_) => {
-                // Query file not found or unreadable
-                return None;
+            Ok(text) => {
+                eprintln!("DEBUG: Found query file for {} ({} bytes)", language_id, text.len());
+                text
+            }
+            Err(e) => {
+                eprintln!("DEBUG: Query file not found for {}: {} (path: {})", language_id, e, query_path.display());
+                // Try alternative path: look for queries directly in language directory
+                let alt_path = self.runtime.language_dir(language_id).join("highlights.scm");
+                eprintln!("DEBUG: Trying alternative path: {}", alt_path.display());
+                match std::fs::read_to_string(&alt_path) {
+                    Ok(text) => {
+                        eprintln!("DEBUG: Found query at alternative path for {}", language_id);
+                        text
+                    }
+                    Err(e2) => {
+                        eprintln!("DEBUG: Alternative path also failed: {}", e2);
+                        return None;
+                    }
+                }
             }
         };
 
         if query_text.trim().is_empty() {
+            eprintln!("DEBUG: Query file for {} is empty", language_id);
             return None;
         }
 
         // Compile the query
         match Query::new(&ts_lang, &query_text) {
-            Ok(q) => Some(q),
+            Ok(q) => {
+                eprintln!("DEBUG: Successfully compiled query for {}", language_id);
+                Some(q)
+            }
             Err(e) => {
                 // Log the error for debugging but don't crash
                 eprintln!(
@@ -147,9 +178,14 @@ impl HighlightEngine {
         let root_node = tree.root_node();
         let mut spans = Vec::new();
 
+        eprintln!("DEBUG: Executing query, source length: {} bytes", source.len());
+        eprintln!("DEBUG: Root node: start={}, end={}", root_node.start_byte(), root_node.end_byte());
+
         // Use StreamingIterator to iterate over query matches
         let mut matches = cursor.matches(query, root_node, source.as_bytes());
+        let mut match_count = 0;
         while let Some(match_) = StreamingIterator::next(&mut matches) {
+            match_count += 1;
             for capture in match_.captures {
                 let node = capture.node;
                 let start = node.start_byte();
@@ -161,6 +197,7 @@ impl HighlightEngine {
             }
         }
 
+        eprintln!("DEBUG: Found {} query matches, {} total captures", match_count, spans.len());
         spans
     }
 
@@ -204,122 +241,124 @@ impl Default for HighlightEngine {
 
 pub fn map_capture_name(name: &str) -> Highlight {
     match name {
-        // Programming language captures
-        "comment" => Highlight::Comment,
-        "string" => Highlight::String,
-        "string.escape" => Highlight::String,
-        "escape" => Highlight::String,
-        "string.special" => Highlight::String,
-        "keyword" => Highlight::Keyword,
-        "function" | "function.call" | "function.method" => Highlight::Function,
-        "function.macro" | "macro" => Highlight::Function, // Macros use function color
-        "variable" | "variable.parameter" => Highlight::Variable,
-        "variable.builtin" => Highlight::Type, // Built-in variables like 'self' use type color (amber in dark zaroxi_theme)
-        "type" | "type.builtin" => Highlight::Type,
-        "constant" | "constant.builtin" => Highlight::Constant,
-        "attribute" => Highlight::Attribute,
-        "operator" => Highlight::Operator,
-        "punctuation.bracket" => Highlight::Operator,
-        "punctuation.delimiter" => Highlight::Operator,
-        "number" => Highlight::Number,
-        "boolean" => Highlight::Constant,
-        "property" => Highlight::Property,
-        "namespace" => Highlight::Namespace,
-        "constructor" => Highlight::Type,
-        "label" => Highlight::Variable,
-        "mutable_specifier" => Highlight::Keyword,
-        "lifetime" => Highlight::Type, // Lifetimes use type color
-
-        // Markdown-specific captures (based on tree-sitter-markdown-inline grammar)
-        // Based on debug output showing actual node types
-        "emphasis" => Highlight::Comment,
-        "strong_emphasis" => Highlight::Keyword,
-        "code_span" => Highlight::Constant,
-        "inline_code" => Highlight::Constant,
-        "link_text" => Highlight::Variable,
-        "link_destination" => Highlight::String,
-        "link_title" => Highlight::String,
-        "shortcut_link" => Highlight::Variable,
-        "full_reference_link" => Highlight::Variable,
-        "collapsed_reference_link" => Highlight::Variable,
-        "inline_link" => Highlight::Variable,
-        "image" => Highlight::Variable,
-        "image.description" => Highlight::Variable,
-        "html_tag" => Highlight::Attribute,
-        "hard_line_break" => Highlight::Operator,
-        "line_break" => Highlight::Operator,
+        // Comments
+        "comment" | "comment.line" | "comment.block" | "comment.documentation" => Highlight::Comment,
+        
+        // Strings
+        "string" | "string.quoted" | "string.quoted.single" | "string.quoted.double" 
+        | "string.quoted.triple" | "string.quoted.raw" | "string.quoted.other" 
+        | "string.special" | "string.special.path" | "string.special.url" 
+        | "string.special.symbol" | "string.special.regex" | "string.special.format" 
+        | "string.interpolation" | "string.template" => Highlight::String,
+        
+        // Escape sequences
+        "escape" | "string.escape" | "character.escape" | "escape_sequence" => Highlight::String,
+        
+        // Keywords
+        "keyword" | "keyword.control" | "keyword.control.conditional" 
+        | "keyword.control.repeat" | "keyword.control.import" | "keyword.control.return" 
+        | "keyword.control.exception" | "keyword.control.flow" | "keyword.operator" 
+        | "keyword.directive" | "keyword.directive.define" | "keyword.directive.include" 
+        | "keyword.storage" | "keyword.storage.modifier" | "keyword.storage.type" 
+        | "keyword.function" | "keyword.other" | "keyword.other.unit" 
+        | "keyword.other.special-method" | "keyword.other.import" 
+        | "keyword.control.as" | "keyword.control.use" | "keyword.control.mod" 
+        | "keyword.control.where" | "keyword.control.let" | "keyword.control.match" 
+        | "keyword.control.if" | "keyword.control.else" | "keyword.control.for" 
+        | "keyword.control.while" | "keyword.control.loop" | "keyword.control.in" 
+        | "keyword.control.break" | "keyword.control.continue" | "keyword.control.return" 
+        | "keyword.control.yield" | "keyword.control.await" | "keyword.control.async" 
+        | "keyword.control.unsafe" | "keyword.control.pub" | "keyword.control.crate" 
+        | "keyword.control.super" | "keyword.control.self" | "keyword.control.static" 
+        | "keyword.control.const" | "keyword.control.mut" | "keyword.control.ref" 
+        | "keyword.control.move" | "keyword.control.dyn" | "keyword.control.impl" 
+        | "keyword.control.trait" | "keyword.control.enum" | "keyword.control.struct" 
+        | "keyword.control.type" | "keyword.control.fn" | "keyword.control.extern" 
+        | "keyword.control.macro" | "keyword.control.union" => Highlight::Keyword,
+        
+        // Functions and methods
+        "function" | "function.call" | "function.method" | "function.builtin" 
+        | "method" | "method.call" | "constructor" | "function.macro" | "macro" => Highlight::Function,
+        
+        // Variables
+        "variable" | "variable.parameter" | "variable.other" | "variable.other.member" 
+        | "label" | "definition" => Highlight::Variable,
+        
+        // Built-in variables
+        "variable.builtin" | "variable.language" | "variable.special" => Highlight::Type,
+        
+        // Types
+        "type" | "type.builtin" | "type.parameter" | "type.qualifier" 
+        | "lifetime" | "storageclass" => Highlight::Type,
+        
+        // Constants
+        "constant" | "constant.builtin" | "boolean" | "constant.language" 
+        | "constant.numeric" | "constant.character" | "constant.other" => Highlight::Constant,
+        
+        // Attributes
+        "attribute" | "attribute.builtin" | "decorator" | "annotation" => Highlight::Attribute,
+        
+        // Operators
+        "operator" | "operator.assignment" | "operator.arithmetic" 
+        | "operator.comparison" | "operator.logical" | "operator.bitwise" 
+        | "operator.unary" | "operator.ternary" | "operator.spread" 
+        | "punctuation.bracket" | "punctuation.delimiter" | "punctuation.special" 
+        | "punctuation" => Highlight::Operator,
+        
+        // Numbers
+        "number" | "number.float" | "number.integer" | "number.hex" 
+        | "number.octal" | "number.binary" | "number.scientific" => Highlight::Number,
+        
+        // Properties
+        "property" | "property.definition" | "property.readonly" 
+        | "field" | "field.definition" => Highlight::Property,
+        
+        // Namespaces
+        "namespace" | "module" | "package" | "import" | "include" => Highlight::Namespace,
+        
+        // Markdown-specific captures
+        "emphasis" | "text.emphasis" => Highlight::Comment,
+        "strong_emphasis" | "text.strong" => Highlight::Keyword,
+        "code_span" | "inline_code" | "text.literal" | "code_block.content" => Highlight::Constant,
+        "link_text" | "shortcut_link" | "full_reference_link" | "collapsed_reference_link" 
+        | "inline_link" | "link" | "reference_link" | "reference_definition" 
+        | "footnote_reference" | "footnote_definition" | "text.reference" => Highlight::Variable,
+        "link_destination" | "link_title" | "uri_autolink" | "email_autolink" 
+        | "url" | "email" | "text.uri" => Highlight::String,
+        "image" | "image.description" => Highlight::Variable,
+        "html_tag" | "html" | "html_block" | "html_inline" | "tag" => Highlight::Attribute,
+        "hard_line_break" | "line_break" | "soft_line_break" => Highlight::Operator,
         "strikethrough" => Highlight::Comment,
-        "uri_autolink" => Highlight::String,
-        "email_autolink" => Highlight::String,
-        "backslash_escape" => Highlight::String,
-        "latex" => Highlight::Constant,
-        // Additional captures that might be present
-        "link" => Highlight::Variable,
-        "link.autolink" => Highlight::String,
-        "html" => Highlight::Attribute,
-        "html_block" => Highlight::Attribute,
-        "html_inline" => Highlight::Attribute,
-        // Fallback for block-level elements if they somehow appear
-        "heading" => Highlight::Type,
-        // These captures are kept for compatibility but not used in the current markdown query
-        // They remain as fallbacks
-        "heading.1" => Highlight::Type,
-        "heading.2" => Highlight::Type,
-        "heading.3" => Highlight::Type,
-        "heading.4" => Highlight::Type,
-        "heading.5" => Highlight::Type,
-        "heading.6" => Highlight::Type,
-        "atx_heading" => Highlight::Type,
-        "setext_heading" => Highlight::Type,
-        "setext_heading_text" => Highlight::Type,
-        "code_block" => Highlight::Property,
-        "code_block.delimiter" => Highlight::Operator,
-        "code_block.content" => Highlight::Plain,
-        "fenced_code_block" => Highlight::Property,
-        "fenced_code_block_delimiter" => Highlight::Operator,
-        "blockquote" => Highlight::Comment,
-        "block_quote" => Highlight::Comment,
-        "blockquote.marker" => Highlight::Operator,
-        "block_quote_marker" => Highlight::Operator,
-        "list" => Highlight::Property,
-        "list.item" => Highlight::Property,
-        "list.marker" => Highlight::Operator,
-        "list_item" => Highlight::Property,
-        "thematic_break" => Highlight::Operator,
-        "table" => Highlight::Property,
+        "backslash_escape" | "escape_sequence" => Highlight::String,
+        "latex" | "text.math" => Highlight::Constant,
+        
+        // Headings
+        "heading" | "heading.1" | "heading.2" | "heading.3" | "heading.4" | "heading.5" | "heading.6" 
+        | "atx_heading" | "setext_heading" | "setext_heading_text" | "heading_content" 
+        | "text.title" => Highlight::Type,
+        
+        // Code blocks
+        "code_block" | "fenced_code_block" | "code_block.delimiter" | "fenced_code_block_delimiter" => Highlight::Property,
+        
+        // Blockquotes
+        "blockquote" | "block_quote" | "text.quote" => Highlight::Comment,
+        "blockquote.marker" | "block_quote_marker" => Highlight::Operator,
+        
+        // Lists
+        "list" | "list.item" | "list_item" | "text.environment" => Highlight::Property,
+        "list.marker" | "list_item_marker" | "task_list_marker" => Highlight::Operator,
+        
+        // Tables
+        "table" | "table.row" => Highlight::Property,
         "table.header" => Highlight::Type,
-        "table.row" => Highlight::Property,
         "table.cell" => Highlight::Plain,
         "table.delimiter" => Highlight::Operator,
-        "paragraph" => Highlight::Plain,
-        "reference_link" => Highlight::Variable,
-        "reference_definition" => Highlight::Variable,
-        "footnote_reference" => Highlight::Variable,
-        "footnote_definition" => Highlight::Variable,
-        "task_list_marker" => Highlight::Operator,
-        "escape_sequence" => Highlight::String,
-        "soft_line_break" => Highlight::Plain,
-        "heading_content" => Highlight::Type,
-        "url" => Highlight::String,
-        "email" => Highlight::String,
-        "inline" => Highlight::Plain,
-        "block" => Highlight::Plain,
-        "document" => Highlight::Plain,
-        // nvim-treesitter style captures
-        "text.literal" => Highlight::Constant,
-        "text.reference" => Highlight::Variable,
-        "text.title" => Highlight::Type,
-        "text.uri" => Highlight::String,
-        "text.emphasis" => Highlight::Comment,
-        "text.strong" => Highlight::Keyword,
-        "text.quote" => Highlight::Comment,
-        "text.math" => Highlight::Constant,
-        "text.environment" => Highlight::Property,
-        "punctuation.special" => Highlight::Operator,
-        "definition" => Highlight::Variable,
-        // Additional markdown captures from the query file
-        "atx_heading_marker" => Highlight::Operator,
-        "plain" => Highlight::Plain,
+        
+        // Other
+        "thematic_break" | "atx_heading_marker" => Highlight::Operator,
+        "paragraph" | "inline" | "block" | "document" | "plain" => Highlight::Plain,
+        
+        // Catch-all
         _ => Highlight::Plain,
     }
 }
