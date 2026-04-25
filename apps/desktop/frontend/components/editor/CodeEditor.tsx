@@ -47,6 +47,17 @@ function truncateToNLines(text: string, maxLines: number): string {
   return text; // not enough lines to truncate
 }
 
+/** Return an array of character offsets where each line starts (first element is always 0). */
+function computeLineOffsets(s: string): number[] {
+  const offsets: number[] = [0];
+  for (let i = 0; i < s.length; i++) {
+    if (s.charCodeAt(i) === 10 /* \n */) {
+      offsets.push(i + 1);
+    }
+  }
+  return offsets;
+}
+
 function ReadOnlyContent({
   displayValue,
   cursorLine,
@@ -68,12 +79,6 @@ function ReadOnlyContent({
   const [containerHeight, setContainerHeight] = useState(0);
   const rafRef = useRef<number | null>(null);
 
-  // Split the text into lines only once per content change
-  const linesRef = useRef<string[] | null>(null);
-  useEffect(() => {
-    linesRef.current = displayValue.split('\n');
-  }, [displayValue]);
-
   useEffect(() => {
     const update = () => {
       if (scrollContainerRef.current) {
@@ -88,6 +93,18 @@ function ReadOnlyContent({
     return () => observer.disconnect();
   }, []);
 
+  /* Compute line start offsets once per content change – avoids splitting into huge string array. */
+  const lineOffsets = useMemo(() => computeLineOffsets(displayValue), [displayValue]);
+  /* Sentinel that includes an extra entry for the end of the last line. */
+  const sentinel = useMemo(
+    () =>
+      lineOffsets.length > 0
+        ? [...lineOffsets, displayValue.length]
+        : [0],
+    [lineOffsets, displayValue.length],
+  );
+  const localLineCount = lineOffsets.length;
+
   const gutterWidth = useMemo(() => {
     const digits = String(displayLineCount).length;
     return Math.max(
@@ -99,7 +116,7 @@ function ReadOnlyContent({
   }, [displayLineCount]);
 
   const overscan = 5;
-  const totalHeight = displayLineCount * lineHeight;
+  const totalHeight = localLineCount * lineHeight;
 
   const { firstLine, lastLine } = useMemo(() => {
     if (containerHeight === 0 || lineHeight <= 0) {
@@ -108,14 +125,14 @@ function ReadOnlyContent({
     const effectiveScrollTop = Math.max(0, scrollTop);
     const first = Math.max(0, Math.floor(effectiveScrollTop / lineHeight) - overscan);
     const last = Math.min(
-      displayLineCount - 1,
+      localLineCount - 1,
       Math.ceil((effectiveScrollTop + containerHeight) / lineHeight) + overscan - 1,
     );
     if (!Number.isFinite(first) || !Number.isFinite(last)) {
       return { firstLine: -1, lastLine: -1 };
     }
     return { firstLine: first, lastLine: last };
-  }, [scrollTop, lineHeight, displayLineCount, containerHeight]);
+  }, [scrollTop, lineHeight, localLineCount, containerHeight]);
 
   const lineNumbers = useMemo(() => {
     if (firstLine < 0 || lastLine < 0) {
@@ -152,14 +169,18 @@ function ReadOnlyContent({
     return ops;
   }, [firstLine, lastLine, cursorLine, lineHeight]);
 
-  // Render only the visible code lines as separate absolutely‑positioned rows
+  // Virtualised code rows – built from the offset table to avoid allocating thousands of strings.
   const codeRows = useMemo(() => {
-    if (firstLine < 0 || lastLine < 0 || !linesRef.current) {
+    if (firstLine < 0 || lastLine < 0) {
       return null;
     }
     const rows: React.ReactNode[] = [];
     for (let idx = firstLine; idx <= lastLine; idx++) {
-      const text = linesRef.current[idx] ?? '';
+      const start = sentinel[idx];
+      const end = sentinel[idx + 1];
+      const raw = displayValue.slice(start, end);
+      // Strip trailing newline(s) so the content doesn't break absolute layout.
+      const text = raw.replace(/\r?\n$/, '');
       rows.push(
         <div
           key={idx}
@@ -182,7 +203,7 @@ function ReadOnlyContent({
       );
     }
     return rows;
-  }, [firstLine, lastLine, gutterWidth, lineHeight]);
+  }, [firstLine, lastLine, gutterWidth, lineHeight, displayValue, sentinel]);
 
   const handleScroll = useCallback(() => {
     if (rafRef.current != null) {
