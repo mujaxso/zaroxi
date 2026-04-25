@@ -160,7 +160,7 @@ impl DocumentSyntaxState {
         let mut result = Vec::new();
 
         // Filter spans to the requested range, converting byte offsets to char offsets
-        for span in &highlights {
+        for span in highlights {
             let span_start_char = byte_to_char(span.start);
             let span_end_char = byte_to_char(span.end);
 
