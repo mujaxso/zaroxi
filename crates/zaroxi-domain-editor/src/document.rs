@@ -321,7 +321,8 @@ impl Document {
         });
 
         let text = self.text();
-        match SyntaxTree::new(pool.clone(), &text, self.language) {
+        let lang = self.language;
+        match SyntaxTree::new(pool.clone(), &text, lang) {
             Ok(tree) => {
                 self.syntax_tree = Some(tree);
                 true

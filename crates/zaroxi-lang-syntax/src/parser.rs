@@ -81,6 +81,7 @@ impl Default for ParserPool {
 ///
 /// This struct manages the lifecycle of a Tree-sitter parse tree and supports
 /// incremental re-parsing after text edits.
+#[derive(Clone)]
 pub struct SyntaxTree {
     /// The Tree-sitter parse tree.
     tree: Tree,
