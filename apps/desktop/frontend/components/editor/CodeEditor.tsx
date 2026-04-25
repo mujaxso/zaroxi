@@ -264,7 +264,7 @@ function VirtualEditor({
     resize: 'none',
     outline: 'none',
     background: 'transparent',
-    caretColor: 'inherit',
+    caretColor: '#E6EAF2', // visible caret color (dark theme primary text)
     color: 'transparent',
   };
 
@@ -332,6 +332,12 @@ function VirtualEditor({
           onChange={handleChange}
           onScroll={handleScroll}
           onSelect={handleSelectionChange}
+          onClick={() => {
+            // Ensure textarea receives focus on click
+            if (textAreaRef.current && editable) {
+              textAreaRef.current.focus();
+            }
+          }}
           spellCheck={false}
           autoComplete="off"
           autoCorrect="off"
