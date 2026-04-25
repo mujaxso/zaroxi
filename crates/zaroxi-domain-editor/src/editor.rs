@@ -155,11 +155,11 @@ impl EditorState {
     ///
     /// This method caches the highlights and only recomputes them when the
     /// document version changes. For large files, it returns an empty vector.
-    pub fn highlights(&mut self) -> &[HighlightSpan] {
+    pub fn highlights(&mut self) -> Vec<HighlightSpan> {
         // For large files, return empty highlights
         if self.document.file_class() != FileClass::Normal {
             self.cached_highlights.clear();
-            return &self.cached_highlights;
+            return Vec::new();
         }
 
         // Check if we need to recompute highlights
@@ -168,7 +168,7 @@ impl EditorState {
             self.recompute_highlights();
         }
 
-        &self.cached_highlights
+        self.cached_highlights.clone()
     }
 
     /// Recompute highlight spans for the current document.
@@ -206,7 +206,7 @@ impl EditorState {
     /// This is the main method for the rendering layer to get syntax-colored spans.
     pub fn styled_spans(&mut self, colors: &SemanticColors) -> Vec<StyledSpan> {
         let highlights = self.highlights();
-        apply_theme(highlights, colors)
+        apply_theme(&highlights, colors)
     }
 
     /// Get styled spans for a specific line range, applying the given theme.
@@ -218,20 +218,25 @@ impl EditorState {
         start_line: usize,
         end_line: usize,
     ) -> Vec<StyledSpan> {
+        // First, get the highlights (this may borrow self mutably)
         let highlights = self.highlights();
+
+        // Now we can borrow self.document immutably because highlights is owned
         let text = self.document.text();
-        let mut result = Vec::new();
+        let total_lines = self.document.len_lines();
 
         // Convert line range to byte range
         let start_byte = self.document.line_to_char(start_line);
-        let end_byte = if end_line >= self.document.len_lines() {
+        let end_byte = if end_line >= total_lines {
             text.len()
         } else {
             self.document.line_to_char(end_line)
         };
 
+        let mut result = Vec::new();
+
         // Filter spans to the requested range
-        for span in highlights {
+        for span in &highlights {
             if span.end > start_byte && span.start < end_byte {
                 let clamped_start = span.start.max(start_byte);
                 let clamped_end = span.end.min(end_byte);
