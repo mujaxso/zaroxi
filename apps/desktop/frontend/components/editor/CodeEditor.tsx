@@ -314,7 +314,7 @@ function VirtualEditor({
 
   const codeStyle: React.CSSProperties = {
     height: '100%',
-    width: '100%',
+    width: 'auto',
     margin: 0,
     border: 0,
     padding: 0,
@@ -402,10 +402,10 @@ function VirtualEditor({
               lineHeight: `${lineHeight}px`,
               whiteSpace: 'pre',
               zIndex: 1,
-              width: 'max-content',
+              width: 'auto',
               minWidth: '100%',
             }}
-            className="text-sm p-0 text-editor-foreground"
+            className="text-xs p-0 text-editor-foreground"
           >
             {codeRows}
           </div>
@@ -417,13 +417,12 @@ function VirtualEditor({
               position: 'absolute',
               left: 0,
               top: 0,
-              right: 0,
               height: totalHeight,
               zIndex: 0,
-              width: 'max-content',
+              width: 'auto',
               minWidth: '100%',
             }}
-            className="text-sm p-0"
+            className="text-xs p-0"
             value={displayValue}
             onChange={handleChange}
             onScroll={handleScroll}
