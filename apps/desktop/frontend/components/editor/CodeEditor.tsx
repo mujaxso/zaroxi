@@ -16,12 +16,11 @@ interface CodeEditorProps {
   className?: string;
 }
 
-/** Maximum number of lines we allow to be rendered in the textarea at once.
+/** Maximum number of lines we allow to be rendered at once.
  * Files exceeding this limit will show a preview of the first lines and forbid editing. */
 const MAX_VISIBLE_LINES = 200_000;
 
-/** Fast line‑counting that stops scanning once we exceed MAX_VISIBLE_LINES.
- *  This avoids scanning gigabyte files completely. */
+/** Fast line‑counting that stops scanning once we exceed MAX_VISIBLE_LINES. */
 function fastLineCount(text: string): number | 'exceeds' {
   let lines = 1;
   const len = text.length;
@@ -47,13 +46,12 @@ function truncateToNLines(text: string, maxLines: number): string {
     if (text.charCodeAt(i) === 10) {
       newlineCount++;
       if (newlineCount >= maxLines) {
-        // Include the newline we just counted, then stop.
         return text.slice(0, i + 1);
       }
     }
     i++;
   }
-  return text; // not enough lines to truncate
+  return text;
 }
 
 /** Return an array of character offsets where each line starts (first element is always 0). */
@@ -70,7 +68,7 @@ function computeLineOffsets(s: string): number[] {
   return offsets;
 }
 
-function ReadOnlyContent({
+function VirtualEditor({
   displayValue,
   cursorLine,
   lineHeight,
@@ -79,6 +77,8 @@ function ReadOnlyContent({
   largeFileBanner,
   onScroll,
   styledSpans,
+  editable,
+  onValueChange,
 }: {
   displayValue: string;
   cursorLine: number;
@@ -88,6 +88,8 @@ function ReadOnlyContent({
   largeFileBanner: React.ReactNode;
   onScroll: (st: number) => void;
   styledSpans: Array<{start: number; end: number; color: string}>;
+  editable: boolean;
+  onValueChange?: (newValue: string) => void;
 }) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [containerHeight, setContainerHeight] = useState(0);
@@ -107,9 +109,7 @@ function ReadOnlyContent({
     return () => observer.disconnect();
   }, []);
 
-  /* Compute line start offsets once per content change – avoids splitting into huge string array. */
   const lineOffsets = useMemo(() => computeLineOffsets(displayValue), [displayValue]);
-  /* Sentinel that includes an extra entry for the end of the last line. */
   const sentinel = useMemo(
     () =>
       lineOffsets.length > 0
@@ -139,7 +139,6 @@ function ReadOnlyContent({
     return { firstLine: first, lastLine: last };
   }, [scrollTop, lineHeight, localLineCount, containerHeight]);
 
-  // Virtualised code rows – built from the offset table to avoid allocating thousands of strings.
   const codeRows = useMemo(() => {
     if (firstLine < 0 || lastLine < 0) {
       return null;
@@ -149,22 +148,18 @@ function ReadOnlyContent({
       const start = sentinel[idx];
       const end = sentinel[idx + 1];
       const raw = displayValue.slice(start, end);
-      // Strip trailing newline(s) so the content doesn't break absolute layout.
       const text = raw.replace(/\r?\n$/, '');
 
-      // Build styled spans for this line
       const lineStart = start;
       const lineEnd = end;
       const lineSpans = styledSpans.filter(
         (s) => s.start >= lineStart && s.end <= lineEnd
       );
 
-      // Create colored segments
       const segments: React.ReactNode[] = [];
       let currentPos = lineStart;
       for (const span of lineSpans) {
         if (span.start > currentPos) {
-          // Unstyled text
           segments.push(
             <span key={`${currentPos}-plain`}>
               {text.slice(currentPos - lineStart, span.start - lineStart)}
@@ -225,6 +220,16 @@ function ReadOnlyContent({
     });
   }, [onScroll]);
 
+  // Handle input events for editable mode
+  const handleInput = useCallback(
+    (e: React.FormEvent<HTMLDivElement>) => {
+      if (!editable || !onValueChange) return;
+      const newText = (e.target as HTMLElement).innerText;
+      onValueChange(newText);
+    },
+    [editable, onValueChange],
+  );
+
   return (
     <div className="flex flex-col h-full w-full bg-editor overflow-hidden">
       <div
@@ -240,7 +245,7 @@ function ReadOnlyContent({
             minWidth: '100%',
           }}
         >
-          {/* Gutter – positioned absolutely inside the scroll container */}
+          {/* Gutter */}
           <div
             style={{
               position: 'absolute',
@@ -260,8 +265,28 @@ function ReadOnlyContent({
               containerHeight={containerHeight}
             />
           </div>
-          {/* Virtualised code rows – only visible lines are rendered */}
-          {codeRows}
+          {/* Virtualised code rows */}
+          <div
+            contentEditable={editable}
+            suppressContentEditableWarning
+            onInput={handleInput}
+            style={{
+              position: 'absolute',
+              left: gutterWidth,
+              top: 0,
+              right: 0,
+              height: totalHeight,
+              outline: 'none',
+              whiteSpace: 'pre',
+              overflow: 'hidden',
+              fontFamily: FONT_TOKENS.editor,
+              fontSize: 'inherit',
+              lineHeight: `${lineHeight}px`,
+            }}
+            className="text-sm p-0 text-editor-foreground"
+          >
+            {codeRows}
+          </div>
         </div>
       </div>
       {largeFileBanner}
@@ -277,11 +302,7 @@ export function CodeEditor({
   readOnly = false,
   className,
 }: CodeEditorProps) {
-  // Determine whether the file is too large to edit safely.
-  // Use a fast heuristic: if the string is longer than a reasonable threshold,
-  // assume it's a large file without scanning every byte.
   const [isLarge, setIsLarge] = useState<boolean>(() => {
-    // If the string is very long, it's likely a large file
     if (initialValue.length > 10_000_000) {
       return true;
     }
@@ -295,24 +316,16 @@ export function CodeEditor({
     return initialValue;
   });
 
-  // The whole original content is stored so that `onChange` receives it even when truncated.
   const fullValueRef = useRef(initialValue);
   const initialRef = useRef(initialValue);
 
-  // Refs for scroll synchronisation
-  const textAreaRef = useRef<HTMLTextAreaElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // Editor state for the gutter (only cursor line, no scroll state)
   const [cursorLine, setCursorLine] = useState(() => {
     const beforeNewlines = initialValue.slice(0, 0).match(/\n/g);
     return beforeNewlines ? beforeNewlines.length + 1 : 1;
   });
 
-  /** Scroll offset of the text content, used by the gutter to determine visible lines. */
   const [scrollTop, setScrollTop] = useState(0);
 
-  // Update displayValue when initialValue changes from the outside
   useEffect(() => {
     if (initialRef.current !== initialValue) {
       initialRef.current = initialValue;
@@ -328,9 +341,7 @@ export function CodeEditor({
     }
   }, [initialValue]);
 
-  // Inject CSS that hides native scrollbars (professional IDE look)
   useEffect(() => {
-    // Check if style already exists to avoid duplicates
     if (document.getElementById('hide-scrollbar-style')) {
       return;
     }
@@ -342,15 +353,11 @@ export function CodeEditor({
       }
     `;
     document.head.appendChild(style);
-    return () => {
-      // Don't remove on unmount to avoid flickering when switching tabs
-    };
+    return () => {};
   }, []);
 
-  // State for styled spans from Rust backend
   const [styledSpans, setStyledSpans] = useState<Array<{start: number; end: number; color: string}>>([]);
 
-  // Fetch styled spans from Rust backend when file path changes
   useEffect(() => {
     if (!filePath) return;
     console.log('[CodeEditor] Fetching styled spans for:', filePath);
@@ -366,95 +373,23 @@ export function CodeEditor({
 
   const lineHeight = GUTTER_CONFIG.LINE_HEIGHT;
 
-  const rafScrollRef = useRef<number | null>(null);
-  const handleScroll = useCallback(() => {
-    if (rafScrollRef.current != null) {
-      cancelAnimationFrame(rafScrollRef.current);
-    }
-    rafScrollRef.current = requestAnimationFrame(() => {
-      const el = textAreaRef.current;
-      if (!el) return;
-      setScrollTop(el.scrollTop);
-      rafScrollRef.current = null;
-    });
-  }, []);
+  const handleValueChange = useCallback(
+    (newValue: string) => {
+      fullValueRef.current = newValue;
+      setDisplayValue(newValue);
+      onChange(newValue);
+      if (filePath) {
+        useTabsStore.getState().markDirty(filePath);
+      }
+    },
+    [onChange, filePath],
+  );
 
-  const handleSelectionChange = useCallback(() => {
-    const ta = textAreaRef.current;
-    if (!ta) return;
-    const selStart = ta.selectionStart;
-    // Count newlines in the displayed (truncated) text only
-    const beforeNewlines = displayValue.slice(0, selStart).match(/\n/g);
-    const line = beforeNewlines ? beforeNewlines.length + 1 : 1;
-    setCursorLine(line);
-  }, [displayValue]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    // If the file was too large, editing is disabled.
-    if (readOnly || isLarge) return;
-    const newValue = e.target.value;
-    // Keep track of the full content (may be larger than displayed, but here editing is only when file fits)
-    fullValueRef.current = newValue;
-    setDisplayValue(newValue);
-    onChange(newValue);
-    if (filePath) {
-      useTabsStore.getState().markDirty(filePath);
-    }
-    handleSelectionChange();
-  };
-
-  // Compute the line count of the *displayed* content (used for gutter)
   const displayLineCount = useMemo(() => {
     const r = fastLineCount(displayValue);
-    return r === 'exceeds' ? MAX_VISIBLE_LINES + 1 : r; // fallback if something went wrong
+    return r === 'exceeds' ? MAX_VISIBLE_LINES + 1 : r;
   }, [displayValue]);
 
-  // Common class for the code area (textarea and pre)
-  const codeClass = cn(
-    'text-sm leading-[22px] p-0 hide-scrollbar text-editor-foreground',
-  );
-
-  const codeStyle: React.CSSProperties = {
-    height: '100%',
-    width: '100%',
-    margin: 0,
-    border: 0,
-    padding: 0,
-    overflow: 'auto',
-    scrollbarWidth: 'none',
-    msOverflowStyle: 'none',
-    whiteSpace: 'pre',
-    wordBreak: 'normal',
-    fontFamily: FONT_TOKENS.editor,
-  };
-
-  const [textareaHeight, setTextareaHeight] = useState(0);
-
-  useEffect(() => {
-    const updateHeight = () => {
-      if (textAreaRef.current) {
-        setTextareaHeight(textAreaRef.current.clientHeight);
-      }
-    };
-    updateHeight();
-    const observer = new ResizeObserver(updateHeight);
-    if (textAreaRef.current) {
-      observer.observe(textAreaRef.current);
-    }
-    return () => observer.disconnect();
-  }, []);
-
-  const gutter = (
-    <LineNumberGutter
-      lineCount={displayLineCount}
-      cursorLine={cursorLine}
-      lineHeight={lineHeight}
-      scrollTop={scrollTop}
-      containerHeight={textareaHeight}
-    />
-  );
-
-  // Large‑file message (Read‑only preview)
   const largeFileBanner = isLarge ? (
     <div className="absolute bottom-0 left-0 right-0 bg-editor z-10 p-2 text-xs text-muted-foreground border-t border-[rgba(128,128,128,0.18)]">
       File is larger than {MAX_VISIBLE_LINES.toLocaleString()} lines.
@@ -462,57 +397,20 @@ export function CodeEditor({
     </div>
   ) : null;
 
-  // Because the actual rendered content (displayValue) may be shorter than fullValueRef,
-  // we need to tell the user the editor is read‑only when isLarge is true.
   const effectiveReadOnly = readOnly || isLarge;
 
-  if (effectiveReadOnly) {
-    return (
-      <ReadOnlyContent
-        displayValue={displayValue}
-        cursorLine={cursorLine}
-        lineHeight={lineHeight}
-        scrollTop={scrollTop}
-        displayLineCount={displayLineCount}
-        largeFileBanner={largeFileBanner}
-        onScroll={setScrollTop}
-        styledSpans={styledSpans}
-      />
-    );
-  }
-
-  const containerClassName = cn(
-    'flex flex-row h-full w-full gap-1',
-    'relative',
-    className,
-  );
-
   return (
-    <div
-      ref={containerRef}
-      className={containerClassName}
-    >
-      {gutter}
-      <textarea
-        ref={textAreaRef}
-        className={cn(
-          codeClass,
-          'bg-transparent caret-foreground outline-none resize-none flex-1',
-        )}
-        style={{
-          ...codeStyle,
-          border: 'none',
-        }}
-        value={displayValue}
-        onChange={handleChange}
-        onScroll={handleScroll}
-        onSelect={handleSelectionChange}
-        spellCheck={false}
-        autoComplete="off"
-        autoCorrect="off"
-        wrap="off"
-      />
-      {largeFileBanner}
-    </div>
+    <VirtualEditor
+      displayValue={displayValue}
+      cursorLine={cursorLine}
+      lineHeight={lineHeight}
+      scrollTop={scrollTop}
+      displayLineCount={displayLineCount}
+      largeFileBanner={largeFileBanner}
+      onScroll={setScrollTop}
+      styledSpans={styledSpans}
+      editable={!effectiveReadOnly}
+      onValueChange={effectiveReadOnly ? undefined : handleValueChange}
+    />
   );
 }
