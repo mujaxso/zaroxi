@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tauri::command;
 use zaroxi_domain_editor::document_cache::BufferManager;
-use zaroxi_domain_editor::document_syntax_cache::{DocumentSyntaxCache, DocumentSyntaxState};
+use zaroxi_domain_editor::document_syntax_cache::DocumentSyntaxCache;
 use zaroxi_domain_editor::LargeFileMode;
 use zaroxi_lang_syntax::language::LanguageId;
 use zaroxi_ops_file::FileLoader;
@@ -131,25 +131,13 @@ pub struct StyledSpanResponse {
     pub version: u64,
 }
 
-/// Request for styled spans within a specific viewport range.
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct StyledSpansRequest {
-    pub path: String,
-    /// First visible line (0‑based).
-    pub start_line: usize,
-    /// Last visible line (exclusive, 0‑based).
-    pub end_line: usize,
-    /// The document version the frontend currently has.
-    pub version: u64,
-}
 
 #[tauri::command(rename_all = "camelCase")]
 pub async fn get_styled_spans(
     path: String,
     start_line: Option<usize>,
     end_line: Option<usize>,
-    version: Option<u64>,
+    _version: Option<u64>,
 ) -> Result<Vec<StyledSpanResponse>, String> {
     let path_buf = std::path::PathBuf::from(&path);
     let canonical = path_buf

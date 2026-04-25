@@ -423,7 +423,6 @@ export function CodeEditor({
   const rafRef = useRef<number | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const versionRef = useRef<number>(0);
-  const versionRef = useRef<number>(0);
 
   const scrollRef = useRef(scrollTop);
   scrollRef.current = scrollTop;
