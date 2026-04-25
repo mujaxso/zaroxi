@@ -31,6 +31,10 @@ export function CodeEditor({
 
   // Editor state we need to expose to the gutter
   const [cursorLine, setCursorLine] = useState(1);
+  const [containerHeight, setContainerHeight] = useState(0);
+  const [scrollTop, setScrollTop] = useState(0);
+
+  const scrollTopRafId = useRef<number | null>(null);
 
   // Sync when the parent supplies a new `initialValue`
   useEffect(() => {
@@ -54,6 +58,22 @@ export function CodeEditor({
     };
   }, []);
 
+  // Re‑measure container height and update gutter on mount / resize
+  const measureContainer = useCallback(() => {
+    if (containerRef.current) {
+      setContainerHeight(containerRef.current.clientHeight);
+    }
+  }, []);
+
+  useEffect(() => {
+    measureContainer();
+    const observer = new ResizeObserver(measureContainer);
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+    return () => observer.disconnect();
+  }, [measureContainer]);
+
   // Compute logical line count and current cursor line
   const lineCount = useMemo(
     () => (value.match(/\n/g) || []).length + 1,
@@ -71,6 +91,25 @@ export function CodeEditor({
     if (gutterInnerRef.current) {
       gutterInnerRef.current.style.transform = `translateY(-${st}px)`;
     }
+
+    // Throttle scrollTop state update to at most once per frame
+    if (scrollTopRafId.current !== null) {
+      cancelAnimationFrame(scrollTopRafId.current);
+    }
+    scrollTopRafId.current = requestAnimationFrame(() => {
+      const newVal = ta.scrollTop;
+      setScrollTop(newVal);
+      scrollTopRafId.current = null;
+    });
+  }, []);
+
+  // Cleanup rAF on unmount
+  useEffect(() => {
+    return () => {
+      if (scrollTopRafId.current !== null) {
+        cancelAnimationFrame(scrollTopRafId.current);
+      }
+    };
   }, []);
 
   const handleSelectionChange = useCallback(() => {
@@ -117,6 +156,8 @@ export function CodeEditor({
       lineCount={lineCount}
       cursorLine={cursorLine}
       lineHeight={lineHeight}
+      scrollTop={scrollTop}
+      containerHeight={containerHeight}
       innerRef={gutterInnerRef}
     />
   );
