@@ -33,7 +33,7 @@ impl EditorState {
             scroll_offset_y: 0.0,
             highlight_engine: HighlightEngine::new(),
             cached_highlights: Vec::new(),
-            cached_version: 0,
+            cached_version: u64::MAX,
         }
     }
 
@@ -46,7 +46,7 @@ impl EditorState {
             scroll_offset_y: 0.0,
             highlight_engine: HighlightEngine::new(),
             cached_highlights: Vec::new(),
-            cached_version: 0,
+            cached_version: u64::MAX,
         };
         // Trigger initial syntax highlighting
         state.highlights();
