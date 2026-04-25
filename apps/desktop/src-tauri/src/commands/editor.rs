@@ -1,10 +1,8 @@
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
 use std::sync::Arc;
 use tauri::command;
 use zaroxi_domain_editor::document_cache::BufferManager;
 use zaroxi_domain_editor::document_syntax_cache::{DocumentSyntaxCache, DocumentSyntaxState};
-use zaroxi_domain_editor::document::Document;
 use zaroxi_domain_editor::LargeFileMode;
 use zaroxi_lang_syntax::language::LanguageId;
 use zaroxi_ops_file::FileLoader;
