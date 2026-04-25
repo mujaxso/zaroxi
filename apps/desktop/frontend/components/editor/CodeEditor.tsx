@@ -289,8 +289,13 @@ function VirtualEditor({
       onScroll(ta.scrollTop);
       // Sync horizontal scroll to the parent container
       const parent = ta.parentElement;
-      if (parent && parent.scrollLeft !== ta.scrollLeft) {
-        parent.scrollLeft = ta.scrollLeft;
+      if (parent) {
+        if (parent.scrollLeft !== ta.scrollLeft) {
+          parent.scrollLeft = ta.scrollLeft;
+        }
+        if (parent.scrollTop !== ta.scrollTop) {
+          parent.scrollTop = ta.scrollTop;
+        }
       }
     }
   }, [onScroll]);
@@ -314,7 +319,7 @@ function VirtualEditor({
 
   const codeStyle: React.CSSProperties = {
     height: '100%',
-    width: 'auto',
+    width: 'max-content',
     margin: 0,
     border: 0,
     padding: 0,
@@ -402,7 +407,7 @@ function VirtualEditor({
               lineHeight: `${lineHeight}px`,
               whiteSpace: 'pre',
               zIndex: 1,
-              width: 'auto',
+              width: 'max-content',
               minWidth: '100%',
             }}
             className="text-xs p-0 text-editor-foreground"
@@ -419,7 +424,7 @@ function VirtualEditor({
               top: 0,
               height: totalHeight,
               zIndex: 0,
-              width: 'auto',
+              width: 'max-content',
               minWidth: '100%',
             }}
             className="text-xs p-0"
