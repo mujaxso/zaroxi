@@ -11,7 +11,7 @@ use parking_lot::Mutex;
 use zaroxi_lang_syntax::highlight::{HighlightEngine, HighlightSpan};
 use zaroxi_lang_syntax::parser::{SyntaxTree, ParserPool};
 use zaroxi_lang_syntax::language::LanguageId;
-use zaroxi_lang_syntax::theme_map::{StyledSpan, apply_theme};
+use zaroxi_lang_syntax::theme_map::StyledSpan;
 use zaroxi_theme::theme::SemanticColors;
 
 /// Cached syntax state for a single document.

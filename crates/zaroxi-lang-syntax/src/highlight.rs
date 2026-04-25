@@ -37,7 +37,7 @@ pub enum Highlight {
 ///
 /// This struct is designed to be reused across multiple highlight operations
 /// to avoid re-creating parsers and queries unnecessarily.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct HighlightEngine {
     /// Cached runtime for resolving language resources.
     runtime: crate::runtime::Runtime,
