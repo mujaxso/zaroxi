@@ -13,3 +13,6 @@ serde = { workspace = true, features = ["derive"] }
 thiserror = { workspace = true }
 memmap2 = "0.9"
 tokio = { workspace = true, features = ["sync"] }
+zaroxi-lang-syntax = { workspace = true }
+zaroxi-theme = { workspace = true }
+parking_lot = { workspace = true }
