@@ -569,8 +569,8 @@ pub fn download_and_install_grammar(language_id: &str) -> Result<(), String> {
     std::fs::create_dir_all(&languages_dir)
         .map_err(|e| format!("Failed to create languages dir: {}", e))?;
 
-    // Create a temporary directory for cloning and compiling
-    let temp_dir = std::env::temp_dir().join(format!("zaroxi-grammar-{}", language_id));
+    // Create a unique temporary directory for cloning and compiling
+    let temp_dir = std::env::temp_dir().join(format!("zaroxi-grammar-{}-{}", language_id, std::process::id()));
     if temp_dir.exists() {
         std::fs::remove_dir_all(&temp_dir)
             .map_err(|e| format!("Failed to clean temp dir: {}", e))?;
@@ -586,6 +586,8 @@ pub fn download_and_install_grammar(language_id: &str) -> Result<(), String> {
         .map_err(|e| format!("Failed to run git clone: {}", e))?;
 
     if !status.success() {
+        // Clean up temp directory on failure
+        let _ = std::fs::remove_dir_all(&temp_dir);
         return Err(format!("git clone failed for {}", language_id));
     }
 
@@ -605,68 +607,97 @@ pub fn download_and_install_grammar(language_id: &str) -> Result<(), String> {
         grammars_dir.join(format!("libtree-sitter-{}.so", language_id))
     };
 
-    // Build the C source files into a shared library using the cc crate
-    let mut build = cc::Build::new();
-    // cc only creates static libraries, shared_flag is deprecated
-    build.opt_level(2);
-    build.cpp(false); // C language, not C++
+    // Check if we're in a cargo build environment (TARGET env var is set)
+    let in_cargo_build = std::env::var("TARGET").is_ok();
 
-    for src_file in &info.source_files {
-        let src_path = source_dir.join(src_file);
-        if src_path.exists() {
-            build.file(&src_path);
-        } else {
-            eprintln!("Warning: Source file not found: {}", src_path.display());
+    if in_cargo_build {
+        // Build the C source files into a shared library using the cc crate
+        let mut build = cc::Build::new();
+        build.opt_level(2);
+        build.cpp(false); // C language, not C++
+
+        for src_file in &info.source_files {
+            let src_path = source_dir.join(src_file);
+            if src_path.exists() {
+                build.file(&src_path);
+            } else {
+                eprintln!("Warning: Source file not found: {}", src_path.display());
+            }
         }
-    }
 
-    // The cc crate outputs to OUT_DIR, we need to find and copy the library
-    let lib_name = format!("tree_sitter_{}", language_id);
-    build.compile(&lib_name);
+        // The cc crate outputs to OUT_DIR, we need to find and copy the library
+        let lib_name = format!("tree_sitter_{}", language_id);
+        build.compile(&lib_name);
 
-    // Find the compiled library in OUT_DIR
-    let out_dir = std::env::var("OUT_DIR").unwrap_or_else(|_| "/tmp".to_string());
-    let out_path = std::path::PathBuf::from(&out_dir);
+        // Find the compiled library in OUT_DIR
+        let out_dir = std::env::var("OUT_DIR").unwrap_or_else(|_| "/tmp".to_string());
+        let out_path = std::path::PathBuf::from(&out_dir);
 
-    // The cc crate creates a library with a specific naming pattern
-    // On Linux: libtree_sitter_{language}.a (static) or libtree_sitter_{language}.so (shared)
-    // On macOS: libtree_sitter_{language}.a or libtree_sitter_{language}.dylib
-    // On Windows: tree_sitter_{language}.lib or tree_sitter_{language}.dll
-    let built_lib = if cfg!(windows) {
-        out_path.join(format!("{}.dll", lib_name))
-    } else if cfg!(target_os = "macos") {
-        out_path.join(format!("lib{}.dylib", lib_name))
-    } else {
-        out_path.join(format!("lib{}.so", lib_name))
-    };
-
-    if built_lib.exists() {
-        std::fs::copy(&built_lib, &output_lib)
-            .map_err(|e| format!("Failed to copy library: {}", e))?;
-        eprintln!("Copied grammar library to {}", output_lib.display());
-    } else {
-        // Try to find the library with alternative naming (static library)
-        let alt_lib = if cfg!(windows) {
-            out_path.join(format!("{}.lib", lib_name))
+        // The cc crate creates a library with a specific naming pattern
+        let built_lib = if cfg!(windows) {
+            out_path.join(format!("{}.dll", lib_name))
         } else if cfg!(target_os = "macos") {
-            out_path.join(format!("lib{}.a", lib_name))
+            out_path.join(format!("lib{}.dylib", lib_name))
         } else {
-            out_path.join(format!("lib{}.a", lib_name))
+            out_path.join(format!("lib{}.so", lib_name))
         };
 
-        if alt_lib.exists() {
-            // If only static library was built, we need to link it differently
-            // For now, just copy the static library
-            std::fs::copy(&alt_lib, &output_lib)
-                .map_err(|e| format!("Failed to copy static library: {}", e))?;
-            eprintln!("Copied static grammar library to {}", output_lib.display());
+        if built_lib.exists() {
+            std::fs::copy(&built_lib, &output_lib)
+                .map_err(|e| format!("Failed to copy library: {}", e))?;
+            eprintln!("Copied grammar library to {}", output_lib.display());
         } else {
-            return Err(format!(
-                "Could not find compiled library for {} in {}",
-                language_id,
-                out_dir
-            ));
+            // Try to find the library with alternative naming (static library)
+            let alt_lib = if cfg!(windows) {
+                out_path.join(format!("{}.lib", lib_name))
+            } else if cfg!(target_os = "macos") {
+                out_path.join(format!("lib{}.a", lib_name))
+            } else {
+                out_path.join(format!("lib{}.a", lib_name))
+            };
+
+            if alt_lib.exists() {
+                std::fs::copy(&alt_lib, &output_lib)
+                    .map_err(|e| format!("Failed to copy static library: {}", e))?;
+                eprintln!("Copied static grammar library to {}", output_lib.display());
+            } else {
+                // Clean up temp directory
+                let _ = std::fs::remove_dir_all(&temp_dir);
+                return Err(format!(
+                    "Could not find compiled library for {} in {}",
+                    language_id,
+                    out_dir
+                ));
+            }
         }
+    } else {
+        // Not in cargo build environment, try to use system cc directly
+        eprintln!("DEBUG: Not in cargo build environment, trying system cc for {}", language_id);
+
+        // Build using system cc
+        let mut cc_cmd = std::process::Command::new("cc");
+        cc_cmd.arg("-shared").arg("-fPIC").arg("-O2");
+
+        for src_file in &info.source_files {
+            let src_path = source_dir.join(src_file);
+            if src_path.exists() {
+                cc_cmd.arg(src_path.to_str().unwrap());
+            } else {
+                eprintln!("Warning: Source file not found: {}", src_path.display());
+            }
+        }
+
+        cc_cmd.arg("-o").arg(output_lib.to_str().unwrap());
+
+        let status = cc_cmd.status()
+            .map_err(|e| format!("Failed to run system cc: {}", e))?;
+
+        if !status.success() {
+            let _ = std::fs::remove_dir_all(&temp_dir);
+            return Err(format!("System cc compilation failed for {}", language_id));
+        }
+
+        eprintln!("Copied grammar library to {}", output_lib.display());
     }
 
     // Copy query files
