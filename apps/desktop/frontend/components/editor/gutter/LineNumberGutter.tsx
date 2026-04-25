@@ -4,8 +4,6 @@ import { GUTTER_CONFIG } from './GutterConfig';
 interface Props {
   lineCount: number;
   cursorLine: number;
-  scrollTop: number;
-  containerHeight: number;
   lineHeight: number;
   innerRef?: React.RefObject<HTMLDivElement>;
 }
@@ -13,29 +11,10 @@ interface Props {
 export function LineNumberGutter({
   lineCount,
   cursorLine,
-  scrollTop,
-  containerHeight,
   lineHeight,
   innerRef,
 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
-
-  // Virtualized visible line range (using a small overscan buffer)
-  const start = useMemo(() => {
-    if (containerHeight <= 0) return 0;
-    const scLine = Math.floor(scrollTop / lineHeight);
-    return Math.max(0, scLine - 1);
-  }, [scrollTop, containerHeight, lineHeight]);
-
-  const visibleLineCount = useMemo(() => {
-    if (containerHeight <= 0) return 0;
-    return Math.ceil(containerHeight / lineHeight);
-  }, [containerHeight, lineHeight]);
-
-  const end = useMemo(() => {
-    if (containerHeight <= 0 || lineCount === 0) return 0;
-    return Math.min(lineCount, start + visibleLineCount + 2);
-  }, [start, visibleLineCount, lineCount]);
 
   // Gutter width based on number of digits of the last line
   const gutterWidth = useMemo(() => {
@@ -48,9 +27,9 @@ export function LineNumberGutter({
     );
   }, [lineCount]);
 
-  // Build the virtualized line‑number list using absolute positioning
+  // Always render every line (no virtualisation). This eliminates re‑renders caused by scroll‑top changes.
   const numbers = [];
-  for (let i = start; i < end; i++) {
+  for (let i = 0; i < lineCount; i++) {
     const lineNum = i + 1;
     const isCurrent = lineNum === cursorLine;
     numbers.push(
