@@ -74,13 +74,15 @@ export function CodeEditor({
   // Refs for scroll synchronisation
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const gutterInnerRef = useRef<HTMLDivElement>(null);
 
   // Editor state for the gutter (only cursor line, no scroll state)
   const [cursorLine, setCursorLine] = useState(() => {
     const beforeNewlines = initialValue.slice(0, 0).match(/\n/g);
     return beforeNewlines ? beforeNewlines.length + 1 : 1;
   });
+
+  /** Scroll offset of the text content, used by the gutter to determine visible lines. */
+  const [scrollTop, setScrollTop] = useState(0);
 
   // Update displayValue when initialValue changes from the outside
   useEffect(() => {
@@ -117,12 +119,7 @@ export function CodeEditor({
   const handleScroll = useCallback(() => {
     const el = textAreaRef.current;
     if (!el) return;
-    const gutterEl = gutterInnerRef.current;
-    if (!gutterEl) return;
-    const inner = gutterEl.firstElementChild as HTMLElement | null;
-    if (inner) {
-      inner.style.transform = `translateY(-${el.scrollTop}px)`;
-    }
+    setScrollTop(el.scrollTop);
   }, []);
 
   const handleSelectionChange = useCallback(() => {
@@ -178,7 +175,7 @@ export function CodeEditor({
       lineCount={displayLineCount}
       cursorLine={cursorLine}
       lineHeight={lineHeight}
-      ref={gutterInnerRef}
+      scrollTop={scrollTop}
     />
   );
 
