@@ -273,11 +273,32 @@ function VirtualEditor({
         ref={containerRef}
         className="relative flex-1 overflow-hidden"
       >
-        {/* Single scrollable container that holds both textarea and overlay */}
+        {/* Fixed gutter – does not scroll */}
         <div
           style={{
             position: 'absolute',
             left: 0,
+            top: 0,
+            width: gutterWidth,
+            height: '100%',
+            pointerEvents: 'none',
+            overflow: 'hidden',
+            zIndex: 2,
+          }}
+        >
+          <LineNumberGutter
+            lineCount={displayLineCount}
+            cursorLine={cursorLine}
+            lineHeight={lineHeight}
+            scrollTop={scrollTop}
+            containerHeight={containerHeight}
+          />
+        </div>
+        {/* Scrollable area – starts after the gutter */}
+        <div
+          style={{
+            position: 'absolute',
+            left: gutterWidth,
             top: 0,
             right: 0,
             bottom: 0,
@@ -295,28 +316,6 @@ function VirtualEditor({
             onScroll(st);
           }}
         >
-          {/* Gutter – sticky left */}
-          <div
-            style={{
-              position: 'sticky',
-              left: 0,
-              top: 0,
-              width: gutterWidth,
-              height: totalHeight,
-              pointerEvents: 'none',
-              overflow: 'hidden',
-              zIndex: 2,
-              float: 'left',
-            }}
-          >
-            <LineNumberGutter
-              lineCount={displayLineCount}
-              cursorLine={cursorLine}
-              lineHeight={lineHeight}
-              scrollTop={scrollTop}
-              containerHeight={containerHeight}
-            />
-          </div>
           {/* Styled overlay – positioned relative to this scrollable container */}
           <div
             style={{
@@ -342,7 +341,7 @@ function VirtualEditor({
             style={{
               ...codeStyle,
               position: 'absolute',
-              left: gutterWidth,
+              left: 0,
               top: 0,
               right: 0,
               height: totalHeight,
@@ -414,6 +413,9 @@ export function CodeEditor({
   // Ref to store the actual container height (shared with VirtualEditor)
   const containerHeightRef = useRef(600); // default until measured
 
+  // Debounce timer for highlight fetches
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Re-fetch highlights when scroll position changes (debounced)
   const scrollRef = useRef(scrollTop);
   scrollRef.current = scrollTop;
@@ -421,42 +423,57 @@ export function CodeEditor({
   useEffect(() => {
     if (!filePath) return;
 
-    // Compute visible line range for the current scroll position
-    const lineHeight = GUTTER_CONFIG.LINE_HEIGHT;
-    const containerHeight = containerHeightRef.current; // use the actual measured height
-    const overscan = 5;
-    const effectiveScrollTop = Math.max(0, scrollTop);
-    const firstLine = Math.max(0, Math.floor(effectiveScrollTop / lineHeight) - overscan);
-    const lastLine = Math.ceil((effectiveScrollTop + containerHeight) / lineHeight) + overscan - 1;
-
-    // Skip fetch if the range hasn't changed significantly (within 2 lines)
-    const lastRange = lastFetchedRangeRef.current;
-    if (lastRange && Math.abs(lastRange.firstLine - firstLine) <= 2 && Math.abs(lastRange.lastLine - lastLine) <= 2) {
-      return;
+    // Clear any pending debounce timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
     }
 
-    console.log('[CodeEditor] Fetching styled spans for:', filePath, 'lines', firstLine, '-', lastLine);
-    invoke('get_styled_spans', {
-      path: filePath,
-      startLine: firstLine,
-      endLine: lastLine,
-    })
-      .then((spans: any) => {
-        console.log('[CodeEditor] Received styled spans:', spans?.length);
-        const newSpans = spans || [];
-        setStyledSpans(newSpans);
-        lastValidSpansRef.current = newSpans;
-        lastFetchedRangeRef.current = { firstLine, lastLine };
-        // Do NOT update highlightVersion here to avoid infinite loop
+    // Set a new debounce timer (150 ms)
+    debounceTimerRef.current = setTimeout(() => {
+      // Compute visible line range for the current scroll position
+      const lineHeight = GUTTER_CONFIG.LINE_HEIGHT;
+      const containerHeight = containerHeightRef.current; // use the actual measured height
+      const overscan = 5;
+      const effectiveScrollTop = Math.max(0, scrollTop);
+      const firstLine = Math.max(0, Math.floor(effectiveScrollTop / lineHeight) - overscan);
+      const lastLine = Math.ceil((effectiveScrollTop + containerHeight) / lineHeight) + overscan - 1;
+
+      // Skip fetch if the range hasn't changed significantly (within 2 lines)
+      const lastRange = lastFetchedRangeRef.current;
+      if (lastRange && Math.abs(lastRange.firstLine - firstLine) <= 2 && Math.abs(lastRange.lastLine - lastLine) <= 2) {
+        return;
+      }
+
+      console.log('[CodeEditor] Fetching styled spans for:', filePath, 'lines', firstLine, '-', lastLine);
+      invoke('get_styled_spans', {
+        path: filePath,
+        startLine: firstLine,
+        endLine: lastLine,
       })
-      .catch((err: any) => {
-        console.error('[CodeEditor] Failed to get styled spans:', err);
-        // Fallback: keep last valid spans instead of clearing to avoid flash
-        // Only clear if we have no valid spans at all
-        if (lastValidSpansRef.current.length === 0) {
-          setStyledSpans([]);
-        }
-      });
+        .then((spans: any) => {
+          console.log('[CodeEditor] Received styled spans:', spans?.length);
+          const newSpans = spans || [];
+          setStyledSpans(newSpans);
+          lastValidSpansRef.current = newSpans;
+          lastFetchedRangeRef.current = { firstLine, lastLine };
+          // Do NOT update highlightVersion here to avoid infinite loop
+        })
+        .catch((err: any) => {
+          console.error('[CodeEditor] Failed to get styled spans:', err);
+          // Fallback: keep last valid spans instead of clearing to avoid flash
+          // Only clear if we have no valid spans at all
+          if (lastValidSpansRef.current.length === 0) {
+            setStyledSpans([]);
+          }
+        });
+    }, 150);
+
+    // Cleanup timer on unmount or when dependencies change
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
   }, [filePath, scrollTop]);
 
   useEffect(() => {
