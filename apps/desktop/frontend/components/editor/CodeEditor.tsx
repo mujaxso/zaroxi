@@ -285,7 +285,13 @@ function VirtualEditor({
   // Synchronous scroll handler – no requestAnimationFrame delay
   const handleScroll = useCallback(() => {
     if (textAreaRef.current) {
-      onScroll(textAreaRef.current.scrollTop);
+      const ta = textAreaRef.current;
+      onScroll(ta.scrollTop);
+      // Sync horizontal scroll to the parent container
+      const parent = ta.parentElement;
+      if (parent && parent.scrollLeft !== ta.scrollLeft) {
+        parent.scrollLeft = ta.scrollLeft;
+      }
     }
   }, [onScroll]);
 
@@ -368,10 +374,16 @@ function VirtualEditor({
           }}
           className="hide-scrollbar"
           onScroll={(e) => {
+            const target = e.target as HTMLDivElement;
             // Sync scrollTop from this container to the textarea
-            const st = (e.target as HTMLDivElement).scrollTop;
+            const st = target.scrollTop;
             if (textAreaRef.current && textAreaRef.current.scrollTop !== st) {
               textAreaRef.current.scrollTop = st;
+            }
+            // Sync scrollLeft from this container to the textarea
+            const sl = target.scrollLeft;
+            if (textAreaRef.current && textAreaRef.current.scrollLeft !== sl) {
+              textAreaRef.current.scrollLeft = sl;
             }
             onScroll(st);
           }}
@@ -390,7 +402,7 @@ function VirtualEditor({
               lineHeight: `${lineHeight}px`,
               whiteSpace: 'pre',
               zIndex: 1,
-              width: 'auto',
+              width: 'max-content',
               minWidth: '100%',
             }}
             className="text-sm p-0 text-editor-foreground"
@@ -408,7 +420,7 @@ function VirtualEditor({
               right: 0,
               height: totalHeight,
               zIndex: 0,
-              width: 'auto',
+              width: 'max-content',
               minWidth: '100%',
             }}
             className="text-sm p-0"
@@ -585,12 +597,19 @@ export function CodeEditor({
     if (!filePath) return;
     // Reset allSpansRef when file changes
     allSpansRef.current = [];
-    // Clear stable state for this file to force fresh fetch
-    stableHighlightState.delete(filePath);
+    // Don't clear stable state - keep it for immediate reuse on tab switch
+    // Only clear if we're opening a completely different file (not tab switch)
+    // We'll let the version check handle invalidation
     (async () => {
       try {
         const response: any = await invoke('open_document', { path: filePath });
         versionRef.current = response.version;
+        // After getting the new version, check if stable state is still valid
+        const stableState = stableHighlightState.get(filePath);
+        if (stableState && stableState.version !== response.version) {
+          // Version changed, clear stale state
+          stableHighlightState.delete(filePath);
+        }
       } catch (err) {
         console.error('[CodeEditor] Failed to get document version:', err);
       }
@@ -646,18 +665,32 @@ export function CodeEditor({
     const firstLine = 0;
     const lastLine = Math.ceil(containerHeight / lineHeight) + overscan - 1;
     
-    // Check stable state first
+    // Check stable state first - this persists across tab switches
     const stableState = stableHighlightState.get(filePath);
     if (stableState && stableState.version === versionRef.current) {
       const rangeKey = `${firstLine}:${lastLine}`;
       if (stableState.rangeSpans.has(rangeKey)) {
-        // Already have this range cached
+        // Already have this range cached - use it immediately
         const cachedSpans = stableState.rangeSpans.get(rangeKey)!;
         if (JSON.stringify(styledSpansRef.current) !== JSON.stringify(cachedSpans)) {
           setStyledSpans(cachedSpans);
           styledSpansRef.current = cachedSpans;
         }
         lastValidSpansRef.current = cachedSpans;
+        lastFetchedRangeRef.current = { firstLine, lastLine };
+        return;
+      }
+    }
+    
+    // If we have any stable state for this file, use the first available range
+    if (stableState && stableState.version === versionRef.current) {
+      const firstRange = stableState.rangeSpans.values().next().value;
+      if (firstRange) {
+        if (JSON.stringify(styledSpansRef.current) !== JSON.stringify(firstRange)) {
+          setStyledSpans(firstRange);
+          styledSpansRef.current = firstRange;
+        }
+        lastValidSpansRef.current = firstRange;
         lastFetchedRangeRef.current = { firstLine, lastLine };
         return;
       }
