@@ -6,6 +6,7 @@ use crate::thresholds::FileClass;
 use crate::viewport::Viewport;
 use zaroxi_lang_syntax::highlight::{HighlightEngine, HighlightSpan};
 use zaroxi_lang_syntax::theme_map::{apply_theme, StyledSpan};
+use zaroxi_lang_syntax::LanguageId;
 use zaroxi_theme::theme::SemanticColors;
 
 /// The main editor state, combining document, cursor, viewport, and syntax highlighting.
