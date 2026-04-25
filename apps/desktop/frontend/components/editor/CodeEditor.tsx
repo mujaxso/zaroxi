@@ -65,15 +65,13 @@ export function CodeEditor({
   // Refs for scroll synchronisation
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const gutterInnerRef = useRef<HTMLDivElement>(null);
 
-  // Editor state for the gutter
+  // Editor state for the gutter (only cursor line, no scroll state)
   const [cursorLine, setCursorLine] = useState(() => {
     const beforeNewlines = initialValue.slice(0, 0).match(/\n/g);
     return beforeNewlines ? beforeNewlines.length + 1 : 1;
   });
-  const [scrollTop, setScrollTop] = useState(0);
-  const [containerHeight, setContainerHeight] = useState(0);
-  const scrollTopRafId = useRef<number | null>(null);
 
   // Update displayValue when initialValue changes from the outside
   useEffect(() => {
@@ -107,46 +105,19 @@ export function CodeEditor({
 
   const lineHeight = GUTTER_CONFIG.LINE_HEIGHT;
 
-  // Re‑measure container height and update gutter on mount / resize
-  const measureContainer = useCallback(() => {
-    if (containerRef.current) {
-      setContainerHeight(containerRef.current.clientHeight);
-    }
-  }, []);
-
-  useEffect(() => {
-    measureContainer();
-    const observer = new ResizeObserver(measureContainer);
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
-    }
-    return () => observer.disconnect();
-  }, [measureContainer]);
-
+  // Handle scroll: directly set the gutter container transform, no React state updates
   const handleScroll = useCallback(() => {
     const ta = textAreaRef.current;
     if (!ta) return;
     const st = ta.scrollTop;
 
-    // Throttle scrollTop state update to at most once per frame
-    if (scrollTopRafId.current !== null) {
-      cancelAnimationFrame(scrollTopRafId.current);
+    // Move the gutter inner container directly (no re‑render)
+    if (gutterInnerRef.current) {
+      gutterInnerRef.current.style.transform = `translateY(-${st}px)`;
     }
-    scrollTopRafId.current = requestAnimationFrame(() => {
-      const newVal = ta.scrollTop;
-      setScrollTop(newVal);
-      scrollTopRafId.current = null;
-    });
   }, []);
 
-  // Cleanup rAF on unmount
-  useEffect(() => {
-    return () => {
-      if (scrollTopRafId.current !== null) {
-        cancelAnimationFrame(scrollTopRafId.current);
-      }
-    };
-  }, []);
+  // No rAF, no scrollTop state, no containerHeight state for the gutter.
 
   const handleSelectionChange = useCallback(() => {
     const ta = textAreaRef.current;
@@ -198,8 +169,7 @@ export function CodeEditor({
       lineCount={displayLineCount}
       cursorLine={cursorLine}
       lineHeight={lineHeight}
-      scrollTop={scrollTop}
-      containerHeight={containerHeight}
+      ref={gutterInnerRef}
     />
   );
 
