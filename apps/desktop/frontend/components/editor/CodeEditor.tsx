@@ -145,7 +145,9 @@ function VirtualEditor({
   // Build a map from character offset to color for fast lookup
   const colorMap = useMemo(() => {
     const map = new Map<number, string>();
-    for (const span of styledSpans) {
+    // Use lastValidSpansRef as fallback when styledSpans is empty but we have valid spans
+    const spans = styledSpans.length > 0 ? styledSpans : lastValidSpansRef.current;
+    for (const span of spans) {
       for (let i = span.start; i < span.end; i++) {
         map.set(i, span.color);
       }
@@ -376,6 +378,13 @@ export function CodeEditor({
   const [styledSpans, setStyledSpans] = useState<Array<{start: number; end: number; color: string}>>([]);
   const [highlightVersion, setHighlightVersion] = useState(0);
 
+  // Ref to store the last valid styled spans to avoid flash when fetch is in progress
+  const lastValidSpansRef = useRef<Array<{start: number; end: number; color: string}>>([]);
+  // Ref to store the last fetched line range to avoid redundant fetches
+  const lastFetchedRangeRef = useRef<{firstLine: number; lastLine: number} | null>(null);
+  // Ref for debounce timer
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Re-fetch highlights when scroll position changes (debounced)
   const scrollRef = useRef(scrollTop);
   scrollRef.current = scrollTop;
@@ -391,22 +400,48 @@ export function CodeEditor({
     const firstLine = Math.max(0, Math.floor(effectiveScrollTop / lineHeight) - overscan);
     const lastLine = Math.ceil((effectiveScrollTop + containerHeight) / lineHeight) + overscan - 1;
 
-    console.log('[CodeEditor] Fetching styled spans for:', filePath, 'lines', firstLine, '-', lastLine);
-    invoke('get_styled_spans', {
-      path: filePath,
-      startLine: firstLine,
-      endLine: lastLine,
-    })
-      .then((spans: any) => {
-        console.log('[CodeEditor] Received styled spans:', spans?.length);
-        setStyledSpans(spans || []);
-        // Do NOT update highlightVersion here to avoid infinite loop
+    // Skip fetch if the range hasn't changed significantly (within 2 lines)
+    const lastRange = lastFetchedRangeRef.current;
+    if (lastRange && Math.abs(lastRange.firstLine - firstLine) <= 2 && Math.abs(lastRange.lastLine - lastLine) <= 2) {
+      return;
+    }
+
+    // Clear previous debounce timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Debounce the fetch by 50ms to avoid excessive requests during scrolling
+    debounceTimerRef.current = setTimeout(() => {
+      console.log('[CodeEditor] Fetching styled spans for:', filePath, 'lines', firstLine, '-', lastLine);
+      invoke('get_styled_spans', {
+        path: filePath,
+        startLine: firstLine,
+        endLine: lastLine,
       })
-      .catch((err: any) => {
-        console.error('[CodeEditor] Failed to get styled spans:', err);
-        // Fallback: clear spans so plain text is shown
-        setStyledSpans([]);
-      });
+        .then((spans: any) => {
+          console.log('[CodeEditor] Received styled spans:', spans?.length);
+          const newSpans = spans || [];
+          setStyledSpans(newSpans);
+          lastValidSpansRef.current = newSpans;
+          lastFetchedRangeRef.current = { firstLine, lastLine };
+          // Do NOT update highlightVersion here to avoid infinite loop
+        })
+        .catch((err: any) => {
+          console.error('[CodeEditor] Failed to get styled spans:', err);
+          // Fallback: keep last valid spans instead of clearing to avoid flash
+          // Only clear if we have no valid spans at all
+          if (lastValidSpansRef.current.length === 0) {
+            setStyledSpans([]);
+          }
+        });
+    }, 50);
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
   }, [filePath, scrollTop]);
 
   useEffect(() => {
