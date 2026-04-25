@@ -79,6 +79,7 @@ function VirtualEditor({
   styledSpans,
   editable,
   onValueChange,
+  containerHeightRef,
 }: {
   displayValue: string;
   cursorLine: number;
@@ -90,10 +91,10 @@ function VirtualEditor({
   styledSpans: Array<{start: number; end: number; color: string}>;
   editable: boolean;
   onValueChange?: (newValue: string) => void;
+  containerHeightRef: React.MutableRefObject<number>;
 }) {
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const containerHeightRef = useRef(600); // default until measured
   const [containerHeight, setContainerHeight] = useState(600);
   const rafRef = useRef<number | null>(null);
 
@@ -113,7 +114,7 @@ function VirtualEditor({
       observer.observe(containerRef.current);
     }
     return () => observer.disconnect();
-  }, []);
+  }, [containerHeightRef]);
 
   const lineOffsets = useMemo(() => computeLineOffsets(displayValue), [displayValue]);
   const sentinel = useMemo(
@@ -382,6 +383,9 @@ export function CodeEditor({
   // Ref to store the last fetched line range to avoid redundant fetches
   const lastFetchedRangeRef = useRef<{firstLine: number; lastLine: number} | null>(null);
 
+  // Ref to store the actual container height (shared with VirtualEditor)
+  const containerHeightRef = useRef(600); // default until measured
+
   // Re-fetch highlights when scroll position changes (debounced)
   const scrollRef = useRef(scrollTop);
   scrollRef.current = scrollTop;
@@ -501,6 +505,7 @@ export function CodeEditor({
       styledSpans={styledSpans}
       editable={!effectiveReadOnly}
       onValueChange={effectiveReadOnly ? undefined : handleValueChange}
+      containerHeightRef={containerHeightRef}
     />
   );
 }
