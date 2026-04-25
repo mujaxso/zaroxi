@@ -3,6 +3,19 @@ import { bridge } from '@/lib/bridge';
 // Cache for opened files to avoid re‑loading from disk.
 const fileCache = new Map<string, OpenFileResponse>();
 
+// Frontend-side document cache that mirrors the Rust cache.
+// Keyed by canonical file path, stores the full document content and metadata.
+// This allows tab switching to be instant without any IPC call.
+const documentCache = new Map<string, {
+  content: string;
+  language?: string;
+  lineCount?: number;
+  charCount?: number;
+  largeFileMode?: string;
+  contentTruncated?: boolean;
+  isDirty: boolean;
+}>();
+
 // Domain types (mirror Rust DTOs)
 export interface OpenWorkspaceRequest {
   path: string;

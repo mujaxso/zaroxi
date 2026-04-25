@@ -2,10 +2,8 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tauri::command;
 use zaroxi_domain_editor::document_cache::BufferManager;
-use zaroxi_domain_editor::Document;
 use zaroxi_domain_editor::LargeFileMode;
 use zaroxi_ops_file::FileLoader;
-use zaroxi_ops_file::file_loader::FileLoadStrategy;
 
 /// Global buffer manager instance shared across all commands.
 static BUFFER_MANAGER: once_cell::sync::Lazy<Arc<BufferManager>> =
