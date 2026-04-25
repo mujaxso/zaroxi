@@ -4,6 +4,7 @@
 use tokio::sync::mpsc;
 use tracing::info;
 
+#[allow(dead_code)]
 pub struct AiDaemon {
     // TODO: Add actual AI agent
     _task_queue: mpsc::Receiver<()>,
