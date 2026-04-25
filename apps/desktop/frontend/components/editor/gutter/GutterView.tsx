@@ -1,91 +1,106 @@
-//! React view component for the line-number gutter.
-//! Renders only visible line numbers using the GutterModel.
-
 import React, { useMemo } from 'react';
-import { GutterModel, VisibleLineInfo } from './GutterModel';
 import { GUTTER_CONFIG } from './GutterConfig';
+import { GUTTER_STYLE } from './GutterStyle';
+import { computeVisibleRange, computeGutterWidth, computeTotalHeight, ViewportState } from './GutterLayout';
 
 interface GutterViewProps {
-  model: GutterModel;
-  className?: string;
+  viewport: ViewportState;
+  cursorLine: number; // 1-based
 }
 
-// ── Single line number element (memoized) ────────────────────────────
+/**
+ * Pure rendering component for the gutter.
+ * Only renders visible lines plus overscan.
+ * Never iterates over the full document.
+ */
+export const GutterView: React.FC<GutterViewProps> = React.memo(({ viewport, cursorLine }) => {
+  const { scrollTop, lineHeight, totalLines, containerHeight } = viewport;
 
-const LineNumber: React.FC<{
-  lineIndex: number;
-  lineNum: number;
-  isCurrent: boolean;
-  lineHeight: number;
-}> = React.memo(({ lineIndex, lineNum, isCurrent, lineHeight }) => {
-  const style: React.CSSProperties = {
-    position: 'absolute',
-    top: lineIndex * lineHeight,
-    left: 0,
-    right: 0,
-    height: lineHeight,
-    lineHeight: `${lineHeight}px`,
-    paddingRight: GUTTER_CONFIG.PADDING_RIGHT,
-    paddingLeft: GUTTER_CONFIG.PADDING_LEFT,
-  };
+  const visibleRange = useMemo(
+    () => computeVisibleRange(viewport),
+    [scrollTop, containerHeight, lineHeight, totalLines],
+  );
 
-  const className = [
-    'text-right text-sm font-mono tabular-nums select-none',
-    isCurrent
-      ? 'text-accent font-semibold bg-accent/15'
-      : 'text-editor-foreground opacity-40',
-  ].join(' ');
+  const gutterWidth = useMemo(
+    () => computeGutterWidth(totalLines),
+    [totalLines],
+  );
+
+  const totalHeight = useMemo(
+    () => computeTotalHeight(totalLines, lineHeight),
+    [totalLines, lineHeight],
+  );
+
+  // Build visible line elements
+  const lineElements = useMemo(() => {
+    if (!visibleRange) return null;
+
+    const elements: React.ReactNode[] = [];
+    const { firstLine, lastLine } = visibleRange;
+
+    for (let lineIndex = firstLine; lineIndex <= lastLine; lineIndex++) {
+      const lineNum = lineIndex + 1;
+      const isCurrent = lineNum === cursorLine;
+
+      elements.push(
+        <div
+          key={lineIndex}
+          style={{
+            position: 'absolute',
+            top: lineIndex * lineHeight,
+            left: 0,
+            right: 0,
+            height: lineHeight,
+            lineHeight: `${lineHeight}px`,
+            paddingLeft: GUTTER_CONFIG.PADDING_LEFT,
+            paddingRight: GUTTER_CONFIG.PADDING_RIGHT,
+            textAlign: 'right',
+            fontFamily: GUTTER_STYLE.FONT_FAMILY,
+            fontSize: GUTTER_STYLE.FONT_SIZE,
+            color: isCurrent ? GUTTER_STYLE.CURRENT_LINE_COLOR : GUTTER_STYLE.LINE_NUMBER_COLOR,
+            fontWeight: isCurrent ? 600 : 400,
+            overflow: 'hidden',
+            whiteSpace: 'nowrap',
+            pointerEvents: 'auto', // allow click for future breakpoints
+            cursor: 'pointer',
+          }}
+          className="gutter-line"
+          data-line-index={lineIndex}
+          data-line-number={lineNum}
+        >
+          {lineNum}
+        </div>,
+      );
+    }
+    return elements;
+  }, [visibleRange, lineHeight, cursorLine]);
 
   return (
-    <div style={style} className={className}>
-      {lineNum}
+    <div
+      style={{
+        position: 'relative',
+        width: gutterWidth,
+        height: totalHeight,
+        backgroundColor: GUTTER_STYLE.BACKGROUND,
+        overflow: 'hidden',
+        userSelect: 'none',
+      }}
+    >
+      {/* Separator line */}
+      <div
+        style={{
+          position: 'absolute',
+          right: 0,
+          top: 0,
+          bottom: 0,
+          width: GUTTER_STYLE.SEPARATOR_WIDTH,
+          backgroundColor: GUTTER_STYLE.SEPARATOR_COLOR,
+        }}
+      />
+      {/* Visible line numbers */}
+      {lineElements}
     </div>
   );
 });
-
-LineNumber.displayName = 'LineNumber';
-
-// ── Gutter view ──────────────────────────────────────────────────────
-
-export const GutterView: React.FC<GutterViewProps> = React.memo(
-  ({ model, className }) => {
-    const { width, visibleLines, totalHeight } = model.layout;
-
-    const lineNumbers = useMemo(() => {
-      return visibleLines.map((info) => (
-        <LineNumber
-          key={info.lineIndex}
-          lineIndex={info.lineIndex}
-          lineNum={info.lineNum}
-          isCurrent={info.isCurrent}
-          lineHeight={model.lineHeight}
-        />
-      ));
-    }, [visibleLines, model.lineHeight]);
-
-    const containerStyle: React.CSSProperties = {
-      width,
-      pointerEvents: 'none',
-      position: 'relative',
-      overflow: 'visible',
-    };
-
-    const innerStyle: React.CSSProperties = {
-      position: 'relative',
-      height: totalHeight,
-      width: '100%',
-      overflow: 'visible',
-    };
-
-    return (
-      <div
-        className={`border-r border-[rgba(128,128,128,0.18)] ${className || ''}`}
-        style={containerStyle}
-      >
-        <div style={innerStyle}>{lineNumbers}</div>
-      </div>
-    );
-  },
-);
 
 GutterView.displayName = 'GutterView';
