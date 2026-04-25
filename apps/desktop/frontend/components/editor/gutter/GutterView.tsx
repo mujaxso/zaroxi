@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { GUTTER_CONFIG } from './GutterConfig';
 import { GUTTER_STYLE } from './GutterStyle';
-import { computeVisibleRange, computeGutterWidth, computeTotalHeight, ViewportState } from './GutterLayout';
+import { computeVisibleRange, computeGutterWidth, ViewportState } from './GutterLayout';
 
 interface GutterViewProps {
   viewport: ViewportState;
@@ -24,11 +24,6 @@ export const GutterView: React.FC<GutterViewProps> = React.memo(({ viewport, cur
   const gutterWidth = useMemo(
     () => computeGutterWidth(totalLines),
     [totalLines],
-  );
-
-  const totalHeight = useMemo(
-    () => computeTotalHeight(totalLines, lineHeight),
-    [totalLines, lineHeight],
   );
 
   // Build visible line elements
@@ -82,7 +77,7 @@ export const GutterView: React.FC<GutterViewProps> = React.memo(({ viewport, cur
       style={{
         position: 'relative',
         width: gutterWidth,
-        height: totalHeight,
+        height: containerHeight,
         backgroundColor: GUTTER_STYLE.BACKGROUND,
         overflow: 'hidden',
         userSelect: 'none',
