@@ -210,6 +210,7 @@ function ReadOnlyContent({
               cursorLine={cursorLine}
               lineHeight={lineHeight}
               scrollTop={scrollTop}
+              containerHeight={containerHeight}
             />
           </div>
           {/* Virtualised code rows – only visible lines are rendered */}
@@ -351,12 +352,29 @@ export function CodeEditor({
     wordBreak: 'normal',
   };
 
+  const [textareaHeight, setTextareaHeight] = useState(0);
+
+  useEffect(() => {
+    const updateHeight = () => {
+      if (textAreaRef.current) {
+        setTextareaHeight(textAreaRef.current.clientHeight);
+      }
+    };
+    updateHeight();
+    const observer = new ResizeObserver(updateHeight);
+    if (textAreaRef.current) {
+      observer.observe(textAreaRef.current);
+    }
+    return () => observer.disconnect();
+  }, []);
+
   const gutter = (
     <LineNumberGutter
       lineCount={displayLineCount}
       cursorLine={cursorLine}
       lineHeight={lineHeight}
       scrollTop={scrollTop}
+      containerHeight={textareaHeight}
     />
   );
 

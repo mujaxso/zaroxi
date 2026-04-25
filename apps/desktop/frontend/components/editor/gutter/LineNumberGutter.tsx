@@ -1,4 +1,4 @@
-import React, { useRef, useLayoutEffect, useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { GutterModel } from './GutterModel';
 import { GutterView } from './GutterView';
 
@@ -7,10 +7,11 @@ interface Props {
   cursorLine: number;
   lineHeight: number;
   scrollTop: number;
+  containerHeight: number;
 }
 
 /**
- * Thin wrapper that measures container height and creates a GutterModel.
+ * Thin wrapper that creates a GutterModel from props.
  *
  * This component is the public API for the gutter subsystem.
  * All layout logic lives in `GutterModel`; all rendering lives in `GutterView`.
@@ -20,25 +21,8 @@ export const LineNumberGutter: React.FC<Props> = ({
   cursorLine,
   lineHeight,
   scrollTop,
+  containerHeight,
 }) => {
-  const outerRef = useRef<HTMLDivElement>(null);
-  const [containerHeight, setContainerHeight] = useState(0);
-
-  // Measure container height on mount and on resize
-  useLayoutEffect(() => {
-    const updateHeight = () => {
-      if (outerRef.current) {
-        setContainerHeight(outerRef.current.clientHeight);
-      }
-    };
-    updateHeight();
-    const observer = new ResizeObserver(updateHeight);
-    if (outerRef.current) {
-      observer.observe(outerRef.current);
-    }
-    return () => observer.disconnect();
-  }, []);
-
   // Create the model (memoized based on inputs)
   const model = useMemo(
     () =>
@@ -57,7 +41,6 @@ export const LineNumberGutter: React.FC<Props> = ({
   if (lineCount === 0) {
     return (
       <div
-        ref={outerRef}
         style={{
           width: model.width,
           pointerEvents: 'none',
@@ -70,7 +53,6 @@ export const LineNumberGutter: React.FC<Props> = ({
 
   return (
     <div
-      ref={outerRef}
       style={{
         width: model.width,
         pointerEvents: 'none',
