@@ -14,6 +14,7 @@ pub mod grammar_registry;
 pub mod highlight;
 pub mod language;
 pub mod manager;
+pub mod parser;
 pub mod query_cache;
 pub mod runtime;
 pub mod theme_map;
