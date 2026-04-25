@@ -315,13 +315,15 @@ impl Document {
             // If reparse fails, fall through to create a new tree
         }
 
+        // Extract needed values before mutable borrow of self.parser_pool
+        let text = self.text();
+        let lang = self.language;
+
         // Create a new syntax tree
         let pool = self.parser_pool.get_or_insert_with(|| {
             Arc::new(ParserPool::new())
         });
 
-        let text = self.text();
-        let lang = self.language;
         match SyntaxTree::new(pool.clone(), &text, lang) {
             Ok(tree) => {
                 self.syntax_tree = Some(tree);
