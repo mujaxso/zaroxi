@@ -192,23 +192,144 @@ export function CodeEditor({
   const effectiveReadOnly = readOnly || isLarge;
 
   if (effectiveReadOnly) {
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const [containerHeight, setContainerHeight] = useState(0);
+    useEffect(() => {
+      const update = () => {
+        if (scrollContainerRef.current) {
+          setContainerHeight(scrollContainerRef.current.clientHeight);
+        }
+      };
+      update();
+      const observer = new ResizeObserver(update);
+      if (scrollContainerRef.current) observer.observe(scrollContainerRef.current);
+      return () => observer.disconnect();
+    }, []);
+
+    const gutterWidth = useMemo(() => {
+      const digits = String(displayLineCount).length;
+      return Math.max(
+        GUTTER_CONFIG.MIN_WIDTH,
+        digits * GUTTER_CONFIG.DIGIT_WIDTH +
+          GUTTER_CONFIG.PADDING_LEFT +
+          GUTTER_CONFIG.PADDING_RIGHT,
+      );
+    }, [displayLineCount]);
+
+    const overscan = 5;
+    const totalHeight = displayLineCount * lineHeight;
+
+    const { firstLine, lastLine } = useMemo(() => {
+      if (containerHeight === 0 || lineHeight <= 0) {
+        return { firstLine: -1, lastLine: -1 };
+      }
+      const effectiveScrollTop = Math.max(0, scrollTop);
+      const first = Math.max(0, Math.floor(effectiveScrollTop / lineHeight) - overscan);
+      const last = Math.min(
+        displayLineCount - 1,
+        Math.ceil((effectiveScrollTop + containerHeight) / lineHeight) + overscan - 1,
+      );
+      if (!Number.isFinite(first) || !Number.isFinite(last)) {
+        return { firstLine: -1, lastLine: -1 };
+      }
+      return { firstLine: first, lastLine: last };
+    }, [scrollTop, lineHeight, displayLineCount, containerHeight]);
+
+    const lineNumbers = useMemo(() => {
+      if (firstLine < 0 || lastLine < 0) {
+        return null;
+      }
+      const ops: React.ReactNode[] = [];
+      for (let idx = firstLine; idx <= lastLine; idx++) {
+        const lineNum = idx + 1;
+        const isCurrent = lineNum === cursorLine;
+        ops.push(
+          <div
+            key={idx}
+            style={{
+              position: 'absolute',
+              top: idx * lineHeight,
+              left: 0,
+              right: 0,
+              height: lineHeight,
+              lineHeight: `${lineHeight}px`,
+              paddingRight: GUTTER_CONFIG.PADDING_RIGHT,
+              paddingLeft: GUTTER_CONFIG.PADDING_LEFT,
+              pointerEvents: 'none',
+            }}
+            className={`text-right text-sm font-mono tabular-nums select-none ${
+              isCurrent
+                ? 'text-accent font-semibold bg-accent/15'
+                : 'text-editor-foreground opacity-40'
+            }`}
+          >
+            {lineNum}
+          </div>,
+        );
+      }
+      return ops;
+    }, [firstLine, lastLine, cursorLine, lineHeight]);
+
+    const handleCombinedScroll = useCallback(() => {
+      if (!scrollContainerRef.current) return;
+      setScrollTop(scrollContainerRef.current.scrollTop);
+    }, []);
+
     return (
       <div
         ref={containerRef}
-        className={cn('flex flex-row h-full w-full bg-editor', className)}
+        className={cn('flex flex-col h-full w-full bg-editor overflow-hidden', className)}
       >
-        {gutter}
-        <pre
-          ref={textAreaRef as unknown as React.RefObject<HTMLPreElement>}
-          className={cn(codeClass, 'bg-editor flex-1')}
-          style={{
-            ...codeStyle,
-            overflow: 'auto',
-          }}
-          onScroll={handleScroll}
+        <div
+          ref={scrollContainerRef}
+          className="overflow-auto relative flex-1"
+          onScroll={handleCombinedScroll}
         >
-          {displayValue}
-        </pre>
+          {/* inner wrapper that has the full content height */}
+          <div
+            style={{
+              position: 'relative',
+              height: totalHeight,
+              width: '100%',
+              minWidth: '100%',
+            }}
+          >
+            {/* gutter */}
+            <div
+              className="shrink-0 border-r border-[rgba(128,128,128,0.18)]"
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                width: gutterWidth,
+                height: totalHeight,
+                pointerEvents: 'none',
+                overflow: 'hidden',
+              }}
+            >
+              {lineNumbers}
+            </div>
+            {/* code */}
+            <pre
+              style={{
+                position: 'absolute',
+                left: gutterWidth,
+                top: 0,
+                right: 0,
+                height: totalHeight,
+                margin: 0,
+                border: 0,
+                padding: 0,
+                whiteSpace: 'pre',
+                wordBreak: 'normal',
+                overflow: 'visible',
+              }}
+              className={cn(codeClass, 'bg-editor')}
+            >
+              {displayValue}
+            </pre>
+          </div>
+        </div>
         {largeFileBanner}
       </div>
     );
