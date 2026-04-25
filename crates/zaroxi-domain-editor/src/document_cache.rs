@@ -11,7 +11,7 @@ use zaroxi_ops_file::file_loader::FileLoader;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
-use tokio::sync::Mutex;
+use parking_lot::Mutex;
 
 /// Metadata stored alongside each cached document.
 #[derive(Debug, Clone)]
@@ -209,7 +209,7 @@ impl BufferManager {
 
         // Check cache first.
         {
-            let mut cache: tokio::sync::MutexGuard<'_, DocumentCache> = self.cache.lock().await;
+            let mut cache = self.cache.lock();
             if let Some(cached) = cache.get(&canonical) {
                 // If the cached document is dirty, we must NOT replace it with
                 // stale disk content.  Return the dirty version.
@@ -247,7 +247,7 @@ impl BufferManager {
 
         // Store in cache.
         {
-            let mut cache: tokio::sync::MutexGuard<'_, DocumentCache> = self.cache.lock().await;
+            let mut cache = self.cache.lock();
             cache.insert(canonical.clone(), cached.clone());
         }
 
@@ -258,7 +258,7 @@ impl BufferManager {
     /// Returns `None` if the document is not in the cache.
     pub async fn get_cached(&self, path: &Path) -> Option<CachedDocument> {
         let canonical = path.canonicalize().ok()?;
-        let mut cache: tokio::sync::MutexGuard<'_, DocumentCache> = self.cache.lock().await;
+        let mut cache = self.cache.lock();
         cache.get(&canonical).map(|c: &mut CachedDocument| c.clone())
     }
 
@@ -266,7 +266,7 @@ impl BufferManager {
     pub async fn mark_dirty(&self, path: &Path) {
         let canonical = path.canonicalize().ok();
         if let Some(canonical) = canonical {
-            let mut cache: tokio::sync::MutexGuard<'_, DocumentCache> = self.cache.lock().await;
+            let mut cache = self.cache.lock();
             if let Some(entry) = cache.get(&canonical) {
                 entry.meta.is_dirty = true;
                 entry.meta.version += 1;
@@ -278,7 +278,7 @@ impl BufferManager {
     pub async fn mark_clean(&self, path: &Path) {
         let canonical = path.canonicalize().ok();
         if let Some(canonical) = canonical {
-            let mut cache: tokio::sync::MutexGuard<'_, DocumentCache> = self.cache.lock().await;
+            let mut cache = self.cache.lock();
             if let Some(entry) = cache.get(&canonical) {
                 entry.meta.is_dirty = false;
                 entry.meta.version += 1;
@@ -290,14 +290,14 @@ impl BufferManager {
     pub async fn close_document(&self, path: &Path) {
         let canonical = path.canonicalize().ok();
         if let Some(canonical) = canonical {
-            let mut cache: tokio::sync::MutexGuard<'_, DocumentCache> = self.cache.lock().await;
+            let mut cache = self.cache.lock();
             cache.remove(&canonical);
         }
     }
 
     /// Return the number of cached documents.
     pub async fn cache_size(&self) -> usize {
-        let cache: tokio::sync::MutexGuard<'_, DocumentCache> = self.cache.lock().await;
+        let cache = self.cache.lock();
         cache.len()
     }
 }
