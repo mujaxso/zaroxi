@@ -68,6 +68,12 @@ function ReadOnlyContent({
   const [containerHeight, setContainerHeight] = useState(0);
   const rafRef = useRef<number | null>(null);
 
+  // Split the text into lines only once per content change
+  const linesRef = useRef<string[] | null>(null);
+  useEffect(() => {
+    linesRef.current = displayValue.split('\n');
+  }, [displayValue]);
+
   useEffect(() => {
     const update = () => {
       if (scrollContainerRef.current) {
@@ -146,6 +152,38 @@ function ReadOnlyContent({
     return ops;
   }, [firstLine, lastLine, cursorLine, lineHeight]);
 
+  // Render only the visible code lines as separate absolutely‑positioned rows
+  const codeRows = useMemo(() => {
+    if (firstLine < 0 || lastLine < 0 || !linesRef.current) {
+      return null;
+    }
+    const rows: React.ReactNode[] = [];
+    for (let idx = firstLine; idx <= lastLine; idx++) {
+      const text = linesRef.current[idx] ?? '';
+      rows.push(
+        <div
+          key={idx}
+          style={{
+            position: 'absolute',
+            left: gutterWidth,
+            top: idx * lineHeight,
+            right: 0,
+            height: lineHeight,
+            lineHeight: `${lineHeight}px`,
+            whiteSpace: 'pre',
+            overflow: 'hidden',
+            fontFamily: 'inherit',
+            fontSize: 'inherit',
+          }}
+          className="font-mono text-sm p-0 text-editor-foreground"
+        >
+          {text}
+        </div>,
+      );
+    }
+    return rows;
+  }, [firstLine, lastLine, gutterWidth, lineHeight]);
+
   const handleScroll = useCallback(() => {
     if (rafRef.current != null) {
       cancelAnimationFrame(rafRef.current);
@@ -173,6 +211,7 @@ function ReadOnlyContent({
             minWidth: '100%',
           }}
         >
+          {/* Gutter area */}
           <div
             className="shrink-0 border-r border-[rgba(128,128,128,0.18)]"
             style={{
@@ -187,24 +226,8 @@ function ReadOnlyContent({
           >
             {lineNumbers}
           </div>
-          <pre
-            className="font-mono text-sm leading-[22px] p-0 hide-scrollbar text-editor-foreground bg-editor"
-            style={{
-              position: 'absolute',
-              left: gutterWidth,
-              top: 0,
-              right: 0,
-              height: totalHeight,
-              margin: 0,
-              border: 0,
-              padding: 0,
-              whiteSpace: 'pre',
-              wordBreak: 'normal',
-              overflow: 'visible',
-            }}
-          >
-            {displayValue}
-          </pre>
+          {/* Virtualised code rows – only visible lines are rendered */}
+          {codeRows}
         </div>
       </div>
       {largeFileBanner}
