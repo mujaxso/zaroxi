@@ -1,7 +1,7 @@
 //! Syntax manager for coordinating multiple documents and languages.
 
 use crate::error::SyntaxError;
-use crate::highlight::HighlightSpan;
+use crate::highlight::{HighlightEngine, HighlightSpan};
 use crate::language::LanguageId;
 use std::collections::HashMap;
 use std::path::Path;
@@ -13,6 +13,8 @@ pub struct SyntaxManager {
     parsers: HashMap<LanguageId, Parser>,
     /// Whether large file mode is active (disables syntax features)
     large_file_mode: bool,
+    /// The highlighting engine for computing highlight spans.
+    highlight_engine: HighlightEngine,
 }
 
 struct SyntaxDocument {
@@ -23,7 +25,12 @@ struct SyntaxDocument {
 
 impl SyntaxManager {
     pub fn new() -> Self {
-        Self { documents: HashMap::new(), parsers: HashMap::new(), large_file_mode: false }
+        Self {
+            documents: HashMap::new(),
+            parsers: HashMap::new(),
+            large_file_mode: false,
+            highlight_engine: HighlightEngine::new(),
+        }
     }
 
     /// Set large file mode for the manager.
@@ -123,9 +130,8 @@ impl SyntaxManager {
         let doc = self.documents.get(doc_id).ok_or(SyntaxError::DocumentNotFound)?;
         match &doc.tree {
             Some(tree) => {
-                // Use the global query cache
-                // For now, just use the standard highlight function which uses the query cache
-                highlight(doc.language, &doc.text, tree)
+                // Use the highlighting engine
+                self.highlight_engine.highlight(doc.language, &doc.text, tree)
             }
             None => Ok(Vec::new()),
         }
