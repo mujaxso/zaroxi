@@ -256,7 +256,7 @@ pub fn map_capture_name(name: &str) -> Highlight {
         
         // Keywords
         "keyword" | "keyword.control" | "keyword.control.conditional" 
-        | "keyword.control.repeat" | "keyword.control.import" | "keyword.control.return" 
+        | "keyword.control.repeat" | "keyword.control.import" 
         | "keyword.control.exception" | "keyword.control.flow" | "keyword.operator" 
         | "keyword.directive" | "keyword.directive.define" | "keyword.directive.include" 
         | "keyword.storage" | "keyword.storage.modifier" | "keyword.storage.type" 
@@ -266,15 +266,15 @@ pub fn map_capture_name(name: &str) -> Highlight {
         | "keyword.control.where" | "keyword.control.let" | "keyword.control.match" 
         | "keyword.control.if" | "keyword.control.else" | "keyword.control.for" 
         | "keyword.control.while" | "keyword.control.loop" | "keyword.control.in" 
-        | "keyword.control.break" | "keyword.control.continue" | "keyword.control.return" 
-        | "keyword.control.yield" | "keyword.control.await" | "keyword.control.async" 
-        | "keyword.control.unsafe" | "keyword.control.pub" | "keyword.control.crate" 
-        | "keyword.control.super" | "keyword.control.self" | "keyword.control.static" 
-        | "keyword.control.const" | "keyword.control.mut" | "keyword.control.ref" 
-        | "keyword.control.move" | "keyword.control.dyn" | "keyword.control.impl" 
-        | "keyword.control.trait" | "keyword.control.enum" | "keyword.control.struct" 
-        | "keyword.control.type" | "keyword.control.fn" | "keyword.control.extern" 
-        | "keyword.control.macro" | "keyword.control.union" => Highlight::Keyword,
+        | "keyword.control.break" | "keyword.control.continue" 
+        | "keyword.control.return" | "keyword.control.yield" | "keyword.control.await" 
+        | "keyword.control.async" | "keyword.control.unsafe" | "keyword.control.pub" 
+        | "keyword.control.crate" | "keyword.control.super" | "keyword.control.self" 
+        | "keyword.control.static" | "keyword.control.const" | "keyword.control.mut" 
+        | "keyword.control.ref" | "keyword.control.move" | "keyword.control.dyn" 
+        | "keyword.control.impl" | "keyword.control.trait" | "keyword.control.enum" 
+        | "keyword.control.struct" | "keyword.control.type" | "keyword.control.fn" 
+        | "keyword.control.extern" | "keyword.control.macro" | "keyword.control.union" => Highlight::Keyword,
         
         // Functions and methods
         "function" | "function.call" | "function.method" | "function.builtin" 
@@ -329,7 +329,7 @@ pub fn map_capture_name(name: &str) -> Highlight {
         "html_tag" | "html" | "html_block" | "html_inline" | "tag" => Highlight::Attribute,
         "hard_line_break" | "line_break" | "soft_line_break" => Highlight::Operator,
         "strikethrough" => Highlight::Comment,
-        "backslash_escape" | "escape_sequence" => Highlight::String,
+        "backslash_escape" => Highlight::String,
         "latex" | "text.math" => Highlight::Constant,
         
         // Headings
