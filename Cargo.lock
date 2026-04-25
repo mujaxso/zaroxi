@@ -5483,6 +5483,7 @@ dependencies = [
  "serde_json",
  "tokio",
  "tracing",
+ "uuid",
  "zaroxi-domain-workspace",
  "zaroxi-infra-rpc",
  "zaroxi-ops-file",
