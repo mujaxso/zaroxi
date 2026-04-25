@@ -307,6 +307,13 @@ impl Document {
             return false;
         }
 
+        // PlainText has no grammar – skip
+        if self.language == LanguageId::PlainText {
+            eprintln!("DEBUG: ensure_syntax_tree: PlainText, skipping");
+            self.syntax_tree = None;
+            return false;
+        }
+
         // If we already have a syntax tree, try to reparse it
         if let Some(ref mut tree) = self.syntax_tree {
             // Reparse incrementally

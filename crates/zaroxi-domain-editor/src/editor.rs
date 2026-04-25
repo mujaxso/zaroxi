@@ -181,6 +181,12 @@ impl EditorState {
 
         eprintln!("DEBUG: recompute_highlights: version={}", self.cached_version);
 
+        // PlainText has no grammar – skip
+        if self.document.language() == LanguageId::PlainText {
+            eprintln!("DEBUG: recompute_highlights: PlainText, skipping");
+            return;
+        }
+
         // Ensure we have a syntax tree
         if !self.document.ensure_syntax_tree() {
             eprintln!("DEBUG: recompute_highlights: ensure_syntax_tree returned false");

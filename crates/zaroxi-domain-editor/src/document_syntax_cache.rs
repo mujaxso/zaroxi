@@ -53,6 +53,14 @@ impl DocumentSyntaxState {
     /// Ensure the syntax tree exists and is up-to-date for the given text.
     /// Returns true if a syntax tree is available after this call.
     pub fn ensure_syntax_tree(&mut self, text: &str, language: LanguageId) -> bool {
+        // PlainText has no grammar – skip entirely
+        if language == LanguageId::PlainText {
+            self.syntax_tree = None;
+            self.cached_highlights.clear();
+            self.cached_version = u64::MAX;
+            return false;
+        }
+
         // If language changed, invalidate everything
         if self.language != language {
             self.syntax_tree = None;
@@ -95,6 +103,11 @@ impl DocumentSyntaxState {
     fn recompute_highlights(&mut self, text: &str, version: u64) {
         self.cached_highlights.clear();
         self.cached_version = version;
+
+        // PlainText has no grammar – skip
+        if self.language == LanguageId::PlainText {
+            return;
+        }
 
         if !self.ensure_syntax_tree(text, self.language) {
             return;

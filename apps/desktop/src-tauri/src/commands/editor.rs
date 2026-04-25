@@ -156,6 +156,11 @@ pub async fn get_styled_spans(
     let text = document.text();
     let language = LanguageId::from_path(&canonical);
 
+    // PlainText has no grammar – return empty spans immediately
+    if language == LanguageId::PlainText {
+        return Ok(Vec::new());
+    }
+
     // Get or create syntax state from the cache
     let mut state = SYNTAX_CACHE.get_or_create_state(&canonical, language);
 
