@@ -201,7 +201,10 @@ impl Document {
             }
             let byte_pos = rope.char_to_byte(char_idx);
             let line = rope.byte_to_line(byte_pos);
-            let line_slice = rope.get_line(line).ok()?;
+            if line >= rope.len_lines() {
+                return None;
+            }
+            let line_slice = rope.line(line);
             let line_start_byte = rope.line_to_byte(line);
             let byte_in_line = byte_pos - line_start_byte;
             let col = line_slice.byte_to_char(byte_in_line);
@@ -230,7 +233,10 @@ impl Document {
     /// exceeds the line length.
     pub fn line_col_to_char(&self, line: usize, col: usize) -> Option<usize> {
         if let Some(rope) = &self.rope {
-            let line_slice = rope.get_line(line).ok()?;
+            if line >= rope.len_lines() {
+                return None;
+            }
+            let line_slice = rope.line(line);
             if col > line_slice.len_chars() {
                 return None;
             }
