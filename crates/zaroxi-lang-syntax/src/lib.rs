@@ -7,6 +7,7 @@
 //! - Extensible: easy to add new languages and features
 //! - Performant: minimal overhead for large files and frequent edits
 
+pub mod cache;
 pub mod dynamic_loader;
 pub mod error;
 pub mod grammar_builder;

@@ -6,15 +6,13 @@
 //! tree‑sitter cache.
 
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
 use std::sync::Arc;
-use parking_lot::Mutex;
 use tauri::command;
 use zaroxi_domain_editor::document_cache::BufferManager;
 use zaroxi_domain_editor::FileClass;
 use zaroxi_lang_syntax::language::LanguageId;
 use zaroxi_lang_syntax::parser::ParserPool;
-use zaroxi_lang_syntax::highlight::{HighlightEngine, HighlightSpan, Highlight};
+use zaroxi_lang_syntax::highlight::{HighlightEngine, Highlight};
 use zaroxi_lang_syntax::cache;
 
 /// Shared buffer manager instance.
