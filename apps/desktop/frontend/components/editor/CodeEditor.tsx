@@ -192,66 +192,23 @@ export function CodeEditor({
   contentTruncated,
   theme = 'dark',
 }: CodeEditorProps) {
-  // Hold the full text. We re‑fetch it whenever filePath changes.
-  const [value, setValue] = useState(
-    filePath ? '' : initialValue // file-backed: start empty, load soon
-  );
+  // Hold the full text.  Content is provided by the parent via initialValue.
+  const [value, setValue] = useState(initialValue);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const highlightLayerRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [scrollTop, setScrollTop] = useState(0);
-  const [scrollLeft, setScrollLeft] = useState(0);
   const [cursorLine, setCursorLine] = useState(1);
-  const [contentLoading, setContentLoading] = useState(!!filePath);
 
-  // Determine whether this is a huge file (read‑only preview).
   const largeFile = contentTruncated ?? (initialValue.length >= TRUNCATE_CHARS);
 
-  // When filePath changes, re‑fetch content from the backend.
-  // Never fall back to `initialValue` for file-backed documents.
+  // When parent changes the file (new initialValue), sync local value.
   useEffect(() => {
-    if (!filePath) {
-      setValue(initialValue);
-      setContentLoading(false);
-      return;
-    }
-
-    setContentLoading(true);
-    setValue(''); // clear previous file content immediately
-
-    let cancelled = false;
-    async function loadContent() {
-      try {
-        const text: string = await invoke('get_document_content', { documentId: filePath });
-        if (!cancelled) {
-          setValue(text);
-        }
-      } catch (err) {
-        console.warn('[CodeEditor] Failed to fetch document content for', filePath, err);
-        if (!cancelled) {
-          // Keep empty – do NOT overwrite with a different file’s content.
-          setValue('');
-        }
-      } finally {
-        if (!cancelled) setContentLoading(false);
-      }
-    }
-    loadContent();
-    return () => { cancelled = true; };
-  }, [filePath]);
-
-  // Reflect externally controlled initialValue only when there is no filePath.
-  useEffect(() => {
-    if (!filePath) {
-      setValue(initialValue);
-    }
-  }, [initialValue, filePath]);
+    setValue(initialValue);
+  }, [initialValue]);
 
   const handleTextareaScroll = useCallback(() => {
-    const ta = textareaRef.current;
-    if (!ta) return;
-    setScrollTop(ta.scrollTop);
-    setScrollLeft(ta.scrollLeft);
+    setScrollTop(textareaRef.current?.scrollTop ?? 0);
   }, []);
 
   const handleSelectionChange = useCallback(() => {
@@ -291,8 +248,8 @@ export function CodeEditor({
     theme,
   );
 
-  // Virtualise the overlay content
-  const containerHeight = Math.max(containerRef.current?.clientHeight ?? 0, lineHeight);
+  // Virtualise the overlay content – only render visible lines.
+  const containerHeight = containerRef.current?.clientHeight ?? 0;
   const visibleStartLine = Math.floor(scrollTop / lineHeight);
   const visibleCount = Math.ceil((containerHeight + lineHeight) / lineHeight) * 2;
   const visibleEndLine = Math.min(visibleStartLine + visibleCount, totalLines);
@@ -302,6 +259,7 @@ export function CodeEditor({
     [allHighlighted, visibleStartLine, visibleEndLine],
   );
 
+  // Gutter
   const gutterWidth = largeFile ? 0 : computeGutterWidth(totalLines);
   const effectiveReadOnly = readOnly || largeFile;
 
@@ -317,7 +275,7 @@ export function CodeEditor({
             cursorLine={cursorLine}
             lineHeight={lineHeight}
             scrollTop={scrollTop}
-            containerHeight={containerRef.current?.clientHeight ?? 0}
+            containerHeight={containerHeight}
           />
         </div>
       )}
@@ -329,28 +287,47 @@ export function CodeEditor({
           </div>
         )}
 
-        {/* Highlight overlay – showing only visible lines */}
+        {/* Highlight overlay – positioned so it aligns with scrolled text */}
         {highlightsEnabled && (
           <div
             ref={highlightLayerRef}
             aria-hidden="true"
-            className="absolute inset-0 pointer-events-none font-mono text-sm whitespace-pre select-none text-editor-foreground"
+            className="absolute inset-0 overflow-hidden pointer-events-none font-mono text-sm whitespace-pre select-none text-editor-foreground"
             style={{
               lineHeight: `${lineHeight}px`,
               fontFamily: FONT_TOKENS.editor,
               whiteSpace: 'pre',
               overflowWrap: 'normal',
-              overflow: 'visible',
             }}
           >
-            {visibleHighlighted.map((hl) => (
-              <div key={hl.index}>
-                {renderSpans(hl.spans, hl.text)}
+            {/* Total height placeholder */}
+            <div
+              style={{
+                height: totalLines * lineHeight,
+                position: 'relative',
+              }}
+            >
+              {/* Shift visible lines according to scrollTop */}
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  transform: `translateY(${-visibleStartLine * lineHeight}px)`,
+                }}
+              >
+                {visibleHighlighted.map((hl) => (
+                  <div key={hl.index}>
+                    {renderSpans(hl.spans, hl.text)}
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
           </div>
         )}
 
+        {/* Editable textarea – text is transparent so that the highlight layer is visible */}
         <textarea
           ref={textareaRef}
           className="flex-1 resize-none outline-none bg-transparent font-mono text-sm p-0 overflow-auto scrollbar-none relative z-10"
