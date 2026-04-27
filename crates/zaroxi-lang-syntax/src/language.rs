@@ -146,6 +146,12 @@ impl LanguageId {
         }
         let id = self.as_str();
         let runtime = Runtime::new();
-        runtime.load_language(id).ok()
+        match runtime.load_language(id) {
+            Ok(lang) => Some(lang),
+            Err(e) => {
+                eprintln!("[language] failed to load grammar for \"{}\": {}", id, e);
+                None
+            }
+        }
     }
 }

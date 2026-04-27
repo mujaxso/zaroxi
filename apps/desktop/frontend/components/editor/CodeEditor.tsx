@@ -252,7 +252,7 @@ export function CodeEditor({
   );
 
   // Virtualise the overlay content so we never render thousands of DOM nodes.
-  const containerHeight = containerRef.current?.clientHeight ?? 0;
+  const containerHeight = Math.max(containerRef.current?.clientHeight ?? 0, lineHeight);
   const visibleStartLine = Math.floor(scrollTop / lineHeight);
   const visibleCount = Math.ceil((containerHeight + lineHeight) / lineHeight) * 2;
   const visibleEndLine = Math.min(visibleStartLine + visibleCount, totalLines);
@@ -261,15 +261,6 @@ export function CodeEditor({
     () => allHighlighted.filter((l) => l.index >= visibleStartLine && l.index < visibleEndLine),
     [allHighlighted, visibleStartLine, visibleEndLine],
   );
-
-  // Keep overlay scroll in sync with textarea
-  useEffect(() => {
-    const overlay = highlightLayerRef.current;
-    if (overlay && highlightsEnabled) {
-      overlay.scrollTop = scrollTop;
-      overlay.scrollLeft = scrollLeft;
-    }
-  }, [scrollTop, scrollLeft, highlightsEnabled]);
 
   const gutterWidth = largeFile ? 0 : computeGutterWidth(totalLines);
   const effectiveReadOnly = readOnly || largeFile;
@@ -298,30 +289,25 @@ export function CodeEditor({
           </div>
         )}
 
+        {/* Highlight overlay – positioned where the textarea is, showing only visible lines */}
         {highlightsEnabled && (
           <div
             ref={highlightLayerRef}
             aria-hidden="true"
-            className="absolute inset-0 overflow-hidden pointer-events-none font-mono text-sm whitespace-pre select-none text-editor-foreground"
+            className="absolute inset-0 pointer-events-none font-mono text-sm whitespace-pre select-none text-editor-foreground"
             style={{
               lineHeight: `${lineHeight}px`,
               fontFamily: FONT_TOKENS.editor,
               whiteSpace: 'pre',
               overflowWrap: 'normal',
+              overflow: 'visible',
             }}
           >
-            <div
-              style={{
-                height: totalLines * lineHeight,
-                position: 'relative',
-              }}
-            >
-              {visibleHighlighted.map((hl) => (
-                <div key={hl.index}>
-                  {renderSpans(hl.spans, hl.text)}
-                </div>
-              ))}
-            </div>
+            {visibleHighlighted.map((hl) => (
+              <div key={hl.index}>
+                {renderSpans(hl.spans, hl.text)}
+              </div>
+            ))}
           </div>
         )}
 
@@ -335,7 +321,11 @@ export function CodeEditor({
             overflowWrap: 'normal',
             wrap: 'off',
             color: highlightsEnabled ? 'transparent' : undefined,
-            caretColor: effectiveReadOnly ? 'transparent' : undefined,
+            caretColor: highlightsEnabled
+              ? 'var(--editor-cursor-color, #E2E8F0)'
+              : effectiveReadOnly
+                ? 'transparent'
+                : undefined,
           }}
           value={value}
           readOnly={effectiveReadOnly}
