@@ -140,7 +140,7 @@ pub async fn get_visible_lines(
 #[command]
 pub async fn apply_edit(request: EditRequest) -> Result<(), String> {
     let path = std::path::PathBuf::from(&request.document_id);
-    let mut cached = BUFFER_MANAGER
+    let cached = BUFFER_MANAGER
         .get_cached(&path)
         .await
         .ok_or_else(|| "Document not found in cache".to_string())?;
@@ -218,4 +218,13 @@ pub async fn get_document_content(document_id: String) -> Result<String, String>
         .ok_or_else(|| "Document not found in cache".to_string())?;
 
     Ok(cached.document.text())
+}
+
+// ---------------------------------------------------------------------------
+// Temporary stub – exists only to satisfy the legacy handler registration.
+// Will be replaced with the real syntax‑highlighting command when it is layered.
+// ---------------------------------------------------------------------------
+#[command]
+pub async fn get_styled_spans() -> Result<(), String> {
+    Ok(())
 }
