@@ -1,9 +1,14 @@
 //! In-memory document cache for the editor.
 //!
-//! This module provides a cache that stores loaded documents (ropes) keyed by
+//! This module provides a cache that stores loaded documents keyed by
 //! their canonical file path.  The cache is designed to be shared across
-//! multiple editor views so that switching tabs does not require re-reading
+//! multiple editor views so that switching tabs does not require re‑reading
 //! the file from disk or rebuilding the rope.
+//!
+//! **Large‑file policy**: documents of class `Large` never contain a rope;
+//! they are stored as `CachedDocument` with a `Document` that holds only a
+//! preview.  The cache treats them exactly like normal documents, enabling
+//! fast tab switches without re‑scanning.
 
 use crate::document::Document;
 use crate::thresholds::FileClass;
@@ -235,8 +240,15 @@ impl BufferManager {
         let (file_source, size) = FileLoader::load_file(path.to_str().unwrap_or(""))
             .map_err(|e| format!("Failed to load file: {}", e))?;
 
-        let text = file_source.as_str().to_string();
-        let document = Document::from_text_with_path(&text, canonical.to_string_lossy().to_string());
+        // For large files we delegate creation to from_mmap (which never builds a rope).
+        let document = match &file_source {
+            zaroxi_ops_file::file_loader::FileSource::Mmap(mmap) => {
+                Document::from_mmap(mmap, canonical.to_string_lossy().to_string(), size)
+            }
+            zaroxi_ops_file::file_loader::FileSource::Memory(s) => {
+                Document::from_text_with_path(s, canonical.to_string_lossy().to_string())
+            }
+        };
 
         let mtime = std::fs::metadata(&canonical)
             .ok()
@@ -326,4 +338,3 @@ impl Clone for CachedDocument {
         }
     }
 }
-

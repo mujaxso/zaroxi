@@ -1,397 +1,296 @@
 //! Minimal text document model backed by a Rope (ropey::Rope).
+//!
+//! The document enforces a **central file‑size policy**: for large files
+//! (`FileClass::Large`) it never creates a rope, holding only a short preview
+//! and pre‑computed line count.  That avoids OOM crashes and guarantees safe
+//! read‑only behaviour for huge files.
+//!
+//! For normal and medium files the underlying storage is a Rope; editing
+//! operations are supported and a version counter propagates to syntax
+//! consumers (future integration).
+//!
 //! No hand‑rolled line‑start caching; the rope provides O(log n) line access.
-
 use crate::thresholds::{self, FileClass};
-use memmap2::Mmap;
 use ropey::Rope;
 use std::path::PathBuf;
-use std::sync::Arc;
-use zaroxi_lang_syntax::SyntaxTree;
-use zaroxi_lang_syntax::ParserPool;
-use zaroxi_lang_syntax::language::LanguageId;
 
-/// Large file mode indicator (kept for backward compatibility, but classification
-/// now uses the richer `FileClass` enum from `thresholds`).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum LargeFileMode {
-    Normal,
-    Large,
-    VeryLarge,
-}
-
-impl LargeFileMode {
-    pub fn from_size(size: u64) -> Self {
-        if size <= 10_000_000 {
-            Self::Normal
-        } else if size <= 100_000_000 {
-            Self::Large
-        } else {
-            Self::VeryLarge
-        }
-    }
-
-    /// Whether edits should be allowed.
-    pub fn is_read_only(&self) -> bool {
-        *self == Self::VeryLarge
-    }
-}
-
-/// A minimal text document that uses a Rope as its backing storage.
+/// A text document.
 ///
-/// This document also maintains an optional syntax tree for syntax highlighting.
-/// The syntax tree is lazily created and updated as the document is edited.
+/// The concrete representation depends on the file class:
+/// - `Normal` / `Medium` : a `Rope` is always present; full editing support.
+/// - `Large` : no rope, only a short preview string and pre‑computed line
+///   count.  The document is read‑only.
 #[derive(Debug, Clone)]
 pub struct Document {
-    rope: Rope,
+    rope: Option<Rope>,
+    /// Line count (available for every class, computed once at load time).
+    line_count: usize,
     version: u64,
     dirty: bool,
     path: Option<PathBuf>,
     file_class: FileClass,
-    /// The syntax tree for syntax highlighting, if available.
-    syntax_tree: Option<SyntaxTree>,
-    /// The parser pool for creating syntax trees.
-    parser_pool: Option<Arc<ParserPool>>,
-    /// The language ID for syntax highlighting.
-    language: LanguageId,
+    /// For large files we keep a preview of the first few characters.
+    preview: String,
 }
 
 impl Document {
-    /// Create a new empty document.
+    // ── Construction ───────────────────────────────────────────────────
+
+    /// Create an empty document (used as a placeholder).
     pub fn new() -> Self {
         Self {
-            rope: Rope::new(),
+            rope: Some(Rope::new()),
+            line_count: 0,
             version: 0,
             dirty: false,
             path: None,
             file_class: FileClass::Normal,
-            syntax_tree: None,
-            parser_pool: None,
-            language: LanguageId::PlainText,
+            preview: String::new(),
         }
     }
 
-    /// Create a document from a plain string.
-    pub fn from_text(text: &str) -> Self {
+    /// Create a document from a full string (normal / medium mode).
+    ///
+    /// The caller is responsible for providing the correct `file_class`.
+    /// This method creates a rope and computes the line count.
+    pub fn from_text(text: &str, file_class: FileClass) -> Self {
         let rope = Rope::from_str(text);
-        let file_class = Self::compute_file_class(&rope, text.len() as u64);
+        let line_count = rope.len_lines();
+        let preview = if file_class == FileClass::Large {
+            text.chars().take(Self::PREVIEW_MAX_CHARS).collect()
+        } else {
+            String::new()
+        };
+
         Self {
-            rope,
+            rope: Some(rope),
+            line_count,
             version: 0,
             dirty: false,
             path: None,
             file_class,
-            syntax_tree: None,
-            parser_pool: None,
-            language: LanguageId::PlainText,
+            preview,
         }
     }
 
     /// Create a document from text with an associated file path.
+    ///
+    /// The file class is **re‑computed** here from the text length.
     pub fn from_text_with_path(text: &str, path: String) -> Self {
-        let mut doc = Self::from_text(text);
+        let file_class = Self::compute_file_class_from_text(text);
+        let mut doc = Self::from_text(text, file_class);
         doc.path = Some(PathBuf::from(path));
-        // Detect language from path
-        if let Some(ref p) = doc.path {
-            doc.language = LanguageId::from_path(p);
-        }
         doc
     }
 
-    // ------------------------------------------------------------------
-    // Basic queries
-    // ------------------------------------------------------------------
+    /// Create a **large‑file** document that stores no rope, only metadata.
+    pub fn from_large_file_preview(
+        preview: String,
+        line_count: usize,
+        path: String,
+    ) -> Self {
+        let path = PathBuf::from(path);
+        Self {
+            rope: None,
+            line_count,
+            version: 0,
+            dirty: false,
+            path: Some(path),
+            file_class: FileClass::Large,
+            preview,
+        }
+    }
 
-    /// Number of Unicode scalar values.
+    /// Create a document from a memory‑mapped file.
+    ///
+    /// For large files it never builds a rope – it only stores a preview
+    /// and the line count (computed by scanning the mmap region).
+    /// For normal / medium files a rope is built.
+    pub fn from_mmap(mmap: &memmap2::Mmap, path: String, size: u64) -> Self {
+        let text = unsafe { std::str::from_utf8_unchecked(&mmap) };
+        let file_class = Self::compute_file_class(size, text);
+        match file_class {
+            FileClass::Large => {
+                let preview: String = text.chars().take(Self::PREVIEW_MAX_CHARS).collect();
+                let line_count = count_lines_of(text);
+                Self {
+                    rope: None,
+                    line_count,
+                    version: 0,
+                    dirty: false,
+                    path: Some(PathBuf::from(path)),
+                    file_class,
+                    preview,
+                }
+            }
+            _ => Self::from_text_with_path(text, path),
+        }
+    }
+
+    // ── Queries ────────────────────────────────────────────────────────
+
     pub fn len_chars(&self) -> usize {
-        self.rope.len_chars()
+        self.rope.as_ref().map(|r| r.len_chars()).unwrap_or(self.preview.len())
     }
 
-    /// Number of lines (0‑based). Rope counts a final line even without a trailing '\n'.
     pub fn len_lines(&self) -> usize {
-        self.rope.len_lines()
+        self.line_count
     }
 
-    /// Whether the document contains no text.
     pub fn is_empty(&self) -> bool {
-        self.rope.len_chars() == 0
+        self.len_chars() == 0
     }
 
-    /// Return the text content of line `idx` (0‑based), without the trailing newline.
-    /// The returned `String` is owned and stripped of trailing line‑terminator characters.
+    /// Return the textual content of line `idx` (0‑based), without the
+    /// trailing newline.  For large files this returns the line from the
+    /// preview if the index is within the preview, otherwise `None`.
     pub fn line(&self, idx: usize) -> Option<String> {
-        self.rope.get_line(idx).map(|slice| {
-            let s = slice.to_string();
-            // Remove only the final line terminator; preserve intentional blank lines.
-            let trimmed = s.strip_suffix('\n').or_else(|| s.strip_suffix("\r\n")).unwrap_or(&s);
-            trimmed.to_owned()
-        })
+        if let Some(rope) = &self.rope {
+            rope.get_line(idx).map(|slice| {
+                let s = slice.to_string();
+                s.strip_suffix('\n')
+                    .or_else(|| s.strip_suffix("\r\n"))
+                    .unwrap_or(&s)
+                    .to_owned()
+            })
+        } else {
+            // Large file – answer from the preview string.
+            line_from_preview(&self.preview, idx)
+        }
     }
 
     /// Return the entire document content as an owned `String`.
+    /// For large files this is the short preview.
     pub fn text(&self) -> String {
-        self.rope.to_string()
-    }
-
-    // ------------------------------------------------------------------
-    // Coordinate conversion
-    // ------------------------------------------------------------------
-
-    /// Convert a character index to (line, column).
-    pub fn char_to_line_col(&self, char_idx: usize) -> Option<(usize, usize)> {
-        if char_idx > self.rope.len_chars() {
-            return None;
-        }
-        let line = self.rope.char_to_line(char_idx);
-        let col = char_idx - self.rope.line_to_char(line);
-        Some((line, col))
-    }
-
-    /// Convert (line, column) to a character index, or `None` if out of bounds.
-    pub fn line_col_to_char(&self, line: usize, col: usize) -> Option<usize> {
-        if line >= self.rope.len_lines() {
-            return None;
-        }
-        let line_start = self.rope.line_to_char(line);
-        let line_slice = self.rope.get_line(line)?;
-        let line_chars = line_slice.chars().count();
-        if col > line_chars {
-            return None;
-        }
-        Some(line_start + col)
-    }
-
-    /// Character index of the start of the given line.
-    pub fn line_to_char(&self, line: usize) -> usize {
-        self.rope.line_to_char(line)
-    }
-
-    /// Convert a byte offset to a character index.
-    pub fn byte_to_char(&self, byte: usize) -> usize {
-        self.rope.byte_to_char(byte)
+        self.rope
+            .as_ref()
+            .map(|r| r.to_string())
+            .unwrap_or_else(|| self.preview.clone())
     }
 
     /// Convert a character index to a byte offset.
     pub fn char_to_byte(&self, char_idx: usize) -> usize {
-        self.rope.char_to_byte(char_idx)
+        self.rope
+            .as_ref()
+            .map(|r| r.char_to_byte(char_idx))
+            .unwrap_or(char_idx) // large files are treated as ascii offsets
     }
 
-    // ------------------------------------------------------------------
-    // Editing operations
-    // ------------------------------------------------------------------
+    pub fn byte_to_char(&self, byte: usize) -> usize {
+        self.rope
+            .as_ref()
+            .map(|r| r.byte_to_char(byte))
+            .unwrap_or(byte)
+    }
 
-    /// Insert text at a given character index.
+    pub fn line_to_char(&self, line: usize) -> usize {
+        self.rope
+            .as_ref()
+            .map(|r| r.line_to_char(line))
+            .unwrap_or(0)
+    }
+
+    // ── Editing (only available for Normal / Medium files) ────────────
+
     pub fn insert(&mut self, char_idx: usize, ins: &str) -> Result<(), String> {
         if self.file_class.is_read_only() {
-            return Err("Read‑only large file".into());
+            return Err("Document is read‑only".into());
         }
-        if char_idx > self.rope.len_chars() {
+        let rope = self.rope.as_mut().ok_or("Read‑only document")?;
+        if char_idx > rope.len_chars() {
             return Err("Invalid char index".into());
         }
-        let byte_pos = self.rope.char_to_byte(char_idx);
-        self.rope.insert(byte_pos, ins);
+        let byte_pos = rope.char_to_byte(char_idx);
+        rope.insert(byte_pos, ins);
+        self.word_count_line_count();
         self.version += 1;
         self.dirty = true;
         Ok(())
     }
 
-    /// Delete characters in the range `start..end`.
     pub fn delete_range(&mut self, start: usize, end: usize) -> Result<(), String> {
         if self.file_class.is_read_only() {
-            return Err("Read‑only large file".into());
+            return Err("Document is read‑only".into());
         }
-        if start > end {
-            return Err("start > end".into());
+        let rope = self.rope.as_mut().ok_or("Read‑only document")?;
+        if start > end || end > rope.len_chars() {
+            return Err("Invalid range".into());
         }
-        if end > self.rope.len_chars() {
-            return Err("Out of bounds".into());
-        }
-        let start_byte = self.rope.char_to_byte(start);
-        let end_byte = self.rope.char_to_byte(end);
-        self.rope.remove(start_byte..end_byte);
+        let start_byte = rope.char_to_byte(start);
+        let end_byte = rope.char_to_byte(end);
+        rope.remove(start_byte..end_byte);
+        self.word_count_line_count();
         self.version += 1;
         self.dirty = true;
         Ok(())
     }
 
-    /// Delete characters in the range `start..end` (alias for `delete_range`).
     pub fn delete(&mut self, start: usize, end: usize) -> Result<(), String> {
         self.delete_range(start, end)
     }
 
-    /// Mark the document as saved.
+    // ── Metadata / versioning ─────────────────────────────────────────
+
     pub fn mark_saved(&mut self) {
         self.dirty = false;
     }
-
-    /// Whether the document has unsaved changes.
-    pub fn is_dirty(&self) -> bool {
-        self.dirty
-    }
-
-    /// Monotonically increasing version counter.
-    pub fn version(&self) -> u64 {
-        self.version
-    }
-
-    /// The file path, if any.
-    pub fn path(&self) -> Option<&std::path::Path> {
-        self.path.as_deref()
-    }
-
-    /// Set (or clear) the file path.
+    pub fn is_dirty(&self) -> bool { self.dirty }
+    pub fn version(&self) -> u64 { self.version }
+    pub fn file_class(&self) -> FileClass { self.file_class }
+    pub fn path(&self) -> Option<&std::path::Path> { self.path.as_deref() }
     pub fn set_path(&mut self, path: Option<String>) {
-        self.path = path.map(PathBuf::from);
+        self.path = path.map(std::path::PathBuf::from);
     }
 
-    /// The large‑file mode (kept for backward compatibility).
-    pub fn large_file_mode(&self) -> LargeFileMode {
-        match self.file_class {
-            FileClass::Normal => LargeFileMode::Normal,
-            FileClass::Medium => LargeFileMode::Large, // map Medium to Large
-            FileClass::Large => LargeFileMode::VeryLarge,
+    /// Whether the document is read‑only (Large class).
+    pub fn is_read_only(&self) -> bool { self.file_class.is_read_only() }
+
+    // ── Internal helpers ──────────────────────────────────────────────
+
+    const PREVIEW_MAX_CHARS: usize = 50_000;
+
+    fn word_count_line_count(&mut self) {
+        if let Some(rope) = &self.rope {
+            self.line_count = rope.len_lines();
         }
     }
 
-    /// Whether the file is “large” (may degrade performance).
-    pub fn is_large(&self) -> bool {
-        self.file_class == FileClass::Medium || self.file_class == FileClass::Large
+    fn compute_file_class_from_text(text: &str) -> FileClass {
+        Self::compute_file_class(text.len() as u64, text)
     }
 
-    /// Whether the file is “very large” (read‑only recommended).
-    pub fn is_very_large(&self) -> bool {
-        self.file_class == FileClass::Large
-    }
-
-    /// The centralised file class.
-    pub fn file_class(&self) -> FileClass {
-        self.file_class
-    }
-
-    // ---------- syntax tree ----------
-
-    /// Get the language ID for syntax highlighting.
-    pub fn language(&self) -> LanguageId {
-        self.language
-    }
-
-    /// Set the language ID for syntax highlighting.
-    pub fn set_language(&mut self, language: LanguageId) {
-        self.language = language;
-        // Invalidate syntax tree when language changes
-        self.syntax_tree = None;
-    }
-
-    /// Get the syntax tree, if available.
-    pub fn syntax_tree(&self) -> Option<&SyntaxTree> {
-        self.syntax_tree.as_ref()
-    }
-
-    /// Get a mutable reference to the syntax tree, if available.
-    pub fn syntax_tree_mut(&mut self) -> Option<&mut SyntaxTree> {
-        self.syntax_tree.as_mut()
-    }
-
-    /// Ensure a syntax tree exists for this document.
-    ///
-    /// Creates a new syntax tree if one doesn't exist, or re-parses the existing
-    /// one if the document has been edited. Returns `true` if a syntax tree is
-    /// available after this call.
-    ///
-    /// For very large files (Large), this method returns `false` to avoid
-    /// expensive parsing operations. Medium files still get syntax trees.
-    pub fn ensure_syntax_tree(&mut self) -> bool {
-        // Skip syntax tree for very large files only
-        if self.file_class == FileClass::Large {
-            eprintln!("DEBUG: ensure_syntax_tree: file_class=Large, skipping");
-            self.syntax_tree = None;
-            return false;
-        }
-
-        // PlainText has no grammar – skip
-        if self.language == LanguageId::PlainText {
-            eprintln!("DEBUG: ensure_syntax_tree: PlainText, skipping");
-            self.syntax_tree = None;
-            return false;
-        }
-
-        // If we already have a syntax tree, try to reparse it
-        if let Some(ref mut tree) = self.syntax_tree {
-            // Reparse incrementally
-            if tree.reparse().is_ok() {
-                eprintln!("DEBUG: ensure_syntax_tree: reparse succeeded");
-                return true;
-            }
-            eprintln!("DEBUG: ensure_syntax_tree: reparse failed, will create new tree");
-        }
-
-        // Extract needed values before mutable borrow of self.parser_pool
-        let text = self.text();
-        let lang = self.language;
-        eprintln!("DEBUG: ensure_syntax_tree: creating new tree for language {:?}", lang);
-
-        // Create a new syntax tree
-        let pool = self.parser_pool.get_or_insert_with(|| {
-            eprintln!("DEBUG: ensure_syntax_tree: creating new ParserPool");
-            Arc::new(ParserPool::new())
-        });
-
-        match SyntaxTree::new(pool.clone(), &text, lang) {
-            Ok(tree) => {
-                eprintln!("DEBUG: ensure_syntax_tree: new tree created successfully");
-                self.syntax_tree = Some(tree);
-                true
-            }
-            Err(e) => {
-                eprintln!("Warning: Failed to create syntax tree: {}", e);
-                self.syntax_tree = None;
-                false
-            }
-        }
-    }
-
-    /// Invalidate the syntax tree (e.g., after a large edit).
-    pub fn invalidate_syntax_tree(&mut self) {
-        self.syntax_tree = None;
-    }
-
-    /// Create a document from a memory‑mapped file.
-    pub fn from_mmap(mmap: Mmap, path: String, size: u64) -> Self {
-        let text = unsafe { std::str::from_utf8_unchecked(&mmap) };
-        let rope = Rope::from_str(text);
-        let file_class = Self::compute_file_class(&rope, size);
-        let path_buf = PathBuf::from(&path);
-        let language = LanguageId::from_path(&path_buf);
-        Self {
-            rope,
-            version: 0,
-            dirty: false,
-            path: Some(path_buf),
-            file_class,
-            syntax_tree: None,
-            parser_pool: None,
-            language,
-        }
-    }
-
-    // ------------------------------------------------------------------
-    // Internal helpers
-    // ------------------------------------------------------------------
-    fn compute_file_class(rope: &Rope, byte_size: u64) -> FileClass {
-        let line_count = rope.len_lines();
-        let max_line_len = rope.lines().map(|l| l.chars().count()).max().unwrap_or(0);
+    fn compute_file_class(byte_size: u64, text: &str) -> FileClass {
+        let line_count = count_lines_of(text);
+        let max_line_len = text
+            .lines()
+            .map(|l| l.len())
+            .max()
+            .unwrap_or(0);
         thresholds::classify_file(byte_size, line_count, max_line_len)
-    }
-
-    fn _char_idx_to_byte(&self, char_idx: usize) -> Option<usize> {
-        if char_idx > self.rope.len_chars() {
-            return None;
-        }
-        Some(self.rope.char_to_byte(char_idx))
     }
 }
 
-impl Default for Document {
-    fn default() -> Self {
-        Self::new()
+// ------------------------------------------------------------------
+// Helpers
+// ------------------------------------------------------------------
+
+/// Count the number of lines in a string slice.
+fn count_lines_of(text: &str) -> usize {
+    text.lines().count()
+}
+
+/// Return the text of line `idx` from a preview string.
+/// The preview is taken as a plain text (no rope).
+fn line_from_preview(preview: &str, idx: usize) -> Option<String> {
+    let mut current_line = 0;
+    if idx == 0 && preview.is_empty() {
+        return Some(String::new());
     }
+    for line in preview.lines() {
+        if current_line == idx {
+            return Some(line.to_owned());
+        }
+        current_line += 1;
+    }
+    None
 }
