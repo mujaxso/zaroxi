@@ -14,6 +14,8 @@ interface CodeEditorProps {
   language?: string;
   readOnly?: boolean;
   className?: string;
+  /** set to true when the backend returns content_truncated (large file with preview) */
+  contentTruncated?: boolean;
 }
 
 /** Maximum characters returned from back‑end for large files. */
@@ -37,7 +39,7 @@ function fastLineCount(text: string): number {
  * - Uses a single textarea for editing (content is the full rope text).
  * - Prevents any rendering of hidden lines; the native scroll handles everything.
  * - Horizontal scrolling works because `wrap="off"`.
- * - For **large** (read‑only) files a static preview is shown.
+ * - For **large** (read‑only) files a scrollable preview is shown.
  */
 export function CodeEditor({
   initialValue,
@@ -45,20 +47,18 @@ export function CodeEditor({
   filePath,
   readOnly = false,
   className,
+  contentTruncated,
 }: CodeEditorProps) {
   // ── Local state ──────────────────────────────────────────────────
   const [value, setValue] = useState(initialValue);
-  const [largeFile, setLargeFile] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [scrollTop, setScrollTop] = useState(0);
   const [cursorLine, setCursorLine] = useState(1);
 
-  // Detect large file from the content length (the back‑end already truncated if needed)
-  useEffect(() => {
-    const isLarge = initialValue.length >= TRUNCATE_CHARS;
-    setLargeFile(isLarge);
-  }, [initialValue]);
+  // Determine whether this is a large file (content truncation flag from backend).
+  // If no flag is provided, fall back to a simple length check for backward compatibility.
+  const largeFile = contentTruncated ?? (initialValue.length >= TRUNCATE_CHARS);
 
   // Keep local value in sync with prop changes (e.g. when switching tabs)
   useEffect(() => {
@@ -66,10 +66,14 @@ export function CodeEditor({
   }, [initialValue]);
 
   // ── Scroll & selection ───────────────────────────────────────────
-  const handleScroll = useCallback(() => {
+  const handleTextareaScroll = useCallback(() => {
     const ta = textareaRef.current;
     if (!ta) return;
     setScrollTop(ta.scrollTop);
+  }, []);
+
+  const handlePreviewScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    setScrollTop(e.currentTarget.scrollTop);
   }, []);
 
   const handleSelectionChange = useCallback(() => {
@@ -119,9 +123,16 @@ export function CodeEditor({
         />
       </div>
 
-      {/* Scrollable text area */}
+      {/* Scrollable text area (or large‑file preview) */}
       {largeFile ? (
-        <div className="flex-1 overflow-hidden bg-editor p-2 font-mono text-sm whitespace-pre">
+        <div
+          className="flex-1 overflow-auto bg-editor p-2 font-mono text-sm whitespace-pre"
+          style={{
+            lineHeight: `${lineHeight}px`,
+            fontFamily: FONT_TOKENS.editor,
+          }}
+          onScroll={handlePreviewScroll}
+        >
           <div className="text-muted-foreground text-xs mb-1">
             File is too large for editing (showing preview of first {TRUNCATE_CHARS.toLocaleString()} characters).
           </div>
@@ -141,7 +152,7 @@ export function CodeEditor({
           value={value}
           readOnly={readOnly}
           onChange={handleChange}
-          onScroll={handleScroll}
+          onScroll={handleTextareaScroll}
           onSelect={handleSelectionChange}
           onClick={() => textareaRef.current?.focus()}
           spellCheck={false}
