@@ -1,6 +1,5 @@
 import {
   useEffect,
-  useLayoutEffect,
   useRef,
   useState,
   useCallback,
@@ -220,20 +219,18 @@ export function CodeEditor({
 
   // ---------- dimensions ----------
   const [containerHeight, setContainerHeight] = useState(0);
-  const [editorWidth, setEditorWidth] = useState(0);
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    setContainerHeight(el.clientHeight);
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setContainerHeight(entry.contentRect.height);
+      }
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
   }, []);
-
-  // track the textarea’s scrollWidth so the overlay matches
-  useEffect(() => {
-    const ta = textareaRef.current;
-    if (!ta) return;
-    setEditorWidth(ta.scrollWidth);
-  }, [value, containerHeight, largeFile, filePath]);
 
   // ---------- line metrics ----------
   const lineHeight = GUTTER_CONFIG.LINE_HEIGHT;
@@ -347,7 +344,7 @@ export function CodeEditor({
               style={{
                 height: totalLines * lineHeight,
                 position: 'relative',
-                width: editorWidth || '100%',
+                width: 'max-content',
               }}
             >
               <div
@@ -355,9 +352,9 @@ export function CodeEditor({
                   position: 'absolute',
                   top: 0,
                   left: 0,
-                  transform: `translate3d(${-scrollLeft}px, ${visibleStartLine * lineHeight}px, 0px)`,
+                  transform: `translate3d(${-scrollLeft}px, ${-visibleStartLine * lineHeight}px, 0px)`,
                   whiteSpace: 'pre',
-                  minWidth: editorWidth || '100%',
+                  width: 'max-content',
                 }}
               >
                 {visibleHighlighted.map((hl) => (
