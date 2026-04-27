@@ -78,7 +78,6 @@ function useFullHighlight(
 function mergeSpans(spans: HighlightSpan[], lineLen: number): HighlightSpan[] {
   if (spans.length === 0 || lineLen === 0) return [];
 
-  // Sort shortest → longest (innermost first)
   const sorted = [...spans].sort((a, b) => (a.end - a.start) - (b.end - b.start));
 
   const charTokens: Array<{ tokenType: string; color?: string } | null> =
@@ -96,7 +95,6 @@ function mergeSpans(spans: HighlightSpan[], lineLen: number): HighlightSpan[] {
     }
   }
 
-  // Compress contiguous runs with the same token into spans.
   const merged: HighlightSpan[] = [];
   let i = 0;
   while (i < lineLen) {
@@ -125,7 +123,6 @@ function renderSpans(spans: HighlightSpan[], lineText: string) {
     return lineText;
   }
 
-  // Remove overlaps so a character is never painted twice.
   const merged = mergeSpans(spans, lineText.length);
   if (merged.length === 0) {
     return lineText;
@@ -160,6 +157,7 @@ function renderSpans(spans: HighlightSpan[], lineText: string) {
 /* ------------------------------------------------------------------ */
 
 interface CodeEditorProps {
+  /** initial content for cases where file loading is handled externally */
   initialValue: string;
   onChange: (value: string) => void;
   filePath?: string;
@@ -167,6 +165,7 @@ interface CodeEditorProps {
   readOnly?: boolean;
   className?: string;
   contentTruncated?: boolean;
+  /** The active colour theme for syntax highlighting. */
   theme?: 'dark' | 'light';
 }
 
@@ -193,6 +192,7 @@ export function CodeEditor({
   contentTruncated,
   theme = 'dark',
 }: CodeEditorProps) {
+  // Hold the full text. We re‑fetch it whenever filePath changes.
   const [value, setValue] = useState(initialValue);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const highlightLayerRef = useRef<HTMLDivElement>(null);
@@ -201,11 +201,37 @@ export function CodeEditor({
   const [scrollLeft, setScrollLeft] = useState(0);
   const [cursorLine, setCursorLine] = useState(1);
 
+  // Determine whether this is a huge file (read‑only preview).
   const largeFile = contentTruncated ?? (initialValue.length >= TRUNCATE_CHARS);
 
+  // When filePath changes, re‑fetch content from the backend.
   useEffect(() => {
-    setValue(initialValue);
-  }, [initialValue]);
+    if (!filePath) {
+      setValue(initialValue);
+      return;
+    }
+    let cancelled = false;
+    async function loadContent() {
+      try {
+        const text: string = await invoke('get_document_content', { documentId: filePath });
+        if (!cancelled) {
+          setValue(text);
+        }
+      } catch (err) {
+        console.warn('Failed to fetch document content, falling back to initialValue:', err);
+        if (!cancelled) setValue(initialValue);
+      }
+    }
+    loadContent();
+    return () => { cancelled = true; };
+  }, [filePath]);
+
+  // Reflect externally controlled initialValue (e.g. when no filePath).
+  useEffect(() => {
+    if (!filePath) {
+      setValue(initialValue);
+    }
+  }, [initialValue, filePath]);
 
   const handleTextareaScroll = useCallback(() => {
     const ta = textareaRef.current;
@@ -251,7 +277,7 @@ export function CodeEditor({
     theme,
   );
 
-  // Virtualise the overlay content so we never render thousands of DOM nodes.
+  // Virtualise the overlay content
   const containerHeight = Math.max(containerRef.current?.clientHeight ?? 0, lineHeight);
   const visibleStartLine = Math.floor(scrollTop / lineHeight);
   const visibleCount = Math.ceil((containerHeight + lineHeight) / lineHeight) * 2;
@@ -289,7 +315,7 @@ export function CodeEditor({
           </div>
         )}
 
-        {/* Highlight overlay – positioned where the textarea is, showing only visible lines */}
+        {/* Highlight overlay – showing only visible lines */}
         {highlightsEnabled && (
           <div
             ref={highlightLayerRef}

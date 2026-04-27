@@ -278,6 +278,10 @@ impl Runtime {
     ///
     /// This uses `libloading` to dynamically load the grammar library and retrieve
     /// the `tree_sitter_{language}` function.
+    ///
+    /// For the `markdown` language the library may export `tree_sitter_markdown_inline`
+    /// instead of `tree_sitter_markdown`.  We try the alternative symbol first if
+    /// `language_id == "markdown"`.
     #[cfg(feature = "dynamic-loading")]
     pub fn load_language(&self, language_id: &str) -> Result<tree_sitter::Language, String> {
         use libloading::{Library, Symbol};
@@ -298,17 +302,42 @@ impl Runtime {
             let lib = Library::new(&library_path)
                 .map_err(|e| format!("Failed to load library {}: {}", library_path.display(), e))?;
 
-            let symbol_name = format!("tree_sitter_{}", language_id);
-            let language_fn: Symbol<unsafe extern "C" fn() -> tree_sitter::Language> = lib
-                .get(symbol_name.as_bytes())
-                .map_err(|e| format!("Failed to get symbol {}: {}", symbol_name, e))?;
+            // Try the standard symbol first, then the inline variant for markdown.
+            let standard_symbol = format!("tree_sitter_{}", language_id);
+            let markdown_inline_symbol = if language_id == "markdown" {
+                Some("tree_sitter_markdown_inline".to_string())
+            } else {
+                None
+            };
 
-            // Call the function to get the language before we forget the library
+            let get_symbol = |sym: &str| -> Result<Symbol<unsafe extern "C" fn() -> tree_sitter::Language>, String> {
+                lib.get(sym.as_bytes())
+                    .map_err(|e| format!("Failed to get symbol {}: {}", sym, e))
+            };
+
+            let symbol = match get_symbol(&standard_symbol) {
+                Ok(s) => Some(s),
+                Err(e) => {
+                    if language_id == "markdown" {
+                        match get_symbol(&markdown_inline_symbol.unwrap()) {
+                            Ok(s) => {
+                                eprintln!("[runtime] loaded markdown inline symbol instead of standard");
+                                Some(s)
+                            }
+                            Err(_) => return Err(format!("Failed to get symbol {}: {}", standard_symbol, e)),
+                        }
+                    } else {
+                        return Err(e);
+                    }
+                }
+            };
+
+            // Call the function to get the language
+            let language_fn = symbol.unwrap();
             let language = language_fn();
 
             // The library must not be unloaded while the language is in use.
             // We leak the library handle to keep it loaded for the lifetime of the program.
-            // The language_fn symbol is no longer needed after we've called it.
             std::mem::forget(lib);
 
             Ok(language)
