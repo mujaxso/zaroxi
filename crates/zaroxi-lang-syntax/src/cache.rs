@@ -7,8 +7,9 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::sync::LazyLock;
+
 use parking_lot::Mutex;
-use once_cell::sync::Lazy;
 
 use crate::language::LanguageId;
 use crate::parser::{ParserPool, SyntaxTree};
@@ -22,8 +23,8 @@ struct CachedSyntax {
 }
 
 /// Per‑document syntax cache, keyed by canonical path.
-static GLOBAL_CACHE: Lazy<Mutex<HashMap<PathBuf, CachedSyntax>>> =
-    Lazy::new(|| Mutex::new(HashMap::new()));
+static GLOBAL_CACHE: LazyLock<Mutex<HashMap<PathBuf, CachedSyntax>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
 
 /// Return the cached highlight spans for the given path and version,
 /// or build them from scratch if missing or stale.
