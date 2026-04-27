@@ -80,8 +80,6 @@ pub async fn open_document(path: String) -> Result<OpenDocumentResponse, String>
         .map_err(|e| format!("Failed to open document: {}", e))?;
 
     let document = &cached.document;
-    let line_count = document.len_lines();
-    let char_count = document.len_chars();
     let file_class = document.file_class();
     let is_read_only = file_class.is_read_only();
     let content_truncated = file_class == FileClass::Large;
@@ -90,6 +88,16 @@ pub async fn open_document(path: String) -> Result<OpenDocumentResponse, String>
         document.text().chars().take(TRUNCATE_CHARS).collect()
     } else {
         document.text()
+    };
+
+    // For large files we use the metrics of the truncated preview,
+    // not the enormous original file.  This prevents huge line‑count
+    // values from being sent to the frontend and avoids crashes there.
+    let (line_count, char_count) = if content_truncated {
+        let preview_lines = content.lines().count();
+        (preview_lines, content.len())
+    } else {
+        (document.len_lines(), document.len_chars())
     };
 
     let version = document.version();

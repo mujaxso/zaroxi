@@ -39,7 +39,7 @@ function fastLineCount(text: string): number {
  * - Uses a single textarea for editing (content is the full rope text).
  * - Prevents any rendering of hidden lines; the native scroll handles everything.
  * - Horizontal scrolling works because `wrap="off"`.
- * - For **large** (read‑only) files a scrollable preview is shown.
+ * - For **large** (read‑only) files a scrollable preview is shown **without a gutter**.
  */
 export function CodeEditor({
   initialValue,
@@ -104,24 +104,27 @@ export function CodeEditor({
     [onChange, readOnly, largeFile, filePath],
   );
 
-  // ── Derived metrics ───────────────────────────────────────────────
+  // ── Derived metrics (only needed for normal/medium files) ─────────
   const lineHeight = GUTTER_CONFIG.LINE_HEIGHT;
   const totalLines = fastLineCount(value);
-  const gutterWidth = computeGutterWidth(totalLines);
+  const gutterWidth = largeFile ? 0 : computeGutterWidth(totalLines);
 
   // ── Layout ────────────────────────────────────────────────────────
   return (
     <div ref={containerRef} className={cn('flex h-full', className)}>
-      {/* Fixed gutter */}
-      <div style={{ width: gutterWidth, flexShrink: 0, position: 'relative', overflow: 'hidden' }}>
-        <LineNumberGutter
-          lineCount={totalLines}
-          cursorLine={cursorLine}
-          lineHeight={lineHeight}
-          scrollTop={scrollTop}
-          containerHeight={containerRef.current ? containerRef.current.clientHeight : 0}
-        />
-      </div>
+      {/* Gutter – disabled for large files to avoid crash from
+          ginormous line counts */}
+      {!largeFile && (
+        <div style={{ width: gutterWidth, flexShrink: 0, position: 'relative', overflow: 'hidden' }}>
+          <LineNumberGutter
+            lineCount={totalLines}
+            cursorLine={cursorLine}
+            lineHeight={lineHeight}
+            scrollTop={scrollTop}
+            containerHeight={containerRef.current ? containerRef.current.clientHeight : 0}
+          />
+        </div>
+      )}
 
       {/* Scrollable text area (or large‑file preview) */}
       {largeFile ? (
