@@ -34,6 +34,8 @@ struct CachedSyntax {
     tree: SyntaxTree,
     /// Highlight spans for the **whole** document.
     spans: Vec<HighlightSpan>,
+    /// Document version at the time the cache was built.
+    version: u64,
 }
 
 /// Per‑document syntax cache, keyed by canonical path.
@@ -121,8 +123,7 @@ pub struct HighlightSpanDto {
 }
 
 // ---------------------------------------------------------------------------
-// Open / visible / edit commands (unchanged logic, slightly adapted for
-// syntax integration)
+// Open / visible / edit commands
 // ---------------------------------------------------------------------------
 
 #[command]
@@ -322,18 +323,120 @@ pub async fn highlight_document(
     // ---- Syntax cache hit / miss ----
     let spans = {
         let mut syn_cache = SYNTAX_CACHE.lock();
-        let needs_rebuild = match syn_cache.get(&path) {
-            Some(cached) if cached.tree.version? Wait – our CachedSyntax doesn't have version field. We'll store version separately. Let's adjust.
+        match syn_cache.get(&path) {
+            Some(cached) if cached.version == version => cached.spans.clone(),
+            _ => {
+                // Build new syntax tree and spans
+                let tree = SyntaxTree::new(
+                    PARSER_POOL.clone(),
+                    &full_text,
+                    lang,
+                )
+                .map_err(|e| format!("Syntax error: {}", e))?;
 
-We need version stored. Let's modify structure: `struct CachedSyntax { tree: SyntaxTree, spans: Vec<HighlightSpan>, version: u64 }`. We'll add.
+                let engine = HighlightEngine::new();
+                let spans = engine
+                    .highlight(lang, &full_text, tree.tree())
+                    .map_err(|e| format!("Highlight error: {}", e))?;
 
-But currently we don't have version in struct. I'll amend in the final answer: include version.
+                syn_cache.insert(
+                    path.clone(),
+                    CachedSyntax {
+                        tree,
+                        spans: spans.clone(),
+                        version,
+                    },
+                );
 
-Thus if cached.version != version then rebuild else reuse spans.
+                spans
+            }
+        }
+    };
 
-We'll implement.
+    // ---- Map spans to the requested line range ----
+    let line_count = full_text.lines().count();
+    let mut response_lines = Vec::new();
+    let end_line = start_line.saturating_add(count).min(line_count);
 
+    // Build byte positions of line starts (including newline).
+    let mut line_offsets = Vec::with_capacity(line_count + 1);
+    line_offsets.push(0usize);
+    for (pos, b) in full_text.bytes().enumerate() {
+        if b == b'\n' {
+            line_offsets.push(pos + 1);
+        }
+    }
+
+    for idx in start_line..end_line {
+        let line_start = line_offsets.get(idx).copied().unwrap_or(full_text.len());
+        let line_end = line_offsets.get(idx + 1).copied().unwrap_or(full_text.len());
+
+        let raw_line = if line_end <= full_text.len() {
+            &full_text[line_start..line_end]
+        } else {
+            &full_text[line_start..]
         };
+        let display_line = raw_line.strip_suffix('\n').unwrap_or(raw_line).to_owned();
 
-We need to get spans. Let's write code:
+        let mut line_spans: Vec<HighlightSpanDto> = Vec::new();
+        for sp in &spans {
+            let span_start = sp.start_byte;
+            let span_end = sp.end_byte;
+            if span_end <= line_start || span_start >= line_end {
+                continue;
+            }
+            let rel_start = if span_start > line_start {
+                span_start - line_start
+            } else {
+                0
+            };
+            let rel_end = if span_end < line_end {
+                span_end - line_start
+            } else {
+                line_end - line_start
+            };
+            line_spans.push(HighlightSpanDto {
+                start: rel_start,
+                end: rel_end,
+                token_type: highlight_tag_to_string(sp.highlight),
+            });
+        }
 
+        line_spans.sort_by_key(|s| s.start);
+        response_lines.push(HighlightedLine {
+            index: idx,
+            text: display_line,
+            spans: line_spans,
+        });
+    }
+
+    Ok(HighlightResponse { lines: response_lines })
+}
+
+// ---------------------------------------------------------------------------
+// Temporary stub – exists only to satisfy the legacy handler registration.
+// ---------------------------------------------------------------------------
+#[command]
+pub async fn get_styled_spans() -> Result<(), String> {
+    Ok(())
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+fn highlight_tag_to_string(tag: tree_sitter::Highlight) -> String {
+    match tag {
+        tree_sitter::Highlight::Keyword => "keyword".to_string(),
+        tree_sitter::Highlight::String => "string".to_string(),
+        tree_sitter::Highlight::Comment => "comment".to_string(),
+        tree_sitter::Highlight::Function => "function".to_string(),
+        tree_sitter::Highlight::Type => "type".to_string(),
+        tree_sitter::Highlight::Variable => "variable".to_string(),
+        tree_sitter::Highlight::Constant => "constant".to_string(),
+        tree_sitter::Highlight::Number => "number".to_string(),
+        tree_sitter::Highlight::Operator => "operator".to_string(),
+        tree_sitter::Highlight::Punctuation => "punctuation".to_string(),
+        other => format!("{:?}", other),
+    }
+}
