@@ -347,8 +347,10 @@ pub async fn highlight_document(
             if sp.end <= line_start || sp.start >= line_end {
                 continue;
             }
-            let rel_start = (sp.start - line_start).max(0);
-            let rel_end = (sp.end - line_start).min(line_end - line_start);
+            // Use saturating operations to avoid overflows when the span starts/ends
+            // outside the current line (i.e., spans that cross line boundaries).
+            let rel_start = sp.start.saturating_sub(line_start);
+            let rel_end = sp.end.saturating_sub(line_start).min(line_end - line_start);
             let token_type = highlight_tag_to_string(sp.highlight);
             let color = tag_to_color(sp.highlight, &theme_colors).map(color_to_hex);
             line_spans.push(HighlightSpanDto {
