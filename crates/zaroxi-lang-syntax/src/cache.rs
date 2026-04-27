@@ -10,9 +10,8 @@
 
 use std::collections::HashMap;
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, LazyLock};
 
-use once_cell::sync::Lazy;
 use parking_lot::Mutex;
 
 use crate::highlight::{HighlightEngine, HighlightSpan};
@@ -21,8 +20,8 @@ use crate::parser::{ParserPool, SyntaxTree};
 
 // ── Global cache ──────────────────────────────────────────────────
 
-static CACHE: Lazy<Mutex<HashMap<PathBuf, DocumentSyntaxState>>> =
-    Lazy::new(|| Mutex::new(HashMap::new()));
+static CACHE: LazyLock<Mutex<HashMap<PathBuf, DocumentSyntaxState>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
 
 // ── Per‑document state ────────────────────────────────────────────
 
