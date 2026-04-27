@@ -160,37 +160,40 @@ pub async fn apply_edit(request: EditRequest) -> Result<(), String> {
         .await
         .ok_or_else(|| "Document not found in cache".to_string())?;
 
-    let mut guard = cached_arc.lock();
-    let document = &mut guard.document;
+    // Perform all mutations while holding the lock, then drop it
+    // before any further .await points, because parking_lot's
+    // MutexGuard is !Send and would make the future !Send.
+    {
+        let mut guard = cached_arc.lock();
+        let document = &mut guard.document;
 
-    // Reject edits for read‑only documents (very large files)
-    if document.file_class().is_read_only() {
-        return Err("Document is read‑only (very large file)".to_string());
-    }
+        // Reject edits for read‑only documents (very large files)
+        if document.file_class().is_read_only() {
+            return Err("Document is read‑only (very large file)".to_string());
+        }
 
-    // Convert byte positions to character positions
-    let start_char = document.byte_to_char(request.start_byte);
-    let old_end_char = document.byte_to_char(request.old_end_byte);
+        // Convert byte positions to character positions
+        let start_char = document.byte_to_char(request.start_byte);
+        let old_end_char = document.byte_to_char(request.old_end_byte);
 
-    // Ensure start <= end
-    let (delete_start, delete_end) = if start_char <= old_end_char {
-        (start_char, old_end_char)
-    } else {
-        (old_end_char, start_char)
-    };
+        // Ensure start <= end
+        let (delete_start, delete_end) = if start_char <= old_end_char {
+            (start_char, old_end_char)
+        } else {
+            (old_end_char, start_char)
+        };
 
-    // Delete old range
-    if delete_start < delete_end {
-        document.delete(delete_start, delete_end)?;
-    }
+        // Delete old range
+        if delete_start < delete_end {
+            document.delete(delete_start, delete_end)?;
+        }
 
-    // Insert new text at the start position (after deletion, the insertion point is delete_start)
-    if !request.new_text.is_empty() {
-        document.insert(delete_start, &request.new_text)?;
-    }
+        // Insert new text at the start position (after deletion, the insertion point is delete_start)
+        if !request.new_text.is_empty() {
+            document.insert(delete_start, &request.new_text)?;
+        }
+    } // guard dropped here – safe to .await now
 
-    // Mark dirty via the cache (must release guard first)
-    drop(guard);
     BUFFER_MANAGER.mark_dirty(&path).await;
 
     Ok(())
