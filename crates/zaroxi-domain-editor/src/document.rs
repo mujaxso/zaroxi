@@ -190,6 +190,73 @@ impl Document {
             .unwrap_or(0)
     }
 
+    /// Convert a character index to a (line, column) pair.
+    ///
+    /// Column is measured in **characters** within the line (not bytes).
+    /// Returns `None` for out‑of‑bounds positions.
+    pub fn char_to_line_col(&self, char_idx: usize) -> Option<(usize, usize)> {
+        if let Some(rope) = &self.rope {
+            if char_idx > rope.len_chars() {
+                return None;
+            }
+            let byte_pos = rope.char_to_byte(char_idx);
+            let line = rope.byte_to_line(byte_pos);
+            let line_slice = rope.get_line(line).ok()?;
+            let line_start_byte = rope.line_to_byte(line);
+            let byte_in_line = byte_pos - line_start_byte;
+            let col = line_slice.byte_to_char(byte_in_line);
+            Some((line, col))
+        } else {
+            // Large file – map using the preview.
+            let preview = &self.preview;
+            let mut char_count = 0usize;
+            for (line_idx, line_str) in preview.lines().enumerate() {
+                let line_len = line_str.chars().count();
+                let end = char_count + line_len;
+                if (char_count..end).contains(&char_idx) {
+                    return Some((line_idx, char_idx - char_count));
+                }
+                // advance past the line characters *and* the newline
+                char_count = end + 1;
+            }
+            None
+        }
+    }
+
+    /// Convert a (line, column) pair to a character index.
+    ///
+    /// Column is measured in **characters** within the line (not bytes).
+    /// Returns `None` if the line index is out of bounds or the column
+    /// exceeds the line length.
+    pub fn line_col_to_char(&self, line: usize, col: usize) -> Option<usize> {
+        if let Some(rope) = &self.rope {
+            let line_slice = rope.get_line(line).ok()?;
+            if col > line_slice.len_chars() {
+                return None;
+            }
+            let byte_in_line = line_slice.char_to_byte(col);
+            let line_start_byte = rope.line_to_byte(line);
+            let byte_pos = line_start_byte + byte_in_line;
+            let char_idx = rope.byte_to_char(byte_pos);
+            Some(char_idx)
+        } else {
+            let preview = &self.preview;
+            let mut char_count = 0usize;
+            for (line_idx, line_str) in preview.lines().enumerate() {
+                if line_idx == line {
+                    let line_len = line_str.chars().count();
+                    return if col <= line_len {
+                        Some(char_count + col)
+                    } else {
+                        None
+                    };
+                }
+                char_count += line_str.chars().count() + 1; // line chars + newline
+            }
+            None
+        }
+    }
+
     // ── Editing (only available for Normal / Medium files) ────────────
 
     pub fn insert(&mut self, char_idx: usize, ins: &str) -> Result<(), String> {
