@@ -5,7 +5,6 @@ import { LineNumberGutter } from './gutter/LineNumberGutter';
 import { GUTTER_CONFIG } from './gutter/GutterConfig';
 import { computeGutterWidth } from './gutter/GutterLayout';
 import { FONT_TOKENS } from '@/lib/theme/font-tokens';
-import { invoke } from '@tauri-apps/api/core';
 
 interface CodeEditorProps {
   initialValue: string;
@@ -14,14 +13,14 @@ interface CodeEditorProps {
   language?: string;
   readOnly?: boolean;
   className?: string;
-  /** set to true when the backend returns content_truncated (large file with preview) */
+  /** set to true when the backend returns content_truncated (large file) */
   contentTruncated?: boolean;
 }
 
-/** Maximum characters returned from back‑end for large files. */
+/** Maximum characters used for the legacy length‑check (kept for backward compat). */
 const TRUNCATE_CHARS = 50_000;
 
-/** Fast line‑counting that stops scanning once we exceed a safe limit. */
+/** Fast line‑counting (O(n), not used for large files where the gutter is hidden). */
 function fastLineCount(text: string): number {
   let lines = 1;
   const len = text.length;
@@ -34,12 +33,11 @@ function fastLineCount(text: string): number {
 }
 
 /**
- * Simple plain‑text editor for normal / medium files.
+ * Plain‑text editor for **all** files, including large ones.
  *
- * - Uses a single textarea for editing (content is the full rope text).
- * - Prevents any rendering of hidden lines; the native scroll handles everything.
- * - Horizontal scrolling works because `wrap="off"`.
- * - For **large** (read‑only) files a scrollable preview is shown **without a gutter**.
+ * For normal/medium files a gutter with line numbers is shown.
+ * For large files the gutter is hidden to avoid expensive computations,
+ * but the full text is still editable via a textarea.
  */
 export function CodeEditor({
   initialValue,
@@ -56,8 +54,6 @@ export function CodeEditor({
   const [scrollTop, setScrollTop] = useState(0);
   const [cursorLine, setCursorLine] = useState(1);
 
-  // Determine whether this is a large file (content truncation flag from backend).
-  // If no flag is provided, fall back to a simple length check for backward compatibility.
   const largeFile = contentTruncated ?? (initialValue.length >= TRUNCATE_CHARS);
 
   // Keep local value in sync with prop changes (e.g. when switching tabs)
@@ -72,15 +68,10 @@ export function CodeEditor({
     setScrollTop(ta.scrollTop);
   }, []);
 
-  const handlePreviewScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    setScrollTop(e.currentTarget.scrollTop);
-  }, []);
-
   const handleSelectionChange = useCallback(() => {
     const ta = textareaRef.current;
     if (!ta) return;
     const sel = ta.selectionStart;
-    // Cursor line is 1‑based
     const before = value.slice(0, sel).match(/\n/g);
     const line = before ? before.length + 1 : 1;
     setCursorLine(line);
@@ -88,25 +79,24 @@ export function CodeEditor({
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      if (readOnly || largeFile) return;
+      if (readOnly) return;
       const newVal = e.target.value;
       setValue(newVal);
       onChange(newVal);
       if (filePath) {
         useTabsStore.getState().markDirty(filePath);
       }
-      // Update cursor line after change (since selection is delayed, use a cheap estimate)
       const selStart = e.target.selectionStart;
       const before = newVal.slice(0, selStart).match(/\n/g);
       const line = before ? before.length + 1 : 1;
       setCursorLine(line);
     },
-    [onChange, readOnly, largeFile, filePath],
+    [onChange, readOnly, filePath],
   );
 
-  // ── Derived metrics (only needed for normal/medium files) ─────────
+  // ── Derived metrics (only needed when gutter is shown) ───────────
   const lineHeight = GUTTER_CONFIG.LINE_HEIGHT;
-  const totalLines = fastLineCount(value);
+  const totalLines = largeFile ? 0 : fastLineCount(value);
   const gutterWidth = largeFile ? 0 : computeGutterWidth(totalLines);
 
   // ── Layout ────────────────────────────────────────────────────────
@@ -126,22 +116,13 @@ export function CodeEditor({
         </div>
       )}
 
-      {/* Scrollable text area (or large‑file preview) */}
-      {largeFile ? (
-        <div
-          className="flex-1 overflow-auto bg-editor p-2 font-mono text-sm whitespace-pre"
-          style={{
-            lineHeight: `${lineHeight}px`,
-            fontFamily: FONT_TOKENS.editor,
-          }}
-          onScroll={handlePreviewScroll}
-        >
-          <div className="text-muted-foreground text-xs mb-1">
-            File is too large for editing (showing preview of first {TRUNCATE_CHARS.toLocaleString()} characters).
+      {/* Scrollable text area */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {largeFile && (
+          <div className="text-muted-foreground text-xs p-1 bg-muted/80 shrink-0">
+            Large file – editing may be slow
           </div>
-          <div>{value}</div>
-        </div>
-      ) : (
+        )}
         <textarea
           ref={textareaRef}
           className="flex-1 resize-none outline-none bg-editor text-editor-foreground font-mono text-sm p-0 overflow-auto scrollbar-none"
@@ -162,7 +143,7 @@ export function CodeEditor({
           autoComplete="off"
           autoCorrect="off"
         />
-      )}
+      </div>
     </div>
   );
 }

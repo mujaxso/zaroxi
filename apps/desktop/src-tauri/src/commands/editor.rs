@@ -1,6 +1,6 @@
 //! Tauri commands that serve the editor front‑end.
 //!
-//! These commands implement a **plain‑text editor with no syntax highlighting**.
+//! These commands implement a **plain‑text editor**.
 //! Syntax decoration will be introduced in a later layer once the core text
 //! engine and viewport system are stable.
 
@@ -68,8 +68,10 @@ pub struct EditRequest {
 
 /// Open a document and return its metadata.
 ///
-/// The returned `content` is the full rope text for normal/medium files, and a
-/// truncated preview for large files.  Large files are always read‑only.
+/// The returned `content` is the full rope text for every file class, even
+/// for large files – editing is allowed for all files.  The frontend uses
+/// `content_truncated` as a signal to suppress expensive decorations like
+/// the line‑number gutter, but the text itself is complete.
 #[command]
 pub async fn open_document(path: String) -> Result<OpenDocumentResponse, String> {
     let path_buf = std::path::PathBuf::from(&path);
@@ -81,26 +83,15 @@ pub async fn open_document(path: String) -> Result<OpenDocumentResponse, String>
 
     let document = &cached.document;
     let file_class = document.file_class();
-    let is_read_only = file_class.is_read_only();
     let content_truncated = file_class == FileClass::Large;
 
-    let content: String = if content_truncated {
-        document.text().chars().take(TRUNCATE_CHARS).collect()
-    } else {
-        document.text()
-    };
+    // Always include the full text so that editing is possible.
+    let content = document.text();
 
-    // For large files we use the metrics of the truncated preview,
-    // not the enormous original file.  This prevents huge line‑count
-    // values from being sent to the frontend and avoids crashes there.
-    let (line_count, char_count) = if content_truncated {
-        let preview_lines = content.lines().count();
-        (preview_lines, content.len())
-    } else {
-        (document.len_lines(), document.len_chars())
-    };
-
-    let version = document.version();
+    // For large files we keep the real line/char counts, because the
+    // gutter is disabled on the frontend when content_truncated is true.
+    let line_count = document.len_lines();
+    let char_count = document.len_chars();
 
     Ok(OpenDocumentResponse {
         document_id: path.clone(),
@@ -108,10 +99,10 @@ pub async fn open_document(path: String) -> Result<OpenDocumentResponse, String>
         line_count,
         char_count,
         file_class: format!("{:?}", file_class),
-        is_read_only,
+        is_read_only: false,   // not enforced at the model level
         content,
         content_truncated,
-        version,
+        version: document.version(),
     })
 }
 
@@ -145,6 +136,8 @@ pub async fn get_visible_lines(
 }
 
 /// Apply an edit to a document.
+///
+/// Large‑file reads are no longer blocked; editing is allowed for all files.
 #[command]
 pub async fn apply_edit(request: EditRequest) -> Result<(), String> {
     let path = std::path::PathBuf::from(&request.document_id);
@@ -152,11 +145,6 @@ pub async fn apply_edit(request: EditRequest) -> Result<(), String> {
         .get_cached(&path)
         .await
         .ok_or_else(|| "Document not found in cache".to_string())?;
-
-    // Reject edits for read‑only documents (very large files)
-    if cached.document.file_class().is_read_only() {
-        return Err("Document is read‑only (very large file)".to_string());
-    }
 
     let mut document = cached.document;
 
