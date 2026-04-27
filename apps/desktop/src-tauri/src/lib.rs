@@ -91,6 +91,7 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
             commands::editor::save_document,
             commands::editor::get_line_count,
             commands::editor::get_styled_spans,
+            commands::editor::highlight_document,
             commands::assistant::start_ai_task,
             commands::assistant::cancel_ai_task,
             commands::search::search_workspace,
