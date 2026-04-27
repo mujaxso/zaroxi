@@ -96,15 +96,17 @@ function renderSpans(spans: HighlightSpan[], lineText: string) {
 
   const segments: React.ReactNode[] = [];
   let last = 0;
-  for (const sp of spans) {
+  for (let i = 0; i < spans.length; i++) {
+    const sp = spans[i];
     if (sp.start > last) {
       segments.push(lineText.slice(last, sp.start));
     }
-    // Apply inline colour when present, otherwise fall back to CSS class
+    // Rely on the inline color from the backend; fall back to CSS class only as a safety net.
     const tokenClass = tokenStyleMap[sp.token_type] ?? '';
+    const key = `${sp.start}-${i}`; // unique per span
     segments.push(
       <span
-        key={`s${sp.start}`}
+        key={key}
         className={tokenClass}
         style={sp.color ? { color: sp.color } : undefined}
       >
@@ -306,16 +308,18 @@ export function CodeEditor({
           </div>
         )}
 
-        {/* Editable textarea */}
+        {/* Editable textarea – text is transparent when highlights are enabled so the
+            syntax layer shows through.  The caret remains visible via caretColor. */}
         <textarea
           ref={textareaRef}
-          className="flex-1 resize-none outline-none bg-transparent text-editor-foreground font-mono text-sm p-0 overflow-auto scrollbar-none relative z-10"
+          className="flex-1 resize-none outline-none bg-transparent font-mono text-sm p-0 overflow-auto scrollbar-none relative z-10"
           style={{
             lineHeight: `${lineHeight}px`,
             fontFamily: FONT_TOKENS.editor,
             whiteSpace: 'pre',
             overflowWrap: 'normal',
             wrap: 'off',
+            color: highlightsEnabled ? 'transparent' : undefined,
             caretColor: effectiveReadOnly ? 'transparent' : undefined,
           }}
           value={value}
