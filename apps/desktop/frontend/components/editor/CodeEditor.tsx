@@ -72,19 +72,46 @@ function useFullHighlight(
 }
 
 /* ------------------------------------------------------------------ */
-/*  Simple token‑type → CSS class mapping (kept as fallback)          */
+/*  Token‑type → CSS class mapping (used as fallback when inline       */
+/*  colour is absent).  The mapping now covers every token name that   */
+/*  the backend may emit.                                              */
 /* ------------------------------------------------------------------ */
 const tokenStyleMap: Record<string, string> = {
-  keyword: 'text-purple-400',
-  string: 'text-green-400',
-  comment: 'text-gray-500 italic',
-  function: 'text-blue-400',
-  type: 'text-cyan-400',
-  variable: 'text-orange-300',
-  constant: 'text-yellow-300',
-  number: 'text-pink-400',
-  operator: 'text-red-300',
-  punctuation: 'text-slate-400',
+  // lower‑case keys match the backend highlight_tag_to_string output
+  keyword: 'text-keyword',
+  string: 'text-string',
+  comment: 'text-comment italic',
+  function: 'text-function',
+  type: 'text-type',
+  variable: 'text-variable',
+  constant: 'text-constant',
+  number: 'text-number',
+  operator: 'text-operator',
+  punctuation: 'text-punctuation',
+  // pascal‑case variants (older captures may arrive like this)
+  Keyword: 'text-keyword',
+  String: 'text-string',
+  Comment: 'text-comment italic',
+  Function: 'text-function',
+  Type: 'text-type',
+  Variable: 'text-variable',
+  Constant: 'text-constant',
+  Number: 'text-number',
+  Operator: 'text-operator',
+  Punctuation: 'text-punctuation',
+  // additional semantic tokens
+  Attribute: 'text-attribute',
+  attribute: 'text-attribute',
+  Property: 'text-property',
+  property: 'text-property',
+  Namespace: 'text-namespace',
+  namespace: 'text-namespace',
+  Tag: 'text-tag',
+  tag: 'text-tag',
+  Macro: 'text-macro',
+  macro: 'text-macro',
+  Plain: 'text-plain',
+  plain: 'text-plain',
 };
 
 /**
