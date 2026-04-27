@@ -46,9 +46,10 @@ function useHighlight(
 
     async function fetch() {
       try {
+        // IMPORTANT: Tauri command expects snake_case argument names.
         const res: HighlightResponse = await invoke('highlight_document', {
-          documentId,
-          startLine,
+          document_id: documentId,
+          start_line: startLine,
           count,
           theme: theme ?? 'dark',
         });

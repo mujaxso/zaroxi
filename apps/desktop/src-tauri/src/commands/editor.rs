@@ -73,17 +73,7 @@ pub struct EditRequest {
     pub new_text: String,
 }
 
-// ── Highlight request / response DTOs ─────────────────────────────
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct HighlightRequest {
-    pub document_id: String,
-    pub start_line: usize,
-    pub count: usize,
-    /// Optional theme name: "dark" or "light".  If omitted, dark is used.
-    pub theme: Option<String>,
-}
+// ── Highlight response DTOs ───────────────────────────────────────
 
 #[derive(Debug, Serialize)]
 pub struct HighlightResponse {
@@ -262,12 +252,19 @@ pub async fn get_document_content(document_id: String) -> Result<String, String>
 
 // ── highlight_document ────────────────────────────────────────────
 // Delegates to the zaroxi_lang_syntax cache for tree/spans.
+// Now accepts flattened arguments to match the front‑end invoke call.
 
 #[command]
 pub async fn highlight_document(
-    request: HighlightRequest,
+    document_id: String,
+    start_line: usize,
+    count: usize,
+    theme: Option<String>,
 ) -> Result<HighlightResponse, String> {
-    let path = std::path::PathBuf::from(&request.document_id);
+    eprintln!("[highlight_document] called: doc_id={}, start_line={}, count={}, theme={:?}",
+              document_id, start_line, count, theme);
+
+    let path = std::path::PathBuf::from(&document_id);
     let cached_arc = BUFFER_MANAGER
         .get_cached(&path)
         .await
@@ -275,26 +272,34 @@ pub async fn highlight_document(
     let guard = cached_arc.lock();
     let document = &guard.document;
 
+    eprintln!("[highlight_document] document file_class={:?}", document.file_class());
+
     if document.file_class() == FileClass::Large {
+        eprintln!("[highlight_document] document is Large -> returning empty");
         return Ok(HighlightResponse { lines: vec![] });
     }
 
-    let lang =
-        LanguageId::from_path(document.path().unwrap_or(std::path::Path::new("")));
+    let lang = LanguageId::from_path(document.path().unwrap_or(std::path::Path::new("")));
+    eprintln!("[highlight_document] detected language: {:?}", lang);
+
     if lang == LanguageId::PlainText {
+        eprintln!("[highlight_document] PlainText -> returning empty");
         return Ok(HighlightResponse { lines: vec![] });
     }
 
     let version = document.version();
     let full_text = document.text();
+    eprintln!("[highlight_document] document version={}, text len={}", version, full_text.len());
+
     let engine = HighlightEngine::new();
 
     // ── Resolve theme colours ────────────────────────────────────
-    let theme_colors = match request.theme.as_deref() {
+    let theme_colors = match theme.as_deref() {
         Some("light") => SemanticColors::light(),
         _ => SemanticColors::dark(),
     };
 
+    eprintln!("[highlight_document] fetching spans from cache...");
     let spans = cache::get_or_compute(
         &path,
         version,
@@ -305,11 +310,13 @@ pub async fn highlight_document(
     )
     .map_err(|e| format!("Highlight error: {}", e))?;
 
-    // ── map spans to requested line range ──
+    eprintln!("[highlight_document] got {} total spans", spans.len());
+
+    // ── Map spans to requested line range ──
     use std::borrow::Cow;
     let line_count = full_text.lines().count();
-    let end_line = request.start_line.saturating_add(request.count).min(line_count);
-    let mut response_lines = Vec::with_capacity(end_line - request.start_line);
+    let end_line = start_line.saturating_add(count).min(line_count);
+    let mut response_lines = Vec::with_capacity(end_line - start_line);
 
     let mut line_offsets = Vec::with_capacity(line_count + 1);
     line_offsets.push(0usize);
@@ -319,7 +326,7 @@ pub async fn highlight_document(
         }
     }
 
-    for idx in request.start_line..end_line {
+    for idx in start_line..end_line {
         let line_start = *line_offsets.get(idx).unwrap_or(&full_text.len());
         let line_end = *line_offsets.get(idx + 1).unwrap_or(&full_text.len());
         let raw = &full_text[line_start..line_end];
@@ -337,7 +344,6 @@ pub async fn highlight_document(
             let rel_start = (sp.start - line_start).max(0);
             let rel_end = (sp.end - line_start).min(line_end - line_start);
             let token_type = highlight_tag_to_string(sp.highlight);
-            // Map the semantic highlight to a theme colour (hex string)
             let color = tag_to_color(sp.highlight, &theme_colors).map(color_to_hex);
             line_spans.push(HighlightSpanDto {
                 start: rel_start,
@@ -354,6 +360,7 @@ pub async fn highlight_document(
         });
     }
 
+    eprintln!("[highlight_document] returning {} lines", response_lines.len());
     Ok(HighlightResponse {
         lines: response_lines,
     })
