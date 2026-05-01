@@ -13,6 +13,7 @@ Please be respectful and considerate of others when participating in this projec
 Before creating a bug report, please check the existing issues to avoid duplicates.
 
 **How to Report a Bug:**
+
 1. Use the bug report template when creating an issue
 2. Describe the exact steps to reproduce the problem
 3. Include system information (OS, Rust version, etc.)
@@ -24,6 +25,7 @@ Before creating a bug report, please check the existing issues to avoid duplicat
 We welcome suggestions for new features and improvements.
 
 **How to Suggest an Enhancement:**
+
 1. Use the feature request template when creating an issue
 2. Clearly describe the feature and its benefits
 3. Explain why this feature would be useful to most users
@@ -42,6 +44,7 @@ We welcome suggestions for new features and improvements.
 #### Development Workflow
 
 1. **Create a branch** for your changes:
+
    ```bash
    git checkout -b feature/your-feature-name
    ```
@@ -49,6 +52,7 @@ We welcome suggestions for new features and improvements.
 2. **Make your changes** following the coding standards
 
 3. **Test your changes**:
+
    ```bash
    cargo test --workspace
    cargo fmt --all -- --check
@@ -56,11 +60,13 @@ We welcome suggestions for new features and improvements.
    ```
 
 4. **Commit your changes** with descriptive commit messages:
+
    ```bash
    git commit -m "feat: add new feature"
    ```
 
 5. **Push to your fork**:
+
    ```bash
    git push origin feature/your-feature-name
    ```
@@ -113,6 +119,7 @@ Use conventional commit messages:
 ```
 
 **Types:**
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `docs`: Documentation changes
@@ -122,6 +129,7 @@ Use conventional commit messages:
 - `chore`: Maintenance tasks
 
 **Examples:**
+
 ```
 feat: add AI context collection
 fix: resolve buffer overflow in editor
@@ -160,6 +168,7 @@ cargo test --workspace -- --nocapture
 ## Recognition
 
 All contributors will be recognized in:
+
 - The project's README (for significant contributions)
 - Release notes
 - The contributors graph on GitHub
@@ -167,6 +176,7 @@ All contributors will be recognized in:
 ## Questions?
 
 If you have questions about contributing:
+
 - Check the documentation in `docs/`
 - Join discussions on GitHub
 - Open an issue with the `question` label

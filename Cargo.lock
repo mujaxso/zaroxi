@@ -5673,10 +5673,15 @@ name = "zaroxi-domain-editor"
 version = "0.1.0"
 dependencies = [
  "memmap2",
+ "parking_lot",
  "ropey",
  "serde",
  "thiserror 2.0.18",
+ "tokio",
  "zaroxi-core-ids",
+ "zaroxi-lang-syntax",
+ "zaroxi-ops-file",
+ "zaroxi-theme",
 ]
 
 [[package]]
@@ -5738,13 +5743,18 @@ dependencies = [
 name = "zaroxi-lang-syntax"
 version = "0.1.0"
 dependencies = [
+ "cc",
  "libloading 0.8.9",
  "memmap2",
+ "parking_lot",
+ "ropey",
  "serde",
  "serde_json",
  "tempfile",
  "thiserror 2.0.18",
+ "toml 0.8.2",
  "tree-sitter",
+ "zaroxi-theme",
 ]
 
 [[package]]
