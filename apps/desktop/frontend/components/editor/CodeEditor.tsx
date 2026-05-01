@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   useCallback,
@@ -49,6 +50,9 @@ function useFullHighlight(
     let cancelled = false;
 
     async function fetch() {
+      // Clear stale highlights immediately so previous document's spans never
+      // appear over the new file content.
+      setLines([]);
       try {
         const res: HighlightResponse = await invoke('highlight_document', {
           request: {
@@ -192,32 +196,44 @@ export function CodeEditor({
   contentTruncated,
   theme = 'dark',
 }: CodeEditorProps) {
-  // ---------- text state ----------
+  // ---------- internal state (always represents the *current* document) ----------
   const [value, setValue] = useState(initialValue);
+  const [scrollTop, setScrollTop] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+  const [cursorLine, setCursorLine] = useState(1);
+
+  // ---------- synchronous reset on file change ----------
+  const prevFilePathRef = useRef(filePath);
+  const fileChanged = prevFilePathRef.current !== filePath;
+
+  if (fileChanged) {
+    // Prevent even a single frame of rendering stale content.
+    // React will use these initial values in the current render,
+    // and the scheduled state updates will align internal state
+    // for subsequent renders.
+    prevFilePathRef.current = filePath;
+
+    setValue(initialValue);
+    setScrollTop(0);
+    setScrollLeft(0);
+    setCursorLine(1);
+  }
+
+  // Effective values to use for this render cycle.
+  const effectiveValue = fileChanged ? initialValue : value;
+  const effectiveScrollTop = fileChanged ? 0 : scrollTop;
+  const effectiveScrollLeft = fileChanged ? 0 : scrollLeft;
+  const effectiveCursorLine = fileChanged ? 1 : cursorLine;
 
   // ---------- refs ----------
   const containerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const highlightOuterRef = useRef<HTMLDivElement>(null);
 
-  // ---------- scroll state ----------
-  const [scrollTop, setScrollTop] = useState(0);
-  const [scrollLeft, setScrollLeft] = useState(0);
-
-  // ---------- cursor line number (for gutter) ----------
-  const [cursorLine, setCursorLine] = useState(1);
-
   // ---------- huge file guard ----------
   const largeFile = contentTruncated ?? initialValue.length >= TRUNCATE_CHARS;
 
-  // ---------- re-sync text when parent changes ----------
-  useEffect(() => {
-    setValue(initialValue);
-    setScrollTop(0);
-    setScrollLeft(0);
-  }, [initialValue, filePath]);
-
-  // ---------- dimensions ----------
+  // ---------- dimensions (container height) ----------
   const [containerHeight, setContainerHeight] = useState(0);
 
   useEffect(() => {
@@ -232,9 +248,9 @@ export function CodeEditor({
     return () => observer.disconnect();
   }, []);
 
-  // ---------- line metrics ----------
+  // ---------- line metrics (based on the effective value) ----------
   const lineHeight = GUTTER_CONFIG.LINE_HEIGHT;
-  const lineStarts = useMemo(() => computeLineStarts(value), [value]);
+  const lineStarts = useMemo(() => computeLineStarts(effectiveValue), [effectiveValue]);
   const totalLines = lineStarts.length;
 
   // ---------- highlight model ----------
@@ -245,8 +261,8 @@ export function CodeEditor({
     theme,
   );
 
-  // ---------- viewport ----------
-  const visibleStartLine = Math.floor(scrollTop / lineHeight);
+  // ---------- viewport calculations (based on effective scroll / height) ----------
+  const visibleStartLine = Math.floor(effectiveScrollTop / lineHeight);
   const visibleCount =
     Math.ceil(((containerHeight || lineHeight) + lineHeight) / lineHeight) * 2;
   const visibleEndLine = Math.min(visibleStartLine + visibleCount, totalLines);
@@ -263,6 +279,15 @@ export function CodeEditor({
   const gutterWidth = largeFile ? 0 : computeGutterWidth(totalLines);
   const effectiveReadOnly = readOnly || largeFile;
 
+  // ---------- reset native textarea scroll to (0,0) when file changes ----------
+  useLayoutEffect(() => {
+    const ta = textareaRef.current;
+    if (ta) {
+      ta.scrollTop = 0;
+      ta.scrollLeft = 0;
+    }
+  }, [filePath]);
+
   // ---------- scroll event ----------
   const handleTextareaScroll = useCallback(
     (e: React.UIEvent<HTMLTextAreaElement>) => {
@@ -278,9 +303,10 @@ export function CodeEditor({
     const ta = textareaRef.current;
     if (!ta) return;
     const pos = ta.selectionStart;
-    const before = value.slice(0, pos).match(/\n/g);
+    // Use the effective value so the line count matches the displayed text.
+    const before = effectiveValue.slice(0, pos).match(/\n/g);
     setCursorLine(before ? before.length + 1 : 1);
-  }, [value]);
+  }, [effectiveValue]);
 
   // ---------- edit handling ----------
   const handleChange = useCallback(
@@ -310,9 +336,9 @@ export function CodeEditor({
         >
           <LineNumberGutter
             lineCount={totalLines}
-            cursorLine={cursorLine}
+            cursorLine={effectiveCursorLine}
             lineHeight={lineHeight}
-            scrollTop={scrollTop}
+            scrollTop={effectiveScrollTop}
             containerHeight={containerHeight}
           />
         </div>
@@ -352,7 +378,7 @@ export function CodeEditor({
                   position: 'absolute',
                   top: 0,
                   left: 0,
-                  transform: `translate3d(${-scrollLeft}px, ${-visibleStartLine * lineHeight}px, 0px)`,
+                  transform: `translate3d(${-effectiveScrollLeft}px, ${-visibleStartLine * lineHeight}px, 0px)`,
                   whiteSpace: 'pre',
                   width: 'max-content',
                 }}
@@ -386,7 +412,7 @@ export function CodeEditor({
                 ? 'transparent'
                 : undefined,
           }}
-          value={value}
+          value={effectiveValue}
           readOnly={effectiveReadOnly}
           onChange={handleChange}
           onScroll={handleTextareaScroll}
