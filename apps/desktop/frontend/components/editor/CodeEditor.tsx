@@ -2,7 +2,7 @@ import {
   useEffect,
   useLayoutEffect,
   useRef,
-  useState,
+  useReducer,
   useCallback,
   useMemo,
 } from 'react';
@@ -39,7 +39,10 @@ function useFullHighlight(
   enabled: boolean,
   theme?: 'dark' | 'light',
 ) {
-  const [lines, setLines] = useState<HighlightLine[]>([]);
+  const [lines, setLines] = useReducer(
+    (_prev: HighlightLine[], next: HighlightLine[]) => next,
+    [],
+  );
 
   useEffect(() => {
     if (!documentId || !enabled) {
@@ -187,6 +190,28 @@ function computeLineStarts(text: string): number[] {
   return starts;
 }
 
+/* ------------------------------------------------------------------ */
+/*  Editor state (value, scroll, cursor) kept per open file              */
+/* ------------------------------------------------------------------ */
+interface EditorState {
+  /** The file content as edited locally. */
+  value: string;
+  /** Vertical scroll position of the textarea. */
+  scrollTop: number;
+  /** Horizontal scroll position of the textarea. */
+  scrollLeft: number;
+  /** 1‑based line number of the (primary) cursor. */
+  cursorLine: number;
+}
+
+/**
+ * CodeEditor – a tab‑isolated editor with syntax highlighting.
+ *
+ * Every open file gets its own EditorState stored in a Map keyed by `filePath`.
+ * When the active file changes we simply switch to the existing state (or
+ * initialise a fresh one).  No state is leaked between documents, and unsaved
+ * local edits survive tab switches.
+ */
 export function CodeEditor({
   initialValue,
   onChange,
@@ -196,45 +221,40 @@ export function CodeEditor({
   contentTruncated,
   theme = 'dark',
 }: CodeEditorProps) {
-  // ---------- internal state (always represents the *current* document) ----------
-  const [value, setValue] = useState(initialValue);
-  const [scrollTop, setScrollTop] = useState(0);
-  const [scrollLeft, setScrollLeft] = useState(0);
-  const [cursorLine, setCursorLine] = useState(1);
+  /* –– editor‑states map (persists across re‑renders) –– */
+  const editorStates = useRef<Map<string, EditorState>>(new Map());
+  // We force a re‑render whenever we mutate the map so React picks up the new data.
+  const [, forceUpdate] = useReducer((x: number) => x + 1, 0);
 
-  // ---------- synchronous reset on file change ----------
-  const prevFilePathRef = useRef(filePath);
-  const fileChanged = prevFilePathRef.current !== filePath;
+  /* derive a stable key for the *active* document */
+  const activeFilePath = filePath ?? '__no_file__';
 
-  if (fileChanged) {
-    // Prevent even a single frame of rendering stale content.
-    // React will use these initial values in the current render,
-    // and the scheduled state updates will align internal state
-    // for subsequent renders.
-    prevFilePathRef.current = filePath;
-
-    setValue(initialValue);
-    setScrollTop(0);
-    setScrollLeft(0);
-    setCursorLine(1);
+  /* –– initialise state for a file that is opened for the first time –– */
+  if (!editorStates.current.has(activeFilePath)) {
+    editorStates.current.set(activeFilePath, {
+      value: initialValue,
+      scrollTop: 0,
+      scrollLeft: 0,
+      cursorLine: 1,
+    });
   }
 
-  // Effective values to use for this render cycle.
-  const effectiveValue = fileChanged ? initialValue : value;
-  const effectiveScrollTop = fileChanged ? 0 : scrollTop;
-  const effectiveScrollLeft = fileChanged ? 0 : scrollLeft;
-  const effectiveCursorLine = fileChanged ? 1 : cursorLine;
+  /* read the *current* document’s state (always in‑sync with the map) */
+  const activeState = editorStates.current.get(activeFilePath)!;
 
-  // ---------- refs ----------
+  /* –– refs –– */
   const containerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const highlightOuterRef = useRef<HTMLDivElement>(null);
 
-  // ---------- huge file guard ----------
-  const largeFile = contentTruncated ?? initialValue.length >= TRUNCATE_CHARS;
+  /* –– huge‑file guard –– */
+  const largeFile = contentTruncated ?? (initialValue.length >= TRUNCATE_CHARS);
 
-  // ---------- dimensions (container height) ----------
-  const [containerHeight, setContainerHeight] = useState(0);
+  /* –– container height from ResizeObserver –– */
+  const [containerHeight, setContainerHeight] = useReducer(
+    (_prev: number, next: number) => next,
+    0,
+  );
 
   useEffect(() => {
     const el = containerRef.current;
@@ -248,21 +268,21 @@ export function CodeEditor({
     return () => observer.disconnect();
   }, []);
 
-  // ---------- line metrics (based on the effective value) ----------
+  /* –– line metrics (always derived from the active document’s value) –– */
   const lineHeight = GUTTER_CONFIG.LINE_HEIGHT;
-  const lineStarts = useMemo(() => computeLineStarts(effectiveValue), [effectiveValue]);
+  const lineStarts = useMemo(() => computeLineStarts(activeState.value), [activeState.value]);
   const totalLines = lineStarts.length;
 
-  // ---------- highlight model ----------
-  const highlightsEnabled = !largeFile && !!filePath;
+  /* –– syntax highlight model (per‑display document) –– */
+  const highlightsEnabled = !largeFile && !!activeFilePath;
   const allHighlighted = useFullHighlight(
-    filePath ?? null,
+    activeFilePath,
     highlightsEnabled,
     theme,
   );
 
-  // ---------- viewport calculations (based on effective scroll / height) ----------
-  const visibleStartLine = Math.floor(effectiveScrollTop / lineHeight);
+  /* –– viewport (visible lines) –– */
+  const visibleStartLine = Math.floor(activeState.scrollTop / lineHeight);
   const visibleCount =
     Math.ceil(((containerHeight || lineHeight) + lineHeight) / lineHeight) * 2;
   const visibleEndLine = Math.min(visibleStartLine + visibleCount, totalLines);
@@ -275,57 +295,68 @@ export function CodeEditor({
     [allHighlighted, visibleStartLine, visibleEndLine],
   );
 
-  // ---------- gutter ----------
+  /* –– gutter –– */
   const gutterWidth = largeFile ? 0 : computeGutterWidth(totalLines);
   const effectiveReadOnly = readOnly || largeFile;
 
-  // ---------- reset native textarea scroll to (0,0) when file changes ----------
+  /* –– synchronize textarea native scroll position when the active file changes –– */
   useLayoutEffect(() => {
     const ta = textareaRef.current;
-    if (ta) {
-      ta.scrollTop = 0;
-      ta.scrollLeft = 0;
-    }
-  }, [filePath]);
+    if (!ta) return;
+    ta.scrollTop = activeState.scrollTop;
+    ta.scrollLeft = activeState.scrollLeft;
+  }, [activeFilePath]);
 
-  // ---------- scroll event ----------
+  /* –– scroll event –– */
   const handleTextareaScroll = useCallback(
     (e: React.UIEvent<HTMLTextAreaElement>) => {
       if (!e.currentTarget) return;
-      setScrollTop(e.currentTarget.scrollTop);
-      setScrollLeft(e.currentTarget.scrollLeft);
+      const sTop = e.currentTarget.scrollTop;
+      const sLeft = e.currentTarget.scrollLeft;
+
+      // mutate the map and schedule a re‑render so the overlay / gutter stay in sync
+      const current = editorStates.current.get(activeFilePath)!;
+      current.scrollTop = sTop;
+      current.scrollLeft = sLeft;
+      forceUpdate();
     },
-    [],
+    [activeFilePath],
   );
 
-  // ---------- cursor tracking ----------
+  /* –– cursor tracking –– */
   const handleSelect = useCallback(() => {
     const ta = textareaRef.current;
     if (!ta) return;
     const pos = ta.selectionStart;
-    // Use the effective value so the line count matches the displayed text.
-    const before = effectiveValue.slice(0, pos).match(/\n/g);
-    setCursorLine(before ? before.length + 1 : 1);
-  }, [effectiveValue]);
+    const before = activeState.value.slice(0, pos).match(/\n/g);
+    const line = before ? before.length + 1 : 1;
+    const st = editorStates.current.get(activeFilePath)!;
+    st.cursorLine = line;
+    forceUpdate();
+  }, [activeFilePath, activeState.value]);
 
-  // ---------- edit handling ----------
+  /* –– edit handling –– */
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       if (readOnly) return;
       const newVal = e.target.value;
-      setValue(newVal);
+
+      const st = editorStates.current.get(activeFilePath)!;
+      st.value = newVal;
+      forceUpdate();
+
       onChange(newVal);
-      if (filePath) {
-        useTabsStore.getState().markDirty(filePath);
-      }
       const pos = e.target.selectionStart;
       const before = newVal.slice(0, pos).match(/\n/g);
-      setCursorLine(before ? before.length + 1 : 1);
+      st.cursorLine = before ? before.length + 1 : 1;
+
+      // mark dirty in the tabs store once we leave the handler
+      useTabsStore.getState().markDirty(activeFilePath);
     },
-    [onChange, readOnly, filePath],
+    [onChange, readOnly, activeFilePath],
   );
 
-  /* ---------- render ---------- */
+  /* –– render –– */
   return (
     <div ref={containerRef} className={cn('flex h-full', className)}>
       {/* gutter */}
@@ -336,9 +367,9 @@ export function CodeEditor({
         >
           <LineNumberGutter
             lineCount={totalLines}
-            cursorLine={effectiveCursorLine}
+            cursorLine={activeState.cursorLine}
             lineHeight={lineHeight}
-            scrollTop={effectiveScrollTop}
+            scrollTop={activeState.scrollTop}
             containerHeight={containerHeight}
           />
         </div>
@@ -378,7 +409,9 @@ export function CodeEditor({
                   position: 'absolute',
                   top: 0,
                   left: 0,
-                  transform: `translate3d(${-effectiveScrollLeft}px, ${-visibleStartLine * lineHeight}px, 0px)`,
+                  transform: `translate3d(${-activeState.scrollLeft}px, ${
+                    -visibleStartLine * lineHeight
+                  }px, 0px)`,
                   whiteSpace: 'pre',
                   width: 'max-content',
                 }}
@@ -412,7 +445,7 @@ export function CodeEditor({
                 ? 'transparent'
                 : undefined,
           }}
-          value={effectiveValue}
+          value={activeState.value}
           readOnly={effectiveReadOnly}
           onChange={handleChange}
           onScroll={handleTextareaScroll}
